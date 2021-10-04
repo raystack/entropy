@@ -1,0 +1,13 @@
+service:
+  host: ""
+  port: 8080
+db:
+  host: localhost
+  name: entropy
+  port: 27017
+newrelic:
+  enabled: false
+  appname: entropy-dev
+  license: ____LICENSE_STRING_OF_40_CHARACTERS_____
+log:
+  level: info
