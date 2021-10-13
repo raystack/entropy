@@ -12,10 +12,13 @@ all: clean test build
 
 build:
 	mkdir -p ${BUILD_DIR}
-	go build -ldflags '-X "${NAME}/version.Version=${VERSION}" -X "${NAME}/version.Commit=${COMMIT}" -X "${NAME}/version.BuildTime=${BUILD_TIME}"' -o ${BUILD_DIR}/${EXE}
+	CGO_ENABLED=0 go build -ldflags '-X "${NAME}/version.Version=${VERSION}" -X "${NAME}/version.Commit=${COMMIT}" -X "${NAME}/version.BuildTime=${BUILD_TIME}"' -o ${BUILD_DIR}/${EXE}
 
 clean:
 	rm -rf ${COVERAGE_DIR} ${BUILD_DIR}
+
+download:
+	go mod download
 
 test:
 	mkdir -p ${COVERAGE_DIR}
