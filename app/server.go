@@ -74,7 +74,10 @@ func RunServer(c *domain.Config) error {
 		return err
 	}
 
-	gw.RegisterHandler(ctx, commonv1.RegisterCommonServiceHandlerFromEndpoint)
+	err = gw.RegisterHandler(ctx, commonv1.RegisterCommonServiceHandlerFromEndpoint)
+	if err != nil {
+		return err
+	}
 	muxServer.SetGateway("/api", gw)
 
 	muxServer.RegisterHandler("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -91,10 +94,7 @@ func RunServer(c *domain.Config) error {
 	errorChan := make(chan error)
 
 	go func() {
-		err := muxServer.Serve()
-		if err != nil {
-			errorChan <- err
-		}
+		errorChan <- muxServer.Serve()
 	}()
 
 	<-ctx.Done()
@@ -116,6 +116,5 @@ func RunMigrations(c *domain.Config) error {
 		return err
 	}
 
-	services.MigrateAll(store)
-	return nil
+	return services.MigrateAll(store)
 }

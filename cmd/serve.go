@@ -18,6 +18,9 @@ func init() {
 func serve(cmd *cobra.Command, args []string) error {
 	var c domain.Config
 	l := config.NewLoader(config.WithPath("./"))
-	l.Load(&c)
+	err := l.Load(&c)
+	if err != nil {
+		return err
+	}
 	return app.RunServer(&c)
 }
