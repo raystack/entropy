@@ -1,0 +1,18 @@
+name: Lint
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  golangci-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: "1.16"
+      - name: download dependencies
+        run: make download
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          skip-go-installation: true
+          version: v1.41.1
