@@ -1,70 +1,85 @@
 # Entropy
 
-Entropy is extensible infrastructure orchestration and application deployment service
+![test workflow](https://github.com/odpf/entropy/actions/workflows/test.yml/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/odpf/entropy)](https://goreportcard.com/report/github.com/odpf/entropy)
+[![Version](https://img.shields.io/github/v/release/odpf/entropy?logo=semantic-release)](Version)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?logo=apache)](LICENSE)
 
-### Installation
+Entropy is an extensible infrastructure orchestration and application deployment tool. Entropy provides features required for deploying and managing complex applications like resource versioning, config schema versioning, rollbacks dry runs etc.
 
-#### Compiling from source
+## Key Features
 
-It requires the following dependencies:
+- **No Dependency:** Written in Go. It compiles into a single binary with no external dependency.
+- **Extensible:** Entropy provides framework to easily write and deploy applications to your choice of cloud
+- **Runtime:** Entropy can run inside VMs or containers with minimal memory footprint.
 
-* Docker
-* Golang (version 1.16 or above)
-* Git
+## Documentation
 
-Run the application dependecies using Docker:
+Explore the following resources to get started with Entropy:
 
+- [Configuration](./docs/reference/configuration.md) to get familar with configuring Entropy.
+
+## Installation
+
+Install Entropy on macOS, Windows, Linux, OpenBSD, FreeBSD, and on any machine.
+
+#### Binary (Cross-platform)
+
+Download the appropriate version for your platform from [releases](https://github.com/odpf/entropy/releases) page. Once downloaded, the binary can be run from anywhere.
+You don’t need to install it into a global location. This works well for shared hosts and other systems where you don’t have a privileged account.
+Ideally, you should install it somewhere in your PATH for easy use. `/usr/local/bin` is the most probable location.
+
+#### Homebrew
+
+```sh
+# Install entropy (requires homebrew installed)
+$ brew install odpf/taps/entropy
+
+# Upgrade entropy (requires homebrew installed)
+$ brew upgrade entropy
+
+# Check for installed entropy version
+$ entropy version
 ```
+
+## Usage
+
+Entropy typically runs as a service and requires a MongoDB to store its state.
+
+## Running locally
+
+```sh
+# Clone the repo
+$ git clone https://github.com/odpf/entropy.git
+
+# Build entropy binary file
+$ make build
+
+# Start a MongoDB instance
 $ docker-compose up
-```
 
-Update the configs(db credentials etc.) as per your dev machine and docker configs.
-
-Run the following commands to compile from source
+# Run entropy on a recipe file
+$ ./entropy serve
 
 ```
-$ git clone git@github.com:odpf/entropy.git
-$ cd entropy
-$ go build main.go
-```
 
-To run tests locally
+## Running tests
 
-```
+```sh
+# Running all unit tests, excluding extractors
 $ make test
 ```
 
-To run tests locally with coverage
+## Contribute
 
-```
-$ make test-coverage
-```
+Development of Entropy happens in the open on GitHub, and we are grateful to the community for contributing bugfixes and improvements. Read below to learn how you can take part in improving Entropy.
 
-To run server locally
+Read our [contributing guide](https://odpf.github.io/entropy/docs/contribute/contributing) to learn about our development process, how to propose bugfixes and improvements, and how to build and test your changes to Entropy.
 
-```
-$ go run main.go serve
-```
+To help you get your feet wet and get you familiar with our contribution process, we have a list of [good first issues](https://github.com/odpf/entropy/labels/good%20first%20issue) that contain bugs which have a relatively limited scope. This is a great place to get started.
 
-To view swagger docs of HTTP APIs visit `/documentation` route on the server.
-e.g. [http://localhost:3000/documentation](http://localhost:3000/documentation)
+This project exists thanks to all the [contributors](https://github.com/odpf/entropy/graphs/contributors).
 
-#### Config
+## License
 
-The config file used by application is `config.yaml` which should be present at the root of this directory.
-
-For any variable the order of precedence is:
-
-1. Env variable
-2. Config file
-3. Default in Struct defined in the application code
-
-For list of all available configuration keys check the [configuration](docs/reference/configuration.md) reference.
-
-### List of available commands
-
-1. Serve
-    - Runs the Server  `$ go run main.go serve`
-
-2. Migrate
-    - Runs the DB Migrations `$ go run main.go migrate`
+Entropy is [Apache 2.0](LICENSE) licensed.
