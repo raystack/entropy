@@ -3,7 +3,7 @@ VERSION=$(shell git describe --tags --always --first-parent 2>/dev/null)
 COMMIT=$(shell git rev-parse --short HEAD)
 BUILD_TIME=$(shell date)
 COVERAGE_DIR=coverage
-BUILD_DIR=build
+BUILD_DIR=dist
 EXE=entropy
 
 .PHONY: all build clean
