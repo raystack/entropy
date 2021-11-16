@@ -1,15 +1,21 @@
 package service
 
 import (
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/odpf/entropy/domain/resource"
+	"github.com/odpf/entropy/pkg/store"
 )
 
-type Container struct{}
-
-func Init(db *mongo.Database) (*Container, error) {
-	return &Container{}, nil
+type Container struct {
+	ResourceRepository *resource.Repository
 }
 
-func (container *Container) MigrateAll(db *mongo.Database) error {
-	return nil
+func Init(db *store.DB) (*Container, error) {
+	resourceRepository := &resource.Repository{DB: db}
+	return &Container{
+		ResourceRepository: resourceRepository,
+	}, nil
+}
+
+func (container *Container) MigrateAll(db *store.DB) error {
+	return container.ResourceRepository.Migrate()
 }

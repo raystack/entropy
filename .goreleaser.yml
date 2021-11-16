@@ -14,9 +14,9 @@ builds:
     binary: entropy
     flags: [-a]
     ldflags:
-      - -X github.com/odpf/entropy/version.Version={{.Tag}}
-      - -X github.com/odpf/entropy/version.Commit={{.FullCommit}}
-      - -X github.com/odpf/entropy/version.BuildTime={{.Date}}
+      - -X github.com/odpf/entropy/pkg/version.Version={{.Tag}}
+      - -X github.com/odpf/entropy/pkg/version.Commit={{.FullCommit}}
+      - -X github.com/odpf/entropy/pkg/version.BuildTime={{.Date}}
     goos: 
       - darwin
       - linux
