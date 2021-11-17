@@ -9,11 +9,9 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: "1.16"
-      - name: download dependencies
-        run: make download
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
+          args: --timeout=2m0s
           skip-go-installation: true
-          skip-pkg-cache: true
           version: v1.41.1
