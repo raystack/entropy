@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	entropy "go.buf.build/odpf/gwv/rohilsurana/proton/odpf/entropy/v1beta1"
+	entropy "go.buf.build/odpf/gwv/whoabhisheksah/proton/odpf/entropy/v1beta1"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

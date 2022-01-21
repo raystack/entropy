@@ -3,6 +3,7 @@ package resource
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/odpf/entropy/domain/model"
 	"github.com/odpf/entropy/pkg/store"
@@ -25,6 +26,8 @@ func (rc *Repository) Migrate() error {
 }
 
 func (rc *Repository) Create(r *model.Resource) error {
+	r.CreatedAt = time.Now()
+	r.UpdatedAt = time.Now()
 	coll := rc.DB.GetCollection(RepositoryName)
 	err := coll.InsertOne(r)
 	if err != nil && errors.Is(err, store.AlreadyExistsError) {
@@ -34,6 +37,7 @@ func (rc *Repository) Create(r *model.Resource) error {
 }
 
 func (rc *Repository) Update(r *model.Resource) error {
+	r.UpdatedAt = time.Now()
 	coll := rc.DB.GetCollection(RepositoryName)
 	err := coll.UpdateOne(map[string]interface{}{"urn": r.Urn}, r)
 	if err != nil {
