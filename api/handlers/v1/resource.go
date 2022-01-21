@@ -70,9 +70,12 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropy.Upd
 		return nil, status.Error(codes.Internal, "failed to update resource in db")
 	}
 	updatedRes, err := server.container.ResourceRepository.GetByURN(res.Urn)
-	updatedResponse, err := model.ResourceToProto(updatedRes)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to get resource from db")
+	}
+	updatedResponse, err := model.ResourceToProto(updatedRes)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to convert resource in proto type")
 	}
 	response := entropy.UpdateResourceResponse{
 		Resource: updatedResponse,
