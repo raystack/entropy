@@ -7,8 +7,8 @@ import (
 	"github.com/odpf/entropy/domain/resource"
 	"github.com/odpf/entropy/service"
 	entropy "go.buf.build/odpf/gwv/whoabhisheksah/proton/odpf/entropy/v1beta1"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type APIServer struct {
@@ -41,13 +41,13 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropy.Cre
 		return nil, status.Error(codes.Internal, "failed to get resource from db")
 	}
 
-	resource, err := model.ResourceToProto(createdResource)
+	createdResponse, err := model.ResourceToProto(createdResource)
 	if err != nil {
 		return nil, err
 	}
 
 	response := entropy.CreateResourceResponse{
-		Resource: resource,
+		Resource: createdResponse,
 	}
 	return &response, nil
 }
