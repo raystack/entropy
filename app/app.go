@@ -112,18 +112,21 @@ func RunServer(c *Config) error {
 
 	logger.Info("starting server", zap.String("host", c.Service.Host), zap.Int("port", c.Service.Port))
 
-	errorChan := make(chan error)
+	serverErrorChan := make(chan error)
 
 	go func() {
-		errorChan <- muxServer.Serve()
+		serverErrorChan <- muxServer.Serve()
 	}()
 
-	<-ctx.Done()
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), time.Second*30)
-	defer shutdownCancel()
-
-	muxServer.Shutdown(shutdownCtx)
-	return <-errorChan
+	select {
+	case <-ctx.Done():
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), time.Second*30)
+		defer shutdownCancel()
+		muxServer.Shutdown(shutdownCtx)
+	case serverError := <-serverErrorChan:
+		return serverError
+	}
+	return nil
 }
 
 func RunMigrations(c *Config) error {
