@@ -1,4 +1,4 @@
-package store
+package mongodb
 
 import (
 	"context"
@@ -16,18 +16,8 @@ type DBConfig struct {
 	Name string `mapstructure:"name" default:"entropy"`
 }
 
-type DB struct {
-	db *mongo.Database
-}
-
-func (d *DB) GetCollection(name string) *Collection {
-	return &Collection{
-		collection: d.db.Collection(name),
-	}
-}
-
 // New returns the database instance
-func New(config *DBConfig) (*DB, error) {
+func New(config *DBConfig) (*mongo.Database, error) {
 	uri := fmt.Sprintf(
 		"mongodb://%s:%s/%s",
 		config.Host,
@@ -45,7 +35,9 @@ func New(config *DBConfig) (*DB, error) {
 
 	err = client.Ping(pingCtx, nil)
 
-	return &DB{
-		db: client.Database(config.Name),
-	}, err
+	if err != nil {
+		return nil, err
+	}
+
+	return client.Database(config.Name), nil
 }

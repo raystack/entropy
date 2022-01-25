@@ -3,49 +3,40 @@ package handlersv1
 import (
 	"context"
 	"errors"
-	"github.com/odpf/entropy/domain/model"
-	"github.com/odpf/entropy/domain/resource"
-	"github.com/odpf/entropy/service"
+	"github.com/odpf/entropy/container"
+	"github.com/odpf/entropy/domain"
+	"github.com/odpf/entropy/store"
 	entropy "go.buf.build/odpf/gwv/whoabhisheksah/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type APIServer struct {
 	entropy.UnimplementedResourceServiceServer
-	container *service.Container
+	container *container.Container
 }
 
-func NewApiServer(container *service.Container) *APIServer {
+func NewApiServer(container *container.Container) *APIServer {
 	return &APIServer{
 		container: container,
 	}
 }
 
 func (server APIServer) CreateResource(ctx context.Context, request *entropy.CreateResourceRequest) (*entropy.CreateResourceResponse, error) {
-	res := model.ResourceFromProto(request.Resource)
-	res.Urn = model.GenerateResourceUrn(res)
-	res.Status = "PENDING"
-	err := server.container.ResourceRepository.Create(res)
+	res := resourceFromProto(request.Resource)
+	createdResource, err := server.container.ResourceService.CreateResource(ctx, res)
 	if err != nil {
-		if errors.Is(err, resource.ResourceAlreadyExistsError) {
-			return nil, status.Error(codes.AlreadyExists, err.Error())
+		if errors.Is(err, store.ResourceAlreadyExistsError) {
+			return nil, status.Error(codes.AlreadyExists, "resource already exists")
 		}
 		return nil, status.Error(codes.Internal, "failed to create resource in db")
 	}
-	createdResource, err := server.container.ResourceRepository.GetByURN(res.Urn)
+	createdResponse, err := resourceToProto(createdResource)
 	if err != nil {
-		if errors.Is(err, resource.NoResourceFoundError) {
-			return nil, status.Error(codes.NotFound, err.Error())
-		}
-		return nil, status.Error(codes.Internal, "failed to get resource from db")
+		return nil, status.Error(codes.Internal, "failed to serialize resource")
 	}
-
-	createdResponse, err := model.ResourceToProto(createdResource)
-	if err != nil {
-		return nil, err
-	}
-
 	response := entropy.CreateResourceResponse{
 		Resource: createdResponse,
 	}
@@ -53,32 +44,48 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropy.Cre
 }
 
 func (server APIServer) UpdateResource(ctx context.Context, request *entropy.UpdateResourceRequest) (*entropy.UpdateResourceResponse, error) {
-	updatePayload := &model.Resource{
-		Urn:     request.GetUrn(),
-		Configs: request.GetConfigs().GetStructValue().AsMap(),
-	}
-	res, err := server.container.ResourceRepository.GetByURN(updatePayload.Urn)
+	updatedResource, err := server.container.ResourceService.UpdateResource(ctx, request.GetUrn(), request.GetConfigs().GetStructValue().AsMap())
 	if err != nil {
-		if errors.Is(err, resource.NoResourceFoundError) {
+		if errors.Is(err, store.ResourceNotFoundError) {
 			return nil, status.Error(codes.NotFound, err.Error())
 		}
-		return nil, status.Error(codes.Internal, "failed to get resource from db")
-	}
-	res.Configs = updatePayload.Configs
-	err = server.container.ResourceRepository.Update(res)
-	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to update resource in db")
 	}
-	updatedRes, err := server.container.ResourceRepository.GetByURN(res.Urn)
+	updatedResponse, err := resourceToProto(updatedResource)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to get resource from db")
-	}
-	updatedResponse, err := model.ResourceToProto(updatedRes)
-	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to convert resource in proto type")
+		return nil, status.Error(codes.Internal, "failed to serialize resource")
 	}
 	response := entropy.UpdateResourceResponse{
 		Resource: updatedResponse,
 	}
 	return &response, nil
+}
+
+func resourceToProto(res *domain.Resource) (*entropy.Resource, error) {
+	conf, err := structpb.NewValue(res.Configs)
+	if err != nil {
+		return nil, err
+	}
+	return &entropy.Resource{
+		Urn:       res.Urn,
+		Name:      res.Name,
+		Parent:    res.Parent,
+		Kind:      res.Kind,
+		Configs:   conf,
+		Labels:    res.Labels,
+		Status:    res.Status,
+		CreatedAt: timestamppb.New(res.CreatedAt),
+		UpdatedAt: timestamppb.New(res.UpdatedAt),
+	}, nil
+}
+
+func resourceFromProto(res *entropy.Resource) *domain.Resource {
+	return &domain.Resource{
+		Urn:     res.GetUrn(),
+		Name:    res.GetName(),
+		Parent:  res.GetParent(),
+		Kind:    res.GetKind(),
+		Configs: res.GetConfigs().GetStructValue().AsMap(),
+		Labels:  res.GetLabels(),
+	}
 }

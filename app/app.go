@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/odpf/entropy/container"
+	"github.com/odpf/entropy/store/mongodb"
 	"net/http"
 	"time"
 
@@ -20,9 +22,7 @@ import (
 	handlersv1 "github.com/odpf/entropy/api/handlers/v1"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
-	"github.com/odpf/entropy/pkg/store"
 	"github.com/odpf/entropy/pkg/version"
-	"github.com/odpf/entropy/service"
 	"github.com/odpf/salt/server"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -31,7 +31,7 @@ import (
 // Config contains the application configuration
 type Config struct {
 	Service  ServiceConfig         `mapstructure:"service"`
-	DB       store.DBConfig        `mapstructure:"db"`
+	DB       mongodb.DBConfig      `mapstructure:"db"`
 	NewRelic metric.NewRelicConfig `mapstructure:"newrelic"`
 	Log      logger.LogConfig      `mapstructure:"log"`
 }
@@ -56,12 +56,12 @@ func RunServer(c *Config) error {
 		return err
 	}
 
-	store, err := store.New(&c.DB)
+	store, err := mongodb.New(&c.DB)
 	if err != nil {
 		return err
 	}
 
-	serviceContainer, err := service.Init(store)
+	serviceContainer, err := container.NewContainer(store)
 	if err != nil {
 		return err
 	}
@@ -127,15 +127,15 @@ func RunServer(c *Config) error {
 }
 
 func RunMigrations(c *Config) error {
-	store, err := store.New(&c.DB)
+	store, err := mongodb.New(&c.DB)
 	if err != nil {
 		return err
 	}
 
-	services, err := service.Init(store)
+	serviceContainer, err := container.NewContainer(store)
 	if err != nil {
 		return err
 	}
 
-	return services.MigrateAll(store)
+	return serviceContainer.MigrateAll(store)
 }
