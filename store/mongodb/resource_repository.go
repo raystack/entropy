@@ -12,21 +12,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var ResourceRepositoryName = "resource"
-
 type ResourceRepository struct {
-	db *mongo.Database
+	collection *mongo.Collection
 }
 
-func NewRepository(db *mongo.Database) *ResourceRepository {
+func NewResourceRepository(collection *mongo.Collection) *ResourceRepository {
 	return &ResourceRepository{
-		db: db,
+		collection: collection,
 	}
 }
 
 func (rc *ResourceRepository) Migrate() error {
-	coll := rc.db.Collection(ResourceRepositoryName)
-	return createUniqueIndex(coll, "urn", 1)
+	return createUniqueIndex(rc.collection, "urn", 1)
 }
 
 func createUniqueIndex(collection *mongo.Collection, key string, order int) error {
@@ -43,9 +40,8 @@ func createUniqueIndex(collection *mongo.Collection, key string, order int) erro
 func (rc *ResourceRepository) Create(resource *domain.Resource) error {
 	resource.CreatedAt = time.Now()
 	resource.UpdatedAt = time.Now()
-	coll := rc.db.Collection(ResourceRepositoryName)
 
-	_, err := coll.InsertOne(context.TODO(), resource)
+	_, err := rc.collection.InsertOne(context.TODO(), resource)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
 			return fmt.Errorf("%w: %s", store.ResourceAlreadyExistsError, err)
@@ -57,8 +53,7 @@ func (rc *ResourceRepository) Create(resource *domain.Resource) error {
 
 func (rc *ResourceRepository) Update(r *domain.Resource) error {
 	r.UpdatedAt = time.Now()
-	coll := rc.db.Collection(ResourceRepositoryName)
-	singleResult := coll.FindOneAndUpdate(context.TODO(),
+	singleResult := rc.collection.FindOneAndUpdate(context.TODO(),
 		map[string]interface{}{"urn": r.Urn},
 		map[string]interface{}{"$set": r},
 	)
@@ -73,9 +68,8 @@ func (rc *ResourceRepository) Update(r *domain.Resource) error {
 }
 
 func (rc *ResourceRepository) GetByURN(urn string) (*domain.Resource, error) {
-	coll := rc.db.Collection(ResourceRepositoryName)
 	res := &domain.Resource{}
-	err := coll.FindOne(context.TODO(), map[string]interface{}{"urn": urn}).Decode(res)
+	err := rc.collection.FindOne(context.TODO(), map[string]interface{}{"urn": urn}).Decode(res)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, fmt.Errorf("%w: %s", store.ResourceNotFoundError, err)

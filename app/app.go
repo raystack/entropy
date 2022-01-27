@@ -3,7 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/odpf/entropy/container"
+	"github.com/odpf/entropy/pkg/resource"
+	"github.com/odpf/entropy/store"
 	"github.com/odpf/entropy/store/mongodb"
 	"net/http"
 	"time"
@@ -43,7 +44,9 @@ type ServiceConfig struct {
 
 // RunServer runs the application server
 func RunServer(c *Config) error {
-	ctx, cancelFunc := context.WithCancel(server.HandleSignals(context.Background()))
+	ctx, cancelFunc := context.WithCancel(
+		server.HandleSignals(context.Background()),
+	)
 	defer cancelFunc()
 
 	nr, err := metric.New(&c.NewRelic)
@@ -56,15 +59,16 @@ func RunServer(c *Config) error {
 		return err
 	}
 
-	store, err := mongodb.New(&c.DB)
+	mongoStore, err := mongodb.New(&c.DB)
 	if err != nil {
 		return err
 	}
 
-	serviceContainer, err := container.NewContainer(store)
-	if err != nil {
-		return err
-	}
+	resourceRepository := mongodb.NewResourceRepository(
+		mongoStore.Collection(store.ResourceRepositoryName),
+	)
+
+	resourceService := resource.NewService(resourceRepository)
 
 	muxServer, err := server.NewMux(server.Config{
 		Port: c.Service.Port,
@@ -103,7 +107,7 @@ func RunServer(c *Config) error {
 	)
 	muxServer.RegisterService(
 		&entropyv1beta1.ResourceService_ServiceDesc,
-		handlersv1.NewApiServer(serviceContainer),
+		handlersv1.NewApiServer(resourceService),
 	)
 
 	muxServer.RegisterHandler("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -130,15 +134,14 @@ func RunServer(c *Config) error {
 }
 
 func RunMigrations(c *Config) error {
-	store, err := mongodb.New(&c.DB)
+	mongoStore, err := mongodb.New(&c.DB)
 	if err != nil {
 		return err
 	}
 
-	serviceContainer, err := container.NewContainer(store)
-	if err != nil {
-		return err
-	}
+	resourceRepository := mongodb.NewResourceRepository(
+		mongoStore.Collection(store.ResourceRepositoryName),
+	)
 
-	return serviceContainer.MigrateAll(store)
+	return resourceRepository.Migrate()
 }

@@ -11,6 +11,8 @@ var (
 	ResourceNotFoundError      = errors.New("no resource(s) found")
 )
 
+var ResourceRepositoryName = "resources"
+
 type ResourceRepository interface {
 	Create(r *domain.Resource) error
 	Update(r *domain.Resource) error

@@ -3,8 +3,8 @@ package handlersv1
 import (
 	"context"
 	"errors"
-	"github.com/odpf/entropy/container"
 	"github.com/odpf/entropy/domain"
+	"github.com/odpf/entropy/pkg/resource"
 	"github.com/odpf/entropy/store"
 	entropy "go.buf.build/odpf/gwv/whoabhisheksah/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
@@ -15,18 +15,18 @@ import (
 
 type APIServer struct {
 	entropy.UnimplementedResourceServiceServer
-	container *container.Container
+	resourceService resource.ServiceInterface
 }
 
-func NewApiServer(container *container.Container) *APIServer {
+func NewApiServer(resourceService resource.ServiceInterface) *APIServer {
 	return &APIServer{
-		container: container,
+		resourceService: resourceService,
 	}
 }
 
 func (server APIServer) CreateResource(ctx context.Context, request *entropy.CreateResourceRequest) (*entropy.CreateResourceResponse, error) {
 	res := resourceFromProto(request.Resource)
-	createdResource, err := server.container.ResourceService.CreateResource(ctx, res)
+	createdResource, err := server.resourceService.CreateResource(ctx, res)
 	if err != nil {
 		if errors.Is(err, store.ResourceAlreadyExistsError) {
 			return nil, status.Error(codes.AlreadyExists, "resource already exists")
@@ -44,7 +44,7 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropy.Cre
 }
 
 func (server APIServer) UpdateResource(ctx context.Context, request *entropy.UpdateResourceRequest) (*entropy.UpdateResourceResponse, error) {
-	updatedResource, err := server.container.ResourceService.UpdateResource(ctx, request.GetUrn(), request.GetConfigs().GetStructValue().AsMap())
+	updatedResource, err := server.resourceService.UpdateResource(ctx, request.GetUrn(), request.GetConfigs().GetStructValue().AsMap())
 	if err != nil {
 		if errors.Is(err, store.ResourceNotFoundError) {
 			return nil, status.Error(codes.NotFound, err.Error())
