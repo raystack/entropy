@@ -47,7 +47,7 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropy.Upd
 	updatedResource, err := server.resourceService.UpdateResource(ctx, request.GetUrn(), request.GetConfigs().GetStructValue().AsMap())
 	if err != nil {
 		if errors.Is(err, store.ResourceNotFoundError) {
-			return nil, status.Error(codes.NotFound, err.Error())
+			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
 		}
 		return nil, status.Error(codes.Internal, "failed to update resource in db")
 	}

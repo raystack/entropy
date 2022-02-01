@@ -10,6 +10,7 @@ require (
 	github.com/newrelic/go-agent/v3/integrations/nrgrpc v1.3.1
 	github.com/odpf/salt v0.0.0-20210929215807-5e1f68b4ec91
 	github.com/spf13/cobra v1.2.1
+	github.com/stretchr/testify v1.7.0
 	go.buf.build/odpf/gw/odpf/proton v1.1.9
 	go.buf.build/odpf/gwv/whoabhisheksah/proton v1.1.5
 	go.mongodb.org/mongo-driver v1.5.1

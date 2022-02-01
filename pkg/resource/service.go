@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/store"
-	"strings"
 )
 
 type ServiceInterface interface {
@@ -23,7 +22,7 @@ func NewService(repository store.ResourceRepository) *Service {
 }
 
 func (s *Service) CreateResource(ctx context.Context, res *domain.Resource) (*domain.Resource, error) {
-	res.Urn = generateResourceUrn(res)
+	res.Urn = domain.GenerateResourceUrn(res)
 	res.Status = "PENDING"
 	err := s.resourceRepository.Create(res)
 	if err != nil {
@@ -51,16 +50,4 @@ func (s *Service) UpdateResource(ctx context.Context, urn string, configs map[st
 		return nil, err
 	}
 	return updatedRes, nil
-}
-
-func generateResourceUrn(res *domain.Resource) string {
-	return strings.Join([]string{
-		sanitizeString(res.Parent),
-		sanitizeString(res.Name),
-		sanitizeString(res.Kind),
-	}, "-")
-}
-
-func sanitizeString(s string) string {
-	return strings.Replace(s, " ", "_", -1)
 }
