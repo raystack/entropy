@@ -18,7 +18,7 @@ import (
 
 	"github.com/odpf/salt/common"
 	commonv1 "go.buf.build/odpf/gw/odpf/proton/odpf/common/v1"
-	entropyv1beta1 "go.buf.build/odpf/gwv/whoabhisheksah/proton/odpf/entropy/v1beta1"
+	entropyv1beta1 "go.buf.build/odpf/gwv/rohilsurana/proton/odpf/entropy/v1beta1"
 
 	handlersv1 "github.com/odpf/entropy/api/handlers/v1"
 	"github.com/odpf/entropy/pkg/logger"

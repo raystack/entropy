@@ -31,14 +31,14 @@ func TestService_CreateResource(t *testing.T) {
 			Kind:      "firehose",
 			Configs:   map[string]interface{}{},
 			Labels:    map[string]string{},
-			Status:    "PENDING",
+			Status:    domain.ResourceStatusPending,
 			CreatedAt: currentTime,
 			UpdatedAt: currentTime,
 		}
 		wantErr := error(nil)
 		mockRepo.EXPECT().Create(mock.Anything).Run(func(r *domain.Resource) {
 			assert.Equal(t, "p-testdata-gl-testname-firehose", r.Urn)
-			assert.Equal(t, "PENDING", r.Status)
+			assert.Equal(t, domain.ResourceStatusPending, r.Status)
 		}).Return(nil).Once()
 
 		mockRepo.EXPECT().GetByURN("p-testdata-gl-testname-firehose").Return(&domain.Resource{
@@ -48,7 +48,7 @@ func TestService_CreateResource(t *testing.T) {
 			Kind:      "firehose",
 			Configs:   map[string]interface{}{},
 			Labels:    map[string]string{},
-			Status:    "PENDING",
+			Status:    domain.ResourceStatusPending,
 			CreatedAt: currentTime,
 			UpdatedAt: currentTime,
 		}, nil).Once()
@@ -77,7 +77,7 @@ func TestService_CreateResource(t *testing.T) {
 		wantErr := store.ResourceAlreadyExistsError
 		mockRepo.EXPECT().Create(mock.Anything).Run(func(r *domain.Resource) {
 			assert.Equal(t, "p-testdata-gl-testname-firehose", r.Urn)
-			assert.Equal(t, "PENDING", r.Status)
+			assert.Equal(t, domain.ResourceStatusPending, r.Status)
 		}).Return(store.ResourceAlreadyExistsError).Once()
 
 		s := NewService(mockRepo)
@@ -110,7 +110,7 @@ func TestService_UpdateResource(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    map[string]string{},
-			Status:    "PENDING",
+			Status:    domain.ResourceStatusPending,
 			CreatedAt: currentTime,
 			UpdatedAt: updatedTime,
 		}
@@ -123,14 +123,14 @@ func TestService_UpdateResource(t *testing.T) {
 			Kind:      "firehose",
 			Configs:   map[string]interface{}{},
 			Labels:    map[string]string{},
-			Status:    "PENDING",
+			Status:    domain.ResourceStatusPending,
 			CreatedAt: currentTime,
 			UpdatedAt: currentTime,
 		}, nil).Once()
 
 		mockRepo.EXPECT().Update(mock.Anything).Run(func(r *domain.Resource) {
 			assert.Equal(t, "p-testdata-gl-testname-firehose", r.Urn)
-			assert.Equal(t, "PENDING", r.Status)
+			assert.Equal(t, domain.ResourceStatusPending, r.Status)
 			assert.Equal(t, currentTime, r.CreatedAt)
 		}).Return(nil)
 
@@ -143,7 +143,7 @@ func TestService_UpdateResource(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    map[string]string{},
-			Status:    "PENDING",
+			Status:    domain.ResourceStatusPending,
 			CreatedAt: currentTime,
 			UpdatedAt: updatedTime,
 		}, nil).Once()

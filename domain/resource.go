@@ -5,6 +5,17 @@ import (
 	"time"
 )
 
+type ResourceStatus string
+
+const (
+	ResourceStatusUnspecified ResourceStatus = "STATUS_UNSPECIFIED"
+	ResourceStatusPending     ResourceStatus = "STATUS_PENDING"
+	ResourceStatusError       ResourceStatus = "STATUS_ERROR"
+	ResourceStatusRunning     ResourceStatus = "STATUS_RUNNING"
+	ResourceStatusStopped     ResourceStatus = "STATUS_STOPPED"
+	ResourceStatusCompleted   ResourceStatus = "STATUS_COMPLETED"
+)
+
 type Resource struct {
 	Urn       string                 `bson:"urn"`
 	Name      string                 `bson:"name"`
@@ -12,7 +23,7 @@ type Resource struct {
 	Kind      string                 `bson:"kind"`
 	Configs   map[string]interface{} `bson:"configs"`
 	Labels    map[string]string      `bson:"labels"`
-	Status    string                 `bson:"status"`
+	Status    ResourceStatus         `bson:"status"`
 	CreatedAt time.Time              `bson:"created_at"`
 	UpdatedAt time.Time              `bson:"updated_at"`
 }

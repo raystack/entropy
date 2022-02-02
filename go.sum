@@ -424,6 +424,8 @@ go.buf.build/odpf/gw/odpf/proton v1.1.9 h1:iEdRUVVc/HwOqB7WRXjhXjR2pza2gyUbQ74G2
 go.buf.build/odpf/gw/odpf/proton v1.1.9/go.mod h1:I9E8CF7w/690vRNWqBU6qDcUbi3Pi2THdn1yycBVTDQ=
 go.buf.build/odpf/gwv/envoyproxy/protoc-gen-validate v1.1.3/go.mod h1:2Tg6rYIoDhpl39Zd2+WBOF9uG4XxAOs0bK2Z2/bwTOc=
 go.buf.build/odpf/gwv/grpc-ecosystem/grpc-gateway v1.1.37/go.mod h1:UrBCdmHgaY/pLapYUMOq01c1yuzwT8AEBTsgpmzq2zo=
+go.buf.build/odpf/gwv/rohilsurana/proton v1.1.42 h1:ZJAcJCvFLnakJF1KtuJUWIgMy6IHdrYrb8V0D7Cj398=
+go.buf.build/odpf/gwv/rohilsurana/proton v1.1.42/go.mod h1:ThnVXyzef68pmdBweM0106bct7rcxxeQViXfPp5cuE8=
 go.buf.build/odpf/gwv/whoabhisheksah/proton v1.1.5 h1:hn2vGAiwfJIbfrPSas6sPx7bCfifzV8YFn5XK/MUywc=
 go.buf.build/odpf/gwv/whoabhisheksah/proton v1.1.5/go.mod h1:rKVtCIHrsSPR6acJL+Ez74mEl1p9zEKvlF8Y3CuM7wU=
 go.etcd.io/etcd/api/v3 v3.5.0/go.mod h1:cbVKeC6lCfl7j/8jBhAK6aIYO9XOjdptoxU/nLQcPvs=

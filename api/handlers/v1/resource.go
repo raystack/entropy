@@ -6,7 +6,7 @@ import (
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/pkg/resource"
 	"github.com/odpf/entropy/store"
-	entropy "go.buf.build/odpf/gwv/whoabhisheksah/proton/odpf/entropy/v1beta1"
+	entropyv1beta1 "go.buf.build/odpf/gwv/rohilsurana/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -14,7 +14,7 @@ import (
 )
 
 type APIServer struct {
-	entropy.UnimplementedResourceServiceServer
+	entropyv1beta1.UnimplementedResourceServiceServer
 	resourceService resource.ServiceInterface
 }
 
@@ -24,7 +24,7 @@ func NewApiServer(resourceService resource.ServiceInterface) *APIServer {
 	}
 }
 
-func (server APIServer) CreateResource(ctx context.Context, request *entropy.CreateResourceRequest) (*entropy.CreateResourceResponse, error) {
+func (server APIServer) CreateResource(ctx context.Context, request *entropyv1beta1.CreateResourceRequest) (*entropyv1beta1.CreateResourceResponse, error) {
 	res := resourceFromProto(request.Resource)
 	createdResource, err := server.resourceService.CreateResource(ctx, res)
 	if err != nil {
@@ -37,13 +37,13 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropy.Cre
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to serialize resource")
 	}
-	response := entropy.CreateResourceResponse{
+	response := entropyv1beta1.CreateResourceResponse{
 		Resource: createdResponse,
 	}
 	return &response, nil
 }
 
-func (server APIServer) UpdateResource(ctx context.Context, request *entropy.UpdateResourceRequest) (*entropy.UpdateResourceResponse, error) {
+func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1beta1.UpdateResourceRequest) (*entropyv1beta1.UpdateResourceResponse, error) {
 	updatedResource, err := server.resourceService.UpdateResource(ctx, request.GetUrn(), request.GetConfigs().GetStructValue().AsMap())
 	if err != nil {
 		if errors.Is(err, store.ResourceNotFoundError) {
@@ -55,31 +55,38 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropy.Upd
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to serialize resource")
 	}
-	response := entropy.UpdateResourceResponse{
+	response := entropyv1beta1.UpdateResourceResponse{
 		Resource: updatedResponse,
 	}
 	return &response, nil
 }
 
-func resourceToProto(res *domain.Resource) (*entropy.Resource, error) {
+func resourceToProto(res *domain.Resource) (*entropyv1beta1.Resource, error) {
 	conf, err := structpb.NewValue(res.Configs)
 	if err != nil {
 		return nil, err
 	}
-	return &entropy.Resource{
+	return &entropyv1beta1.Resource{
 		Urn:       res.Urn,
 		Name:      res.Name,
 		Parent:    res.Parent,
 		Kind:      res.Kind,
 		Configs:   conf,
 		Labels:    res.Labels,
-		Status:    res.Status,
+		Status:    resourceStatusToProto(string(res.Status)),
 		CreatedAt: timestamppb.New(res.CreatedAt),
 		UpdatedAt: timestamppb.New(res.UpdatedAt),
 	}, nil
 }
 
-func resourceFromProto(res *entropy.Resource) *domain.Resource {
+func resourceStatusToProto(status string) entropyv1beta1.Resource_Status {
+	if resourceStatus, ok := entropyv1beta1.Resource_Status_value[status]; ok {
+		return entropyv1beta1.Resource_Status(resourceStatus)
+	}
+	return entropyv1beta1.Resource_STATUS_UNSPECIFIED
+}
+
+func resourceFromProto(res *entropyv1beta1.Resource) *domain.Resource {
 	return &domain.Resource{
 		Urn:     res.GetUrn(),
 		Name:    res.GetName(),

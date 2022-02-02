@@ -23,7 +23,7 @@ func NewService(repository store.ResourceRepository) *Service {
 
 func (s *Service) CreateResource(ctx context.Context, res *domain.Resource) (*domain.Resource, error) {
 	res.Urn = domain.GenerateResourceUrn(res)
-	res.Status = "PENDING"
+	res.Status = domain.ResourceStatusPending
 	err := s.resourceRepository.Create(res)
 	if err != nil {
 		return nil, err

@@ -62,7 +62,7 @@ func TestResourceRepository_Create(t *testing.T) {
 					Kind:      "firehose",
 					Configs:   map[string]interface{}{},
 					Labels:    map[string]string{},
-					Status:    "PENDING",
+					Status:    domain.ResourceStatusPending,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
 				}}
@@ -89,7 +89,7 @@ func TestResourceRepository_Create(t *testing.T) {
 					Kind:      "firehose",
 					Configs:   map[string]interface{}{},
 					Labels:    map[string]string{},
-					Status:    "PENDING",
+					Status:    domain.ResourceStatusPending,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
 				}}

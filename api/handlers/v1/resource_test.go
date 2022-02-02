@@ -5,10 +5,9 @@ import (
 	"errors"
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/mocks"
-	"github.com/odpf/entropy/pkg/resource"
 	"github.com/odpf/entropy/store"
 	"github.com/stretchr/testify/mock"
-	entropyv1beta1 "go.buf.build/odpf/gwv/whoabhisheksah/proton/odpf/entropy/v1beta1"
+	entropyv1beta1 "go.buf.build/odpf/gwv/rohilsurana/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -33,7 +32,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				Kind:      "firehose",
 				Configs:   configsStructValue,
 				Labels:    nil,
-				Status:    "PENDING",
+				Status:    entropyv1beta1.Resource_STATUS_PENDING,
 				CreatedAt: timestamppb.New(createdAt),
 				UpdatedAt: timestamppb.New(updatedAt),
 			},
@@ -62,7 +61,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    nil,
-			Status:    "PENDING",
+			Status:    domain.ResourceStatusPending,
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
 		}, nil).Once()
@@ -116,40 +115,6 @@ func TestAPIServer_CreateResource(t *testing.T) {
 }
 
 func TestAPIServer_UpdateResource(t *testing.T) {
-	type fields struct {
-		UnimplementedResourceServiceServer entropyv1beta1.UnimplementedResourceServiceServer
-		resourceService                    resource.ServiceInterface
-	}
-	type args struct {
-		ctx     context.Context
-		request *entropyv1beta1.UpdateResourceRequest
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *entropyv1beta1.UpdateResourceResponse
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			server := APIServer{
-				UnimplementedResourceServiceServer: tt.fields.UnimplementedResourceServiceServer,
-				resourceService:                    tt.fields.resourceService,
-			}
-			got, err := server.UpdateResource(tt.args.ctx, tt.args.request)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("UpdateResource() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("UpdateResource() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-
 	t.Run("test update existing resource", func(t *testing.T) {
 		createdAt := time.Now()
 		updatedAt := createdAt.Add(time.Minute)
@@ -164,7 +129,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				Kind:      "firehose",
 				Configs:   configsStructValue,
 				Labels:    nil,
-				Status:    "PENDING",
+				Status:    entropyv1beta1.Resource_STATUS_PENDING,
 				CreatedAt: timestamppb.New(createdAt),
 				UpdatedAt: timestamppb.New(updatedAt),
 			},
@@ -192,7 +157,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 					"replicas": "10",
 				},
 				Labels:    nil,
-				Status:    "PENDING",
+				Status:    domain.ResourceStatusPending,
 				CreatedAt: createdAt,
 				UpdatedAt: updatedAt,
 			}, nil).Once()
