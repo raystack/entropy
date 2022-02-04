@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/odpf/entropy/domain"
+	"github.com/odpf/entropy/pkg/module"
 	"github.com/odpf/entropy/pkg/resource"
 	"github.com/odpf/entropy/store"
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
@@ -16,11 +17,13 @@ import (
 type APIServer struct {
 	entropyv1beta1.UnimplementedResourceServiceServer
 	resourceService resource.ServiceInterface
+	moduleService   module.ServiceInterface
 }
 
-func NewApiServer(resourceService resource.ServiceInterface) *APIServer {
+func NewApiServer(resourceService resource.ServiceInterface, moduleService module.ServiceInterface) *APIServer {
 	return &APIServer{
 		resourceService: resourceService,
+		moduleService:   moduleService,
 	}
 }
 
@@ -32,6 +35,13 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 			return nil, status.Error(codes.AlreadyExists, "resource already exists")
 		}
 		return nil, status.Error(codes.Internal, "failed to create resource in db")
+	}
+	err = server.moduleService.TriggerSync(ctx, createdResource.Urn)
+	if err != nil {
+		if errors.Is(err, store.ModuleNotFoundError) {
+			return nil, status.Errorf(codes.NotFound, "failed to find module to deploy this kind")
+		}
+		return nil, status.Error(codes.Internal, "failed to sync created resource")
 	}
 	createdResponse, err := resourceToProto(createdResource)
 	if err != nil {
@@ -50,6 +60,13 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
 		}
 		return nil, status.Error(codes.Internal, "failed to update resource in db")
+	}
+	err = server.moduleService.TriggerSync(ctx, updatedResource.Urn)
+	if err != nil {
+		if errors.Is(err, store.ModuleNotFoundError) {
+			return nil, status.Errorf(codes.NotFound, "failed to find module to deploy this kind")
+		}
+		return nil, status.Error(codes.Internal, "failed to sync updated resource")
 	}
 	updatedResponse, err := resourceToProto(updatedResource)
 	if err != nil {

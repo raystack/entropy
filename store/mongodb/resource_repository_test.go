@@ -56,10 +56,10 @@ func TestResourceRepository_Create(t *testing.T) {
 			fields: func(mt *mtest.T) fields { return fields{mt.Coll} },
 			args: func(mt *mtest.T) args {
 				return args{&domain.Resource{
-					Urn:       "p-testdata-gl-testname-firehose",
+					Urn:       "p-testdata-gl-testname-log",
 					Name:      "testname",
 					Parent:    "p-testdata-gl",
-					Kind:      "firehose",
+					Kind:      "log",
 					Configs:   map[string]interface{}{},
 					Labels:    map[string]string{},
 					Status:    domain.ResourceStatusPending,
@@ -83,10 +83,10 @@ func TestResourceRepository_Create(t *testing.T) {
 			},
 			args: func(mt *mtest.T) args {
 				return args{&domain.Resource{
-					Urn:       "p-testdata-gl-testname-firehose",
+					Urn:       "p-testdata-gl-testname-log",
 					Name:      "testname",
 					Parent:    "p-testdata-gl",
-					Kind:      "firehose",
+					Kind:      "log",
 					Configs:   map[string]interface{}{},
 					Labels:    map[string]string{},
 					Status:    domain.ResourceStatusPending,
@@ -129,12 +129,12 @@ func TestResourceRepository_GetByURN(t *testing.T) {
 			name: "test resource get success",
 			setup: func(mt *mtest.T) {
 				mt.AddMockResponses(mtest.CreateCursorResponse(1, "test.ns", mtest.FirstBatch, bson.D{
-					{Key: "urn", Value: "p-testdata-gl-testname-firehose"},
+					{Key: "urn", Value: "p-testdata-gl-testname-log"},
 				}))
 			},
 			fields:  func(mt *mtest.T) fields { return fields{mt.Coll} },
-			args:    func(mt *mtest.T) args { return args{"p-testdata-gl-testname-firehose"} },
-			want:    func(mt *mtest.T) *domain.Resource { return &domain.Resource{Urn: "p-testdata-gl-testname-firehose"} },
+			args:    func(mt *mtest.T) args { return args{"p-testdata-gl-testname-log"} },
+			want:    func(mt *mtest.T) *domain.Resource { return &domain.Resource{Urn: "p-testdata-gl-testname-log"} },
 			wantErr: nil,
 		},
 		{
@@ -150,7 +150,7 @@ func TestResourceRepository_GetByURN(t *testing.T) {
 				})
 			},
 			fields:  func(mt *mtest.T) fields { return fields{mt.Coll} },
-			args:    func(mt *mtest.T) args { return args{"p-testdata-gl-unknown-firehose"} },
+			args:    func(mt *mtest.T) args { return args{"p-testdata-gl-unknown-log"} },
 			want:    func(mt *mtest.T) *domain.Resource { return nil },
 			wantErr: store.ResourceNotFoundError,
 		},

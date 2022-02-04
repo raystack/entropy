@@ -26,10 +26,10 @@ func TestAPIServer_CreateResource(t *testing.T) {
 		})
 		want := &entropyv1beta1.CreateResourceResponse{
 			Resource: &entropyv1beta1.Resource{
-				Urn:       "p-testdata-gl-testname-firehose",
+				Urn:       "p-testdata-gl-testname-log",
 				Name:      "testname",
 				Parent:    "p-testdata-gl",
-				Kind:      "firehose",
+				Kind:      "log",
 				Configs:   configsStructValue,
 				Labels:    nil,
 				Status:    entropyv1beta1.Resource_STATUS_PENDING,
@@ -44,19 +44,18 @@ func TestAPIServer_CreateResource(t *testing.T) {
 			Resource: &entropyv1beta1.Resource{
 				Name:    "testname",
 				Parent:  "p-testdata-gl",
-				Kind:    "firehose",
+				Kind:    "log",
 				Configs: configsStructValue,
 				Labels:  nil,
 			},
 		}
 
-		resourceService := mocks.ResourceService{}
-
+		resourceService := &mocks.ResourceService{}
 		resourceService.EXPECT().CreateResource(mock.Anything, mock.Anything).Return(&domain.Resource{
-			Urn:    "p-testdata-gl-testname-firehose",
+			Urn:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
-			Kind:   "firehose",
+			Kind:   "log",
 			Configs: map[string]interface{}{
 				"replicas": "10",
 			},
@@ -66,7 +65,10 @@ func TestAPIServer_CreateResource(t *testing.T) {
 			UpdatedAt: updatedAt,
 		}, nil).Once()
 
-		server := NewApiServer(&resourceService)
+		moduleService := &mocks.ModuleService{}
+		moduleService.EXPECT().TriggerSync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
+
+		server := NewApiServer(resourceService, moduleService)
 		got, err := server.CreateResource(ctx, request)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("CreateResource() error = %v, wantErr %v", err, wantErr)
@@ -89,20 +91,23 @@ func TestAPIServer_CreateResource(t *testing.T) {
 			Resource: &entropyv1beta1.Resource{
 				Name:    "testname",
 				Parent:  "p-testdata-gl",
-				Kind:    "firehose",
+				Kind:    "log",
 				Configs: configsStructValue,
 				Labels:  nil,
 			},
 		}
 
-		resourceService := mocks.ResourceService{}
+		resourceService := &mocks.ResourceService{}
 
 		resourceService.EXPECT().
 			CreateResource(mock.Anything, mock.Anything).
 			Return(nil, store.ResourceAlreadyExistsError).
 			Once()
 
-		server := NewApiServer(&resourceService)
+		moduleService := &mocks.ModuleService{}
+		moduleService.EXPECT().TriggerSync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
+
+		server := NewApiServer(resourceService, moduleService)
 		got, err := server.CreateResource(ctx, request)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("CreateResource() error = %v, wantErr %v", err, wantErr)
@@ -123,10 +128,10 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 		})
 		want := &entropyv1beta1.UpdateResourceResponse{
 			Resource: &entropyv1beta1.Resource{
-				Urn:       "p-testdata-gl-testname-firehose",
+				Urn:       "p-testdata-gl-testname-log",
 				Name:      "testname",
 				Parent:    "p-testdata-gl",
-				Kind:      "firehose",
+				Kind:      "log",
 				Configs:   configsStructValue,
 				Labels:    nil,
 				Status:    entropyv1beta1.Resource_STATUS_PENDING,
@@ -138,21 +143,21 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 
 		ctx := context.Background()
 		request := &entropyv1beta1.UpdateResourceRequest{
-			Urn:     "p-testdata-gl-testname-firehose",
+			Urn:     "p-testdata-gl-testname-log",
 			Configs: configsStructValue,
 		}
 
-		resourceService := mocks.ResourceService{}
+		resourceService := &mocks.ResourceService{}
 
 		resourceService.EXPECT().
-			UpdateResource(mock.Anything, "p-testdata-gl-testname-firehose", map[string]interface{}{
+			UpdateResource(mock.Anything, "p-testdata-gl-testname-log", map[string]interface{}{
 				"replicas": "10",
 			}).
 			Return(&domain.Resource{
-				Urn:    "p-testdata-gl-testname-firehose",
+				Urn:    "p-testdata-gl-testname-log",
 				Name:   "testname",
 				Parent: "p-testdata-gl",
-				Kind:   "firehose",
+				Kind:   "log",
 				Configs: map[string]interface{}{
 					"replicas": "10",
 				},
@@ -162,7 +167,10 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				UpdatedAt: updatedAt,
 			}, nil).Once()
 
-		server := NewApiServer(&resourceService)
+		moduleService := &mocks.ModuleService{}
+		moduleService.EXPECT().TriggerSync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
+
+		server := NewApiServer(resourceService, moduleService)
 		got, err := server.UpdateResource(ctx, request)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("UpdateResource() error = %v, wantErr %v", err, wantErr)
@@ -182,19 +190,22 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 
 		ctx := context.Background()
 		request := &entropyv1beta1.UpdateResourceRequest{
-			Urn:     "p-testdata-gl-testname-firehose",
+			Urn:     "p-testdata-gl-testname-log",
 			Configs: configsStructValue,
 		}
 
-		resourceService := mocks.ResourceService{}
+		resourceService := &mocks.ResourceService{}
 
 		resourceService.EXPECT().
-			UpdateResource(mock.Anything, "p-testdata-gl-testname-firehose", map[string]interface{}{
+			UpdateResource(mock.Anything, "p-testdata-gl-testname-log", map[string]interface{}{
 				"replicas": "10",
 			}).
 			Return(nil, store.ResourceNotFoundError).Once()
 
-		server := NewApiServer(&resourceService)
+		moduleService := &mocks.ModuleService{}
+		moduleService.EXPECT().TriggerSync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
+
+		server := NewApiServer(resourceService, moduleService)
 		got, err := server.UpdateResource(ctx, request)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("UpdateResource() error = %v, wantErr %v", err, wantErr)
