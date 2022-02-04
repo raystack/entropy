@@ -1,12 +1,15 @@
 package logger
 
 import (
-	"github.com/odpf/entropy/domain"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-func New(config *domain.LogConfig) (*zap.Logger, error) {
+type LogConfig struct {
+	Level string `mapstructure:"level" default:"info"`
+}
+
+func New(config *LogConfig) (*zap.Logger, error) {
 	defaultConfig := zap.NewProductionConfig()
 	defaultConfig.Level = zap.NewAtomicLevelAt(getZapLogLevelFromString(config.Level))
 	logger, err := zap.NewProductionConfig().Build()

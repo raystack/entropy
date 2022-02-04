@@ -12,7 +12,7 @@ all: clean test build
 
 build:
 	mkdir -p ${BUILD_DIR}
-	CGO_ENABLED=0 go build -ldflags '-X "${NAME}/version.Version=${VERSION}" -X "${NAME}/version.Commit=${COMMIT}" -X "${NAME}/version.BuildTime=${BUILD_TIME}"' -o ${BUILD_DIR}/${EXE}
+	CGO_ENABLED=0 go build -ldflags '-X "${NAME}/pkg/version.Version=${VERSION}" -X "${NAME}/pkg/version.Commit=${COMMIT}" -X "${NAME}/pkg/version.BuildTime=${BUILD_TIME}"' -o ${BUILD_DIR}/${EXE}
 
 clean:
 	rm -rf ${COVERAGE_DIR} ${BUILD_DIR}

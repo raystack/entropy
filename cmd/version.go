@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	v "github.com/odpf/entropy/version"
+	v "github.com/odpf/entropy/pkg/version"
 	"github.com/spf13/cobra"
 )
 
