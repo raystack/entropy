@@ -66,7 +66,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 		}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().TriggerSync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
+		moduleService.EXPECT().Sync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.CreateResource(ctx, request)
@@ -105,7 +105,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 			Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().TriggerSync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
+		moduleService.EXPECT().Sync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.CreateResource(ctx, request)
@@ -155,7 +155,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 		}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().TriggerSync(mock.Anything, "p-testdata-gl-testname-unknown").Return(store.ModuleNotFoundError)
+		moduleService.EXPECT().Sync(mock.Anything, "p-testdata-gl-testname-unknown").Return(store.ModuleNotFoundError)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.CreateResource(ctx, request)
@@ -218,7 +218,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 			}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().TriggerSync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
+		moduleService.EXPECT().Sync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.UpdateResource(ctx, request)
@@ -253,7 +253,44 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 			Return(nil, store.ResourceNotFoundError).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().TriggerSync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
+		moduleService.EXPECT().Sync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
+
+		server := NewApiServer(resourceService, moduleService)
+		got, err := server.UpdateResource(ctx, request)
+		if !errors.Is(err, wantErr) {
+			t.Errorf("UpdateResource() error = %v, wantErr %v", err, wantErr)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("UpdateResource() got = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("test update resource with unknown kind", func(t *testing.T) {
+		configsStructValue, _ := structpb.NewValue(map[string]interface{}{
+			"replicas": "10",
+		})
+		want := (*entropyv1beta1.UpdateResourceResponse)(nil)
+		wantErr := status.Error(codes.Internal, "failed to find module to deploy this kind")
+
+		ctx := context.Background()
+		request := &entropyv1beta1.UpdateResourceRequest{
+			Urn:     "p-testdata-gl-testname-log",
+			Configs: configsStructValue,
+		}
+
+		resourceService := &mocks.ResourceService{}
+
+		resourceService.EXPECT().
+			UpdateResource(mock.Anything, "p-testdata-gl-testname-log", map[string]interface{}{
+				"replicas": "10",
+			}).
+			Return(&domain.Resource{
+				Urn: "p-testdata-gl-testname-log",
+			}, nil).Once()
+
+		moduleService := &mocks.ModuleService{}
+		moduleService.EXPECT().Sync(mock.Anything, "p-testdata-gl-testname-log").Return(store.ModuleNotFoundError)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.UpdateResource(ctx, request)

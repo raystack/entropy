@@ -21,8 +21,8 @@ func (_m *ModuleService) EXPECT() *ModuleService_Expecter {
 	return &ModuleService_Expecter{mock: &_m.Mock}
 }
 
-// TriggerSync provides a mock function with given fields: ctx, urn
-func (_m *ModuleService) TriggerSync(ctx context.Context, urn string) error {
+// Sync provides a mock function with given fields: ctx, urn
+func (_m *ModuleService) Sync(ctx context.Context, urn string) error {
 	ret := _m.Called(ctx, urn)
 
 	var r0 error
@@ -35,26 +35,26 @@ func (_m *ModuleService) TriggerSync(ctx context.Context, urn string) error {
 	return r0
 }
 
-// ModuleService_TriggerSync_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TriggerSync'
-type ModuleService_TriggerSync_Call struct {
+// ModuleService_Sync_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Sync'
+type ModuleService_Sync_Call struct {
 	*mock.Call
 }
 
-// TriggerSync is a helper method to define mock.On call
+// Sync is a helper method to define mock.On call
 //  - ctx context.Context
 //  - urn string
-func (_e *ModuleService_Expecter) TriggerSync(ctx interface{}, urn interface{}) *ModuleService_TriggerSync_Call {
-	return &ModuleService_TriggerSync_Call{Call: _e.mock.On("TriggerSync", ctx, urn)}
+func (_e *ModuleService_Expecter) Sync(ctx interface{}, urn interface{}) *ModuleService_Sync_Call {
+	return &ModuleService_Sync_Call{Call: _e.mock.On("Sync", ctx, urn)}
 }
 
-func (_c *ModuleService_TriggerSync_Call) Run(run func(ctx context.Context, urn string)) *ModuleService_TriggerSync_Call {
+func (_c *ModuleService_Sync_Call) Run(run func(ctx context.Context, urn string)) *ModuleService_Sync_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
 
-func (_c *ModuleService_TriggerSync_Call) Return(_a0 error) *ModuleService_TriggerSync_Call {
+func (_c *ModuleService_Sync_Call) Return(_a0 error) *ModuleService_Sync_Call {
 	_c.Call.Return(_a0)
 	return _c
 }

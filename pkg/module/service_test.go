@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func TestService_TriggerSync(t *testing.T) {
+func TestService_Sync(t *testing.T) {
 	type fields struct {
 		resourceRepository store.ResourceRepository
 		moduleRepository   store.ModuleRepository
@@ -56,7 +56,7 @@ func TestService_TriggerSync(t *testing.T) {
 	mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
 
 	tt := test{
-		name: "test trigger sync",
+		name: "test sync",
 		fields: fields{
 			resourceRepository: mockResourceRepo,
 			moduleRepository:   mockModuleRepo,
@@ -72,8 +72,8 @@ func TestService_TriggerSync(t *testing.T) {
 			resourceRepository: tt.fields.resourceRepository,
 			moduleRepository:   tt.fields.moduleRepository,
 		}
-		if err := s.TriggerSync(tt.args.ctx, tt.args.urn); !errors.Is(err, tt.wantErr) {
-			t.Errorf("TriggerSync() error = %v, wantErr %v", err, tt.wantErr)
+		if err := s.Sync(tt.args.ctx, tt.args.urn); !errors.Is(err, tt.wantErr) {
+			t.Errorf("Sync() error = %v, wantErr %v", err, tt.wantErr)
 		}
 	})
 
@@ -84,7 +84,7 @@ func TestService_TriggerSync(t *testing.T) {
 	mockModuleRepo.EXPECT().Get("mock").Return(nil, store.ModuleNotFoundError).Once()
 
 	tt = test{
-		name: "test trigger sync module not found error",
+		name: "test sync module not found error",
 		fields: fields{
 			resourceRepository: mockResourceRepo,
 			moduleRepository:   mockModuleRepo,
@@ -100,8 +100,39 @@ func TestService_TriggerSync(t *testing.T) {
 			resourceRepository: tt.fields.resourceRepository,
 			moduleRepository:   tt.fields.moduleRepository,
 		}
-		if err := s.TriggerSync(tt.args.ctx, tt.args.urn); !errors.Is(err, tt.wantErr) {
-			t.Errorf("TriggerSync() error = %v, wantErr %v", err, tt.wantErr)
+		if err := s.Sync(tt.args.ctx, tt.args.urn); !errors.Is(err, tt.wantErr) {
+			t.Errorf("Sync() error = %v, wantErr %v", err, tt.wantErr)
+		}
+	})
+
+	mockResourceRepo.EXPECT().Update(mock.Anything).Run(func(r *domain.Resource) {
+		assert.Equal(t, domain.ResourceStatusError, r.Status)
+	}).Return(nil).Once()
+
+	applyFailedErr := errors.New("apply failed")
+	mockModule.EXPECT().Apply(r).Return(domain.ResourceStatusError, applyFailedErr).Once()
+
+	mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
+
+	tt = test{
+		name: "test sync module error while applying",
+		fields: fields{
+			resourceRepository: mockResourceRepo,
+			moduleRepository:   mockModuleRepo,
+		},
+		args: args{
+			ctx: context.Background(),
+			urn: "p-testdata-gl-testname-mock",
+		},
+		wantErr: applyFailedErr,
+	}
+	t.Run(tt.name, func(t *testing.T) {
+		s := &Service{
+			resourceRepository: tt.fields.resourceRepository,
+			moduleRepository:   tt.fields.moduleRepository,
+		}
+		if err := s.Sync(tt.args.ctx, tt.args.urn); !errors.Is(err, tt.wantErr) {
+			t.Errorf("Sync() error = %v, wantErr %v", err, tt.wantErr)
 		}
 	})
 }

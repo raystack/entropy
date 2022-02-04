@@ -7,7 +7,7 @@ import (
 )
 
 type ServiceInterface interface {
-	TriggerSync(ctx context.Context, urn string) error
+	Sync(ctx context.Context, urn string) error
 }
 
 type Service struct {
@@ -22,7 +22,7 @@ func NewService(resourceRepository store.ResourceRepository, moduleRepository st
 	}
 }
 
-func (s *Service) TriggerSync(ctx context.Context, urn string) error {
+func (s *Service) Sync(ctx context.Context, urn string) error {
 	r, err := s.resourceRepository.GetByURN(urn)
 	if err != nil {
 		return err

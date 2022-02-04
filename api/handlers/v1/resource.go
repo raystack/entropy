@@ -36,7 +36,7 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 		}
 		return nil, status.Error(codes.Internal, "failed to create resource in db")
 	}
-	err = server.moduleService.TriggerSync(ctx, createdResource.Urn)
+	err = server.moduleService.Sync(ctx, createdResource.Urn)
 	if err != nil {
 		if errors.Is(err, store.ModuleNotFoundError) {
 			return nil, status.Errorf(codes.InvalidArgument, "failed to find module to deploy this kind")
@@ -61,10 +61,10 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 		}
 		return nil, status.Error(codes.Internal, "failed to update resource in db")
 	}
-	err = server.moduleService.TriggerSync(ctx, updatedResource.Urn)
+	err = server.moduleService.Sync(ctx, updatedResource.Urn)
 	if err != nil {
 		if errors.Is(err, store.ModuleNotFoundError) {
-			return nil, status.Errorf(codes.NotFound, "failed to find module to deploy this kind")
+			return nil, status.Errorf(codes.Internal, "failed to find module to deploy this kind")
 		}
 		return nil, status.Error(codes.Internal, "failed to sync updated resource")
 	}
