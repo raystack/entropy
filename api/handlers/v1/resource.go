@@ -39,7 +39,7 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 	err = server.moduleService.TriggerSync(ctx, createdResource.Urn)
 	if err != nil {
 		if errors.Is(err, store.ModuleNotFoundError) {
-			return nil, status.Errorf(codes.NotFound, "failed to find module to deploy this kind")
+			return nil, status.Errorf(codes.InvalidArgument, "failed to find module to deploy this kind")
 		}
 		return nil, status.Error(codes.Internal, "failed to sync created resource")
 	}

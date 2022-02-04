@@ -117,6 +117,56 @@ func TestAPIServer_CreateResource(t *testing.T) {
 			t.Errorf("CreateResource() got = %v, want %v", got, want)
 		}
 	})
+
+	t.Run("test create resource of unknown kind", func(t *testing.T) {
+		createdAt := time.Now()
+		updatedAt := createdAt.Add(time.Minute)
+		configsStructValue, _ := structpb.NewValue(map[string]interface{}{
+			"replicas": "10",
+		})
+		want := (*entropyv1beta1.CreateResourceResponse)(nil)
+		wantErr := status.Error(codes.InvalidArgument, "failed to find module to deploy this kind")
+
+		ctx := context.Background()
+		request := &entropyv1beta1.CreateResourceRequest{
+			Resource: &entropyv1beta1.Resource{
+				Name:    "testname",
+				Parent:  "p-testdata-gl",
+				Kind:    "unknown",
+				Configs: configsStructValue,
+				Labels:  nil,
+			},
+		}
+
+		resourceService := &mocks.ResourceService{}
+
+		resourceService.EXPECT().CreateResource(mock.Anything, mock.Anything).Return(&domain.Resource{
+			Urn:    "p-testdata-gl-testname-unknown",
+			Name:   "testname",
+			Parent: "p-testdata-gl",
+			Kind:   "unkown",
+			Configs: map[string]interface{}{
+				"replicas": "10",
+			},
+			Labels:    nil,
+			Status:    domain.ResourceStatusPending,
+			CreatedAt: createdAt,
+			UpdatedAt: updatedAt,
+		}, nil).Once()
+
+		moduleService := &mocks.ModuleService{}
+		moduleService.EXPECT().TriggerSync(mock.Anything, "p-testdata-gl-testname-unknown").Return(store.ModuleNotFoundError)
+
+		server := NewApiServer(resourceService, moduleService)
+		got, err := server.CreateResource(ctx, request)
+		if !errors.Is(err, wantErr) {
+			t.Errorf("CreateResource() error = %v, wantErr %v", err, wantErr)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("CreateResource() got = %v, want %v", got, want)
+		}
+	})
 }
 
 func TestAPIServer_UpdateResource(t *testing.T) {
