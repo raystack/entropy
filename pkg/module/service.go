@@ -7,52 +7,26 @@ import (
 )
 
 type ServiceInterface interface {
-	Sync(ctx context.Context, urn string) error
+	Sync(ctx context.Context, res *domain.Resource) (*domain.Resource, error)
 }
 
 type Service struct {
-	resourceRepository store.ResourceRepository
-	moduleRepository   store.ModuleRepository
+	moduleRepository store.ModuleRepository
 }
 
-func NewService(resourceRepository store.ResourceRepository, moduleRepository store.ModuleRepository) *Service {
+func NewService(moduleRepository store.ModuleRepository) *Service {
 	return &Service{
-		resourceRepository: resourceRepository,
-		moduleRepository:   moduleRepository,
+		moduleRepository: moduleRepository,
 	}
 }
 
-func (s *Service) Sync(ctx context.Context, urn string) error {
-	r, err := s.resourceRepository.GetByURN(urn)
-	if err != nil {
-		return err
-	}
-
+func (s *Service) Sync(ctx context.Context, r *domain.Resource) (*domain.Resource, error) {
 	module, err := s.moduleRepository.Get(r.Kind)
 	if err != nil {
 		r.Status = domain.ResourceStatusError
-		updateErr := s.resourceRepository.Update(r)
-		if updateErr != nil {
-			return updateErr
-		}
-		return err
+		return r, err
 	}
-
 	status, err := module.Apply(r)
-	if err != nil {
-		r.Status = domain.ResourceStatusError
-		updateErr := s.resourceRepository.Update(r)
-		if updateErr != nil {
-			return updateErr
-		}
-		return err
-	}
-
 	r.Status = status
-	err = s.resourceRepository.Update(r)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return r, err
 }

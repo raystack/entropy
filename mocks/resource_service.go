@@ -69,13 +69,13 @@ func (_c *ResourceService_CreateResource_Call) Return(_a0 *domain.Resource, _a1 
 	return _c
 }
 
-// UpdateResource provides a mock function with given fields: ctx, urn, configs
-func (_m *ResourceService) UpdateResource(ctx context.Context, urn string, configs map[string]interface{}) (*domain.Resource, error) {
-	ret := _m.Called(ctx, urn, configs)
+// GetResource provides a mock function with given fields: ctx, urn
+func (_m *ResourceService) GetResource(ctx context.Context, urn string) (*domain.Resource, error) {
+	ret := _m.Called(ctx, urn)
 
 	var r0 *domain.Resource
-	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]interface{}) *domain.Resource); ok {
-		r0 = rf(ctx, urn, configs)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.Resource); ok {
+		r0 = rf(ctx, urn)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.Resource)
@@ -83,8 +83,55 @@ func (_m *ResourceService) UpdateResource(ctx context.Context, urn string, confi
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, map[string]interface{}) error); ok {
-		r1 = rf(ctx, urn, configs)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, urn)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ResourceService_GetResource_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetResource'
+type ResourceService_GetResource_Call struct {
+	*mock.Call
+}
+
+// GetResource is a helper method to define mock.On call
+//  - ctx context.Context
+//  - urn string
+func (_e *ResourceService_Expecter) GetResource(ctx interface{}, urn interface{}) *ResourceService_GetResource_Call {
+	return &ResourceService_GetResource_Call{Call: _e.mock.On("GetResource", ctx, urn)}
+}
+
+func (_c *ResourceService_GetResource_Call) Run(run func(ctx context.Context, urn string)) *ResourceService_GetResource_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *ResourceService_GetResource_Call) Return(_a0 *domain.Resource, _a1 error) *ResourceService_GetResource_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// UpdateResource provides a mock function with given fields: ctx, res
+func (_m *ResourceService) UpdateResource(ctx context.Context, res *domain.Resource) (*domain.Resource, error) {
+	ret := _m.Called(ctx, res)
+
+	var r0 *domain.Resource
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Resource) *domain.Resource); ok {
+		r0 = rf(ctx, res)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.Resource)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.Resource) error); ok {
+		r1 = rf(ctx, res)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -99,15 +146,14 @@ type ResourceService_UpdateResource_Call struct {
 
 // UpdateResource is a helper method to define mock.On call
 //  - ctx context.Context
-//  - urn string
-//  - configs map[string]interface{}
-func (_e *ResourceService_Expecter) UpdateResource(ctx interface{}, urn interface{}, configs interface{}) *ResourceService_UpdateResource_Call {
-	return &ResourceService_UpdateResource_Call{Call: _e.mock.On("UpdateResource", ctx, urn, configs)}
+//  - res *domain.Resource
+func (_e *ResourceService_Expecter) UpdateResource(ctx interface{}, res interface{}) *ResourceService_UpdateResource_Call {
+	return &ResourceService_UpdateResource_Call{Call: _e.mock.On("UpdateResource", ctx, res)}
 }
 
-func (_c *ResourceService_UpdateResource_Call) Run(run func(ctx context.Context, urn string, configs map[string]interface{})) *ResourceService_UpdateResource_Call {
+func (_c *ResourceService_UpdateResource_Call) Run(run func(ctx context.Context, res *domain.Resource)) *ResourceService_UpdateResource_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(map[string]interface{}))
+		run(args[0].(context.Context), args[1].(*domain.Resource))
 	})
 	return _c
 }

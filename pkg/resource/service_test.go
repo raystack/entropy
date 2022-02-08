@@ -16,6 +16,7 @@ import (
 func TestService_CreateResource(t *testing.T) {
 	t.Run("test create new resource", func(t *testing.T) {
 		argResource := &domain.Resource{
+			Urn:     "p-testdata-gl-testname-log",
 			Name:    "testname",
 			Parent:  "p-testdata-gl",
 			Kind:    "log",
@@ -38,7 +39,6 @@ func TestService_CreateResource(t *testing.T) {
 
 		mockRepo := &mocks.ResourceRepository{}
 		mockRepo.EXPECT().Create(mock.Anything).Run(func(r *domain.Resource) {
-			assert.Equal(t, "p-testdata-gl-testname-log", r.Urn)
 			assert.Equal(t, domain.ResourceStatusPending, r.Status)
 		}).Return(nil).Once()
 
@@ -68,6 +68,7 @@ func TestService_CreateResource(t *testing.T) {
 	t.Run("test create duplicate resource", func(t *testing.T) {
 		mockRepo := &mocks.ResourceRepository{}
 		argResource := &domain.Resource{
+			Urn:     "p-testdata-gl-testname-log",
 			Name:    "testname",
 			Parent:  "p-testdata-gl",
 			Kind:    "log",
@@ -77,7 +78,6 @@ func TestService_CreateResource(t *testing.T) {
 		want := (*domain.Resource)(nil)
 		wantErr := store.ResourceAlreadyExistsError
 		mockRepo.EXPECT().Create(mock.Anything).Run(func(r *domain.Resource) {
-			assert.Equal(t, "p-testdata-gl-testname-log", r.Urn)
 			assert.Equal(t, domain.ResourceStatusPending, r.Status)
 		}).Return(store.ResourceAlreadyExistsError).Once()
 
@@ -96,10 +96,6 @@ func TestService_CreateResource(t *testing.T) {
 func TestService_UpdateResource(t *testing.T) {
 	t.Run("test update existing resource", func(t *testing.T) {
 		mockRepo := &mocks.ResourceRepository{}
-		argUrn := "p-testdata-gl-testname-log"
-		argConfigs := map[string]interface{}{
-			"replicas": "10",
-		}
 		currentTime := time.Now()
 		updatedTime := time.Now()
 		want := &domain.Resource{
@@ -116,18 +112,6 @@ func TestService_UpdateResource(t *testing.T) {
 			UpdatedAt: updatedTime,
 		}
 		wantErr := error(nil)
-
-		mockRepo.EXPECT().GetByURN("p-testdata-gl-testname-log").Return(&domain.Resource{
-			Urn:       "p-testdata-gl-testname-log",
-			Name:      "testname",
-			Parent:    "p-testdata-gl",
-			Kind:      "log",
-			Configs:   map[string]interface{}{},
-			Labels:    map[string]string{},
-			Status:    domain.ResourceStatusPending,
-			CreatedAt: currentTime,
-			UpdatedAt: currentTime,
-		}, nil).Once()
 
 		mockRepo.EXPECT().Update(mock.Anything).Run(func(r *domain.Resource) {
 			assert.Equal(t, "p-testdata-gl-testname-log", r.Urn)
@@ -150,7 +134,17 @@ func TestService_UpdateResource(t *testing.T) {
 		}, nil).Once()
 
 		s := NewService(mockRepo)
-		got, err := s.UpdateResource(context.Background(), argUrn, argConfigs)
+		got, err := s.UpdateResource(context.Background(), &domain.Resource{
+			Urn:       "p-testdata-gl-testname-log",
+			Name:      "testname",
+			Parent:    "p-testdata-gl",
+			Kind:      "log",
+			Configs:   map[string]interface{}{},
+			Labels:    map[string]string{},
+			Status:    domain.ResourceStatusPending,
+			CreatedAt: currentTime,
+			UpdatedAt: currentTime,
+		})
 		if !errors.Is(err, wantErr) {
 			t.Errorf("UpdateResource() error = %v, wantErr %v", err, wantErr)
 			return
@@ -162,26 +156,101 @@ func TestService_UpdateResource(t *testing.T) {
 
 	t.Run("test update non-existent resource", func(t *testing.T) {
 		mockRepo := &mocks.ResourceRepository{}
-		argUrn := "p-testdata-gl-testname-log"
-		argConfigs := map[string]interface{}{
-			"replicas": "10",
-		}
+
 		want := (*domain.Resource)(nil)
 		wantErr := store.ResourceNotFoundError
 
 		mockRepo.EXPECT().
-			GetByURN("p-testdata-gl-testname-log").
-			Return(nil, store.ResourceNotFoundError).
+			Update(mock.Anything).
+			Return(store.ResourceNotFoundError).
 			Once()
 
 		s := NewService(mockRepo)
-		got, err := s.UpdateResource(context.Background(), argUrn, argConfigs)
+		got, err := s.UpdateResource(context.Background(), &domain.Resource{
+			Urn:       "p-testdata-gl-testname-log",
+			Name:      "testname",
+			Parent:    "p-testdata-gl",
+			Kind:      "log",
+			Configs:   map[string]interface{}{},
+			Labels:    map[string]string{},
+			Status:    domain.ResourceStatusPending,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		})
 		if !errors.Is(err, wantErr) {
 			t.Errorf("UpdateResource() error = %v, wantErr %v", err, wantErr)
 			return
 		}
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("UpdateResource() got = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestService_GetResource(t *testing.T) {
+	t.Run("test get existing resource", func(t *testing.T) {
+		mockRepo := &mocks.ResourceRepository{}
+		currentTime := time.Now()
+		updatedTime := time.Now()
+		want := &domain.Resource{
+			Urn:    "p-testdata-gl-testname-log",
+			Name:   "testname",
+			Parent: "p-testdata-gl",
+			Kind:   "log",
+			Configs: map[string]interface{}{
+				"replicas": "10",
+			},
+			Labels:    map[string]string{},
+			Status:    domain.ResourceStatusPending,
+			CreatedAt: currentTime,
+			UpdatedAt: updatedTime,
+		}
+		wantErr := error(nil)
+
+		mockRepo.EXPECT().GetByURN("p-testdata-gl-testname-log").Return(&domain.Resource{
+			Urn:    "p-testdata-gl-testname-log",
+			Name:   "testname",
+			Parent: "p-testdata-gl",
+			Kind:   "log",
+			Configs: map[string]interface{}{
+				"replicas": "10",
+			},
+			Labels:    map[string]string{},
+			Status:    domain.ResourceStatusPending,
+			CreatedAt: currentTime,
+			UpdatedAt: updatedTime,
+		}, nil).Once()
+
+		s := NewService(mockRepo)
+		got, err := s.GetResource(context.Background(), "p-testdata-gl-testname-log")
+		if !errors.Is(err, wantErr) {
+			t.Errorf("GetResource() error = %v, wantErr %v", err, wantErr)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("GetResource() got = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("test get non-existent resource", func(t *testing.T) {
+		mockRepo := &mocks.ResourceRepository{}
+
+		want := (*domain.Resource)(nil)
+		wantErr := store.ResourceNotFoundError
+
+		mockRepo.EXPECT().
+			GetByURN(mock.Anything).
+			Return(nil, store.ResourceNotFoundError).
+			Once()
+
+		s := NewService(mockRepo)
+		got, err := s.GetResource(context.Background(), "p-testdata-gl-testname-log")
+		if !errors.Is(err, wantErr) {
+			t.Errorf("GetResource() error = %v, wantErr %v", err, wantErr)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("GetResource() got = %v, want %v", got, want)
 		}
 	})
 }

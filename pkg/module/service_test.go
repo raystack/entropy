@@ -6,29 +6,19 @@ import (
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/mocks"
 	"github.com/odpf/entropy/store"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
+	"reflect"
 	"testing"
 	"time"
 )
 
 func TestService_Sync(t *testing.T) {
 	type fields struct {
-		resourceRepository store.ResourceRepository
-		moduleRepository   store.ModuleRepository
+		moduleRepository store.ModuleRepository
 	}
 	type args struct {
 		ctx context.Context
-		urn string
+		r   *domain.Resource
 	}
-
-	type test struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr error
-	}
-
 	currentTime := time.Now()
 	r := &domain.Resource{
 		Urn:       "p-testdata-gl-testname-mock",
@@ -41,98 +31,113 @@ func TestService_Sync(t *testing.T) {
 		CreatedAt: currentTime,
 		UpdatedAt: currentTime,
 	}
-
-	mockResourceRepo := &mocks.ResourceRepository{}
-	mockResourceRepo.EXPECT().GetByURN("p-testdata-gl-testname-mock").Return(r, nil)
-	mockResourceRepo.EXPECT().Update(mock.Anything).Run(func(r *domain.Resource) {
-		assert.Equal(t, domain.ResourceStatusCompleted, r.Status)
-	}).Return(nil).Once()
+	applyFailedErr := errors.New("apply failed")
 
 	mockModule := &mocks.Module{}
 	mockModule.EXPECT().ID().Return("mock")
-	mockModule.EXPECT().Apply(r).Return(domain.ResourceStatusCompleted, nil).Once()
-
 	mockModuleRepo := &mocks.ModuleRepository{}
-	mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
 
-	tt := test{
-		name: "test sync",
-		fields: fields{
-			resourceRepository: mockResourceRepo,
-			moduleRepository:   mockModuleRepo,
+	tests := []struct {
+		name    string
+		setup   func(t *testing.T)
+		fields  fields
+		args    args
+		want    *domain.Resource
+		wantErr error
+	}{
+		{
+			name: "test sync completed",
+			setup: func(t *testing.T) {
+				mockModule.EXPECT().Apply(r).Return(domain.ResourceStatusCompleted, nil).Once()
+				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
+			},
+			fields: fields{
+				moduleRepository: mockModuleRepo,
+			},
+			args: args{
+				ctx: nil,
+				r:   r,
+			},
+			want: &domain.Resource{
+				Urn:       "p-testdata-gl-testname-mock",
+				Name:      "testname",
+				Parent:    "p-testdata-gl",
+				Kind:      "mock",
+				Configs:   map[string]interface{}{},
+				Labels:    map[string]string{},
+				Status:    domain.ResourceStatusCompleted,
+				CreatedAt: currentTime,
+				UpdatedAt: currentTime,
+			},
+			wantErr: nil,
 		},
-		args: args{
-			ctx: context.Background(),
-			urn: "p-testdata-gl-testname-mock",
+		{
+			name: "test sync module not found error",
+			setup: func(t *testing.T) {
+				mockModuleRepo.EXPECT().Get("mock").Return(nil, store.ModuleNotFoundError).Once()
+			},
+			fields: fields{
+				moduleRepository: mockModuleRepo,
+			},
+			args: args{
+				ctx: nil,
+				r:   r,
+			},
+			want: &domain.Resource{
+				Urn:       "p-testdata-gl-testname-mock",
+				Name:      "testname",
+				Parent:    "p-testdata-gl",
+				Kind:      "mock",
+				Configs:   map[string]interface{}{},
+				Labels:    map[string]string{},
+				Status:    domain.ResourceStatusError,
+				CreatedAt: currentTime,
+				UpdatedAt: currentTime,
+			},
+			wantErr: store.ModuleNotFoundError,
 		},
-		wantErr: nil,
+		{
+			name: "test sync module error while applying",
+			setup: func(t *testing.T) {
+				mockModule.EXPECT().Apply(r).Return(domain.ResourceStatusError, applyFailedErr).Once()
+
+				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
+			},
+			fields: fields{
+				moduleRepository: mockModuleRepo,
+			},
+			args: args{
+				ctx: nil,
+				r:   r,
+			},
+			want: &domain.Resource{
+				Urn:       "p-testdata-gl-testname-mock",
+				Name:      "testname",
+				Parent:    "p-testdata-gl",
+				Kind:      "mock",
+				Configs:   map[string]interface{}{},
+				Labels:    map[string]string{},
+				Status:    domain.ResourceStatusError,
+				CreatedAt: currentTime,
+				UpdatedAt: currentTime,
+			},
+			wantErr: applyFailedErr,
+		},
 	}
-	t.Run(tt.name, func(t *testing.T) {
-		s := &Service{
-			resourceRepository: tt.fields.resourceRepository,
-			moduleRepository:   tt.fields.moduleRepository,
-		}
-		if err := s.Sync(tt.args.ctx, tt.args.urn); !errors.Is(err, tt.wantErr) {
-			t.Errorf("Sync() error = %v, wantErr %v", err, tt.wantErr)
-		}
-	})
-
-	mockResourceRepo.EXPECT().Update(mock.Anything).Run(func(r *domain.Resource) {
-		assert.Equal(t, domain.ResourceStatusError, r.Status)
-	}).Return(nil).Once()
-
-	mockModuleRepo.EXPECT().Get("mock").Return(nil, store.ModuleNotFoundError).Once()
-
-	tt = test{
-		name: "test sync module not found error",
-		fields: fields{
-			resourceRepository: mockResourceRepo,
-			moduleRepository:   mockModuleRepo,
-		},
-		args: args{
-			ctx: context.Background(),
-			urn: "p-testdata-gl-testname-mock",
-		},
-		wantErr: store.ModuleNotFoundError,
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Service{
+				moduleRepository: tt.fields.moduleRepository,
+			}
+			tt.setup(t)
+			got, err := s.Sync(tt.args.ctx, tt.args.r)
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("Sync() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Sync() got = %v, want %v", got, tt.want)
+			}
+		})
 	}
-	t.Run(tt.name, func(t *testing.T) {
-		s := &Service{
-			resourceRepository: tt.fields.resourceRepository,
-			moduleRepository:   tt.fields.moduleRepository,
-		}
-		if err := s.Sync(tt.args.ctx, tt.args.urn); !errors.Is(err, tt.wantErr) {
-			t.Errorf("Sync() error = %v, wantErr %v", err, tt.wantErr)
-		}
-	})
-
-	mockResourceRepo.EXPECT().Update(mock.Anything).Run(func(r *domain.Resource) {
-		assert.Equal(t, domain.ResourceStatusError, r.Status)
-	}).Return(nil).Once()
-
-	applyFailedErr := errors.New("apply failed")
-	mockModule.EXPECT().Apply(r).Return(domain.ResourceStatusError, applyFailedErr).Once()
-
-	mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
-
-	tt = test{
-		name: "test sync module error while applying",
-		fields: fields{
-			resourceRepository: mockResourceRepo,
-			moduleRepository:   mockModuleRepo,
-		},
-		args: args{
-			ctx: context.Background(),
-			urn: "p-testdata-gl-testname-mock",
-		},
-		wantErr: applyFailedErr,
-	}
-	t.Run(tt.name, func(t *testing.T) {
-		s := &Service{
-			resourceRepository: tt.fields.resourceRepository,
-			moduleRepository:   tt.fields.moduleRepository,
-		}
-		if err := s.Sync(tt.args.ctx, tt.args.urn); !errors.Is(err, tt.wantErr) {
-			t.Errorf("Sync() error = %v, wantErr %v", err, tt.wantErr)
-		}
-	})
 }

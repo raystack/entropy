@@ -78,7 +78,7 @@ func RunServer(c *Config) error {
 	}
 
 	resourceService := resource.NewService(resourceRepository)
-	moduleService := module.NewService(resourceRepository, moduleRepository)
+	moduleService := module.NewService(moduleRepository)
 
 	muxServer, err := server.NewMux(server.Config{
 		Port: c.Service.Port,

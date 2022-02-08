@@ -5,6 +5,7 @@ package mocks
 import (
 	context "context"
 
+	domain "github.com/odpf/entropy/domain"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -21,18 +22,27 @@ func (_m *ModuleService) EXPECT() *ModuleService_Expecter {
 	return &ModuleService_Expecter{mock: &_m.Mock}
 }
 
-// Sync provides a mock function with given fields: ctx, urn
-func (_m *ModuleService) Sync(ctx context.Context, urn string) error {
-	ret := _m.Called(ctx, urn)
+// Sync provides a mock function with given fields: ctx, res
+func (_m *ModuleService) Sync(ctx context.Context, res *domain.Resource) (*domain.Resource, error) {
+	ret := _m.Called(ctx, res)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, urn)
+	var r0 *domain.Resource
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Resource) *domain.Resource); ok {
+		r0 = rf(ctx, res)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.Resource)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.Resource) error); ok {
+		r1 = rf(ctx, res)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // ModuleService_Sync_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Sync'
@@ -42,19 +52,19 @@ type ModuleService_Sync_Call struct {
 
 // Sync is a helper method to define mock.On call
 //  - ctx context.Context
-//  - urn string
-func (_e *ModuleService_Expecter) Sync(ctx interface{}, urn interface{}) *ModuleService_Sync_Call {
-	return &ModuleService_Sync_Call{Call: _e.mock.On("Sync", ctx, urn)}
+//  - res *domain.Resource
+func (_e *ModuleService_Expecter) Sync(ctx interface{}, res interface{}) *ModuleService_Sync_Call {
+	return &ModuleService_Sync_Call{Call: _e.mock.On("Sync", ctx, res)}
 }
 
-func (_c *ModuleService_Sync_Call) Run(run func(ctx context.Context, urn string)) *ModuleService_Sync_Call {
+func (_c *ModuleService_Sync_Call) Run(run func(ctx context.Context, res *domain.Resource)) *ModuleService_Sync_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
+		run(args[0].(context.Context), args[1].(*domain.Resource))
 	})
 	return _c
 }
 
-func (_c *ModuleService_Sync_Call) Return(_a0 error) *ModuleService_Sync_Call {
-	_c.Call.Return(_a0)
+func (_c *ModuleService_Sync_Call) Return(_a0 *domain.Resource, _a1 error) *ModuleService_Sync_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }

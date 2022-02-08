@@ -6,6 +6,7 @@ import (
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/mocks"
 	"github.com/odpf/entropy/store"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
@@ -20,7 +21,7 @@ import (
 func TestAPIServer_CreateResource(t *testing.T) {
 	t.Run("test create new resource", func(t *testing.T) {
 		createdAt := time.Now()
-		updatedAt := createdAt
+		updatedAt := createdAt.Add(time.Minute)
 		configsStructValue, _ := structpb.NewValue(map[string]interface{}{
 			"replicas": "10",
 		})
@@ -32,7 +33,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				Kind:      "log",
 				Configs:   configsStructValue,
 				Labels:    nil,
-				Status:    entropyv1beta1.Resource_STATUS_PENDING,
+				Status:    entropyv1beta1.Resource_STATUS_COMPLETED,
 				CreatedAt: timestamppb.New(createdAt),
 				UpdatedAt: timestamppb.New(updatedAt),
 			},
@@ -51,7 +52,9 @@ func TestAPIServer_CreateResource(t *testing.T) {
 		}
 
 		resourceService := &mocks.ResourceService{}
-		resourceService.EXPECT().CreateResource(mock.Anything, mock.Anything).Return(&domain.Resource{
+		resourceService.EXPECT().CreateResource(mock.Anything, mock.Anything).Run(func(ctx context.Context, res *domain.Resource) {
+			assert.Equal(t, "p-testdata-gl-testname-log", res.Urn)
+		}).Return(&domain.Resource{
 			Urn:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
@@ -62,11 +65,40 @@ func TestAPIServer_CreateResource(t *testing.T) {
 			Labels:    nil,
 			Status:    domain.ResourceStatusPending,
 			CreatedAt: createdAt,
+			UpdatedAt: createdAt,
+		}, nil).Once()
+
+		resourceService.EXPECT().UpdateResource(mock.Anything, mock.Anything).Run(func(ctx context.Context, res *domain.Resource) {
+			assert.Equal(t, "p-testdata-gl-testname-log", res.Urn)
+			assert.Equal(t, domain.ResourceStatusCompleted, res.Status)
+		}).Return(&domain.Resource{
+			Urn:    "p-testdata-gl-testname-log",
+			Name:   "testname",
+			Parent: "p-testdata-gl",
+			Kind:   "log",
+			Configs: map[string]interface{}{
+				"replicas": "10",
+			},
+			Labels:    nil,
+			Status:    domain.ResourceStatusCompleted,
+			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
 		}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Sync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
+		moduleService.EXPECT().Sync(mock.Anything, mock.Anything).Return(&domain.Resource{
+			Urn:    "p-testdata-gl-testname-log",
+			Name:   "testname",
+			Parent: "p-testdata-gl",
+			Kind:   "log",
+			Configs: map[string]interface{}{
+				"replicas": "10",
+			},
+			Labels:    nil,
+			Status:    domain.ResourceStatusCompleted,
+			CreatedAt: createdAt,
+			UpdatedAt: createdAt,
+		}, nil)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.CreateResource(ctx, request)
@@ -105,7 +137,6 @@ func TestAPIServer_CreateResource(t *testing.T) {
 			Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Sync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.CreateResource(ctx, request)
@@ -125,7 +156,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 			"replicas": "10",
 		})
 		want := (*entropyv1beta1.CreateResourceResponse)(nil)
-		wantErr := status.Error(codes.InvalidArgument, "failed to find module to deploy this kind")
+		wantErr := status.Error(codes.Internal, "failed to find module to deploy this kind")
 
 		ctx := context.Background()
 		request := &entropyv1beta1.CreateResourceRequest{
@@ -155,7 +186,19 @@ func TestAPIServer_CreateResource(t *testing.T) {
 		}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Sync(mock.Anything, "p-testdata-gl-testname-unknown").Return(store.ModuleNotFoundError)
+		moduleService.EXPECT().Sync(mock.Anything, mock.Anything).Return(&domain.Resource{
+			Urn:    "p-testdata-gl-testname-unknown",
+			Name:   "testname",
+			Parent: "p-testdata-gl",
+			Kind:   "unknown",
+			Configs: map[string]interface{}{
+				"replicas": "10",
+			},
+			Labels:    nil,
+			Status:    domain.ResourceStatusError,
+			CreatedAt: createdAt,
+			UpdatedAt: updatedAt,
+		}, store.ModuleNotFoundError)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.CreateResource(ctx, request)
@@ -184,7 +227,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				Kind:      "log",
 				Configs:   configsStructValue,
 				Labels:    nil,
-				Status:    entropyv1beta1.Resource_STATUS_PENDING,
+				Status:    entropyv1beta1.Resource_STATUS_COMPLETED,
 				CreatedAt: timestamppb.New(createdAt),
 				UpdatedAt: timestamppb.New(updatedAt),
 			},
@@ -198,10 +241,26 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 		}
 
 		resourceService := &mocks.ResourceService{}
+		resourceService.EXPECT().
+			GetResource(mock.Anything, "p-testdata-gl-testname-log").
+			Return(&domain.Resource{
+				Urn:    "p-testdata-gl-testname-log",
+				Name:   "testname",
+				Parent: "p-testdata-gl",
+				Kind:   "log",
+				Configs: map[string]interface{}{
+					"replicas": "9",
+				},
+				Labels:    nil,
+				Status:    domain.ResourceStatusCompleted,
+				CreatedAt: createdAt,
+				UpdatedAt: createdAt,
+			}, nil).Once()
 
 		resourceService.EXPECT().
-			UpdateResource(mock.Anything, "p-testdata-gl-testname-log", map[string]interface{}{
-				"replicas": "10",
+			UpdateResource(mock.Anything, mock.Anything).
+			Run(func(ctx context.Context, res *domain.Resource) {
+				assert.Equal(t, domain.ResourceStatusPending, res.Status)
 			}).
 			Return(&domain.Resource{
 				Urn:    "p-testdata-gl-testname-log",
@@ -217,8 +276,39 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				UpdatedAt: updatedAt,
 			}, nil).Once()
 
+		resourceService.EXPECT().
+			UpdateResource(mock.Anything, mock.Anything).
+			Run(func(ctx context.Context, res *domain.Resource) {
+				assert.Equal(t, domain.ResourceStatusCompleted, res.Status)
+			}).
+			Return(&domain.Resource{
+				Urn:    "p-testdata-gl-testname-log",
+				Name:   "testname",
+				Parent: "p-testdata-gl",
+				Kind:   "log",
+				Configs: map[string]interface{}{
+					"replicas": "10",
+				},
+				Labels:    nil,
+				Status:    domain.ResourceStatusCompleted,
+				CreatedAt: createdAt,
+				UpdatedAt: updatedAt,
+			}, nil).Once()
+
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Sync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
+		moduleService.EXPECT().Sync(mock.Anything, mock.Anything).Return(&domain.Resource{
+			Urn:    "p-testdata-gl-testname-log",
+			Name:   "testname",
+			Parent: "p-testdata-gl",
+			Kind:   "log",
+			Configs: map[string]interface{}{
+				"replicas": "10",
+			},
+			Labels:    nil,
+			Status:    domain.ResourceStatusCompleted,
+			CreatedAt: createdAt,
+			UpdatedAt: updatedAt,
+		}, nil)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.UpdateResource(ctx, request)
@@ -247,13 +337,10 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 		resourceService := &mocks.ResourceService{}
 
 		resourceService.EXPECT().
-			UpdateResource(mock.Anything, "p-testdata-gl-testname-log", map[string]interface{}{
-				"replicas": "10",
-			}).
+			GetResource(mock.Anything, mock.Anything).
 			Return(nil, store.ResourceNotFoundError).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Sync(mock.Anything, "p-testdata-gl-testname-log").Return(nil)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.UpdateResource(ctx, request)
@@ -280,17 +367,19 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 		}
 
 		resourceService := &mocks.ResourceService{}
-
 		resourceService.EXPECT().
-			UpdateResource(mock.Anything, "p-testdata-gl-testname-log", map[string]interface{}{
-				"replicas": "10",
-			}).
+			UpdateResource(mock.Anything, mock.Anything).
+			Return(&domain.Resource{
+				Urn: "p-testdata-gl-testname-log",
+			}, nil).Once()
+		resourceService.EXPECT().
+			GetResource(mock.Anything, mock.Anything).
 			Return(&domain.Resource{
 				Urn: "p-testdata-gl-testname-log",
 			}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Sync(mock.Anything, "p-testdata-gl-testname-log").Return(store.ModuleNotFoundError)
+		moduleService.EXPECT().Sync(mock.Anything, mock.Anything).Return(nil, store.ModuleNotFoundError)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.UpdateResource(ctx, request)
@@ -300,6 +389,74 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 		}
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("UpdateResource() got = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestAPIServer_GetResource(t *testing.T) {
+	t.Run("test get resource", func(t *testing.T) {
+		r := &domain.Resource{
+			Urn:       "p-testdata-gl-testname-mock",
+			Name:      "testname",
+			Parent:    "p-testdata-gl",
+			Kind:      "mock",
+			Configs:   map[string]interface{}{},
+			Labels:    map[string]string{},
+			Status:    domain.ResourceStatusCompleted,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		rProto, _ := resourceToProto(r)
+		argsRequest := &entropyv1beta1.GetResourceRequest{
+			Urn: "p-testdata-gl-testname-mock",
+		}
+		want := &entropyv1beta1.GetResourceResponse{
+			Resource: rProto,
+		}
+		wantErr := error(nil)
+
+		mockResourceService := &mocks.ResourceService{}
+		mockResourceService.EXPECT().GetResource(mock.Anything, mock.Anything).Return(r, nil).Once()
+
+		mockModuleService := &mocks.ModuleService{}
+
+		server := APIServer{
+			resourceService: mockResourceService,
+			moduleService:   mockModuleService,
+		}
+		got, err := server.GetResource(context.TODO(), argsRequest)
+		if !errors.Is(err, wantErr) {
+			t.Errorf("GetResource() error = %v, wantErr %v", err, wantErr)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("GetResource() got = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("test get non existent resource", func(t *testing.T) {
+		argsRequest := &entropyv1beta1.GetResourceRequest{
+			Urn: "p-testdata-gl-testname-mock",
+		}
+		want := (*entropyv1beta1.GetResourceResponse)(nil)
+		wantErr := status.Error(codes.NotFound, "could not find resource with given urn")
+
+		mockResourceService := &mocks.ResourceService{}
+		mockResourceService.EXPECT().GetResource(mock.Anything, mock.Anything).Return(nil, store.ResourceNotFoundError).Once()
+
+		mockModuleService := &mocks.ModuleService{}
+
+		server := APIServer{
+			resourceService: mockResourceService,
+			moduleService:   mockModuleService,
+		}
+		got, err := server.GetResource(context.TODO(), argsRequest)
+		if !errors.Is(err, wantErr) {
+			t.Errorf("GetResource() error = %v, wantErr %v", err, wantErr)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("GetResource() got = %v, want %v", got, want)
 		}
 	})
 }
