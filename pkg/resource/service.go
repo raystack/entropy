@@ -8,7 +8,8 @@ import (
 
 type ServiceInterface interface {
 	CreateResource(ctx context.Context, res *domain.Resource) (*domain.Resource, error)
-	UpdateResource(ctx context.Context, urn string, configs map[string]interface{}) (*domain.Resource, error)
+	UpdateResource(ctx context.Context, res *domain.Resource) (*domain.Resource, error)
+	GetResource(ctx context.Context, urn string) (*domain.Resource, error)
 }
 
 type Service struct {
@@ -22,7 +23,6 @@ func NewService(repository store.ResourceRepository) *Service {
 }
 
 func (s *Service) CreateResource(ctx context.Context, res *domain.Resource) (*domain.Resource, error) {
-	res.Urn = domain.GenerateResourceUrn(res)
 	res.Status = domain.ResourceStatusPending
 	err := s.resourceRepository.Create(res)
 	if err != nil {
@@ -35,19 +35,18 @@ func (s *Service) CreateResource(ctx context.Context, res *domain.Resource) (*do
 	return createdResource, nil
 }
 
-func (s *Service) UpdateResource(ctx context.Context, urn string, configs map[string]interface{}) (*domain.Resource, error) {
-	res, err := s.resourceRepository.GetByURN(urn)
+func (s *Service) UpdateResource(ctx context.Context, res *domain.Resource) (*domain.Resource, error) {
+	err := s.resourceRepository.Update(res)
 	if err != nil {
 		return nil, err
 	}
-	res.Configs = configs
-	err = s.resourceRepository.Update(res)
-	if err != nil {
-		return nil, err
-	}
-	updatedRes, err := s.resourceRepository.GetByURN(urn)
+	updatedRes, err := s.resourceRepository.GetByURN(res.Urn)
 	if err != nil {
 		return nil, err
 	}
 	return updatedRes, nil
+}
+
+func (s *Service) GetResource(ctx context.Context, urn string) (*domain.Resource, error) {
+	return s.resourceRepository.GetByURN(urn)
 }

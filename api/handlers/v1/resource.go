@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/odpf/entropy/domain"
+	"github.com/odpf/entropy/pkg/module"
 	"github.com/odpf/entropy/pkg/resource"
 	"github.com/odpf/entropy/store"
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
@@ -16,16 +17,19 @@ import (
 type APIServer struct {
 	entropyv1beta1.UnimplementedResourceServiceServer
 	resourceService resource.ServiceInterface
+	moduleService   module.ServiceInterface
 }
 
-func NewApiServer(resourceService resource.ServiceInterface) *APIServer {
+func NewApiServer(resourceService resource.ServiceInterface, moduleService module.ServiceInterface) *APIServer {
 	return &APIServer{
 		resourceService: resourceService,
+		moduleService:   moduleService,
 	}
 }
 
 func (server APIServer) CreateResource(ctx context.Context, request *entropyv1beta1.CreateResourceRequest) (*entropyv1beta1.CreateResourceResponse, error) {
 	res := resourceFromProto(request.Resource)
+	res.Urn = domain.GenerateResourceUrn(res)
 	createdResource, err := server.resourceService.CreateResource(ctx, res)
 	if err != nil {
 		if errors.Is(err, store.ResourceAlreadyExistsError) {
@@ -33,32 +37,79 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 		}
 		return nil, status.Error(codes.Internal, "failed to create resource in db")
 	}
-	createdResponse, err := resourceToProto(createdResource)
+	syncedResource, err := server.syncResource(ctx, createdResource)
+	if err != nil {
+		return nil, err
+	}
+	responseResource, err := resourceToProto(syncedResource)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to serialize resource")
 	}
 	response := entropyv1beta1.CreateResourceResponse{
-		Resource: createdResponse,
+		Resource: responseResource,
 	}
 	return &response, nil
 }
 
 func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1beta1.UpdateResourceRequest) (*entropyv1beta1.UpdateResourceResponse, error) {
-	updatedResource, err := server.resourceService.UpdateResource(ctx, request.GetUrn(), request.GetConfigs().GetStructValue().AsMap())
+	res, err := server.resourceService.GetResource(ctx, request.GetUrn())
 	if err != nil {
 		if errors.Is(err, store.ResourceNotFoundError) {
 			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
 		}
 		return nil, status.Error(codes.Internal, "failed to update resource in db")
 	}
-	updatedResponse, err := resourceToProto(updatedResource)
+	res.Configs = request.GetConfigs().GetStructValue().AsMap()
+	res.Status = domain.ResourceStatusPending
+	updatedResource, err := server.resourceService.UpdateResource(ctx, res)
+	if err != nil {
+		return nil, err
+	}
+	syncedResource, err := server.syncResource(ctx, updatedResource)
+	if err != nil {
+		return nil, err
+	}
+	responseResource, err := resourceToProto(syncedResource)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to serialize resource")
 	}
 	response := entropyv1beta1.UpdateResourceResponse{
-		Resource: updatedResponse,
+		Resource: responseResource,
 	}
 	return &response, nil
+}
+
+func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1.GetResourceRequest) (*entropyv1beta1.GetResourceResponse, error) {
+	res, err := server.resourceService.GetResource(ctx, request.GetUrn())
+	if err != nil {
+		if errors.Is(err, store.ResourceNotFoundError) {
+			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
+		}
+		return nil, status.Error(codes.Internal, "failed to fetch resource from db")
+	}
+	responseResource, err := resourceToProto(res)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to serialize resource")
+	}
+	response := entropyv1beta1.GetResourceResponse{
+		Resource: responseResource,
+	}
+	return &response, nil
+}
+
+func (server APIServer) syncResource(ctx context.Context, updatedResource *domain.Resource) (*domain.Resource, error) {
+	syncedResource, err := server.moduleService.Sync(ctx, updatedResource)
+	if err != nil {
+		if errors.Is(err, store.ModuleNotFoundError) {
+			return nil, status.Errorf(codes.Internal, "failed to find module to deploy this kind")
+		}
+		return nil, status.Error(codes.Internal, "failed to sync updated resource")
+	}
+	responseResource, err := server.resourceService.UpdateResource(ctx, syncedResource)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to update resource in db")
+	}
+	return responseResource, nil
 }
 
 func resourceToProto(res *domain.Resource) (*entropyv1beta1.Resource, error) {
