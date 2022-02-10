@@ -116,6 +116,54 @@ func (_c *ResourceService_GetResource_Call) Return(_a0 *domain.Resource, _a1 err
 	return _c
 }
 
+// ListResources provides a mock function with given fields: ctx, parent, kind
+func (_m *ResourceService) ListResources(ctx context.Context, parent string, kind string) ([]*domain.Resource, error) {
+	ret := _m.Called(ctx, parent, kind)
+
+	var r0 []*domain.Resource
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*domain.Resource); ok {
+		r0 = rf(ctx, parent, kind)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*domain.Resource)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, parent, kind)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ResourceService_ListResources_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListResources'
+type ResourceService_ListResources_Call struct {
+	*mock.Call
+}
+
+// ListResources is a helper method to define mock.On call
+//  - ctx context.Context
+//  - parent string
+//  - kind string
+func (_e *ResourceService_Expecter) ListResources(ctx interface{}, parent interface{}, kind interface{}) *ResourceService_ListResources_Call {
+	return &ResourceService_ListResources_Call{Call: _e.mock.On("ListResources", ctx, parent, kind)}
+}
+
+func (_c *ResourceService_ListResources_Call) Run(run func(ctx context.Context, parent string, kind string)) *ResourceService_ListResources_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *ResourceService_ListResources_Call) Return(_a0 []*domain.Resource, _a1 error) *ResourceService_ListResources_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // UpdateResource provides a mock function with given fields: ctx, res
 func (_m *ResourceService) UpdateResource(ctx context.Context, res *domain.Resource) (*domain.Resource, error) {
 	ret := _m.Called(ctx, res)

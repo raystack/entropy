@@ -460,3 +460,46 @@ func TestAPIServer_GetResource(t *testing.T) {
 		}
 	})
 }
+
+func TestAPIServer_ListResource(t *testing.T) {
+	t.Run("test list resource", func(t *testing.T) {
+		r := &domain.Resource{
+			Urn:       "p-testdata-gl-testname-mock",
+			Name:      "testname",
+			Parent:    "p-testdata-gl",
+			Kind:      "mock",
+			Configs:   map[string]interface{}{},
+			Labels:    map[string]string{},
+			Status:    domain.ResourceStatusCompleted,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		rProto, _ := resourceToProto(r)
+		argsRequest := &entropyv1beta1.ListResourcesRequest{
+			Parent: "p-testdata-gl",
+			Kind:   "mock",
+		}
+		want := &entropyv1beta1.ListResourcesResponse{
+			Resources: []*entropyv1beta1.Resource{rProto},
+		}
+		wantErr := error(nil)
+
+		mockResourceService := &mocks.ResourceService{}
+		mockResourceService.EXPECT().ListResources(mock.Anything, r.Parent, r.Kind).Return([]*domain.Resource{r}, nil).Once()
+
+		mockModuleService := &mocks.ModuleService{}
+
+		server := APIServer{
+			resourceService: mockResourceService,
+			moduleService:   mockModuleService,
+		}
+		got, err := server.ListResources(context.TODO(), argsRequest)
+		if !errors.Is(err, wantErr) {
+			t.Errorf("ListResource() error = %v, wantErr %v", err, wantErr)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("ListResource() got = %v, want %v", got, want)
+		}
+	})
+}

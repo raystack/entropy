@@ -254,3 +254,49 @@ func TestService_GetResource(t *testing.T) {
 		}
 	})
 }
+
+func TestService_ListResources(t *testing.T) {
+	t.Run("test list resource", func(t *testing.T) {
+		mockRepo := &mocks.ResourceRepository{}
+		currentTime := time.Now()
+		updatedTime := time.Now()
+		want := []*domain.Resource{{
+			Urn:    "p-testdata-gl-testname-log",
+			Name:   "testname",
+			Parent: "p-testdata-gl",
+			Kind:   "log",
+			Configs: map[string]interface{}{
+				"replicas": "10",
+			},
+			Labels:    map[string]string{},
+			Status:    domain.ResourceStatusCompleted,
+			CreatedAt: currentTime,
+			UpdatedAt: updatedTime,
+		}}
+		wantErr := error(nil)
+
+		mockRepo.EXPECT().List("p-testdata-gl", "log").Return([]*domain.Resource{{
+			Urn:    "p-testdata-gl-testname-log",
+			Name:   "testname",
+			Parent: "p-testdata-gl",
+			Kind:   "log",
+			Configs: map[string]interface{}{
+				"replicas": "10",
+			},
+			Labels:    map[string]string{},
+			Status:    domain.ResourceStatusCompleted,
+			CreatedAt: currentTime,
+			UpdatedAt: updatedTime,
+		}}, nil).Once()
+
+		s := NewService(mockRepo)
+		got, err := s.ListResources(context.Background(), "p-testdata-gl", "log")
+		if !errors.Is(err, wantErr) {
+			t.Errorf("ListResources() error = %v, wantErr %v", err, wantErr)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("ListResources() got = %v, want %v", got, want)
+		}
+	})
+}

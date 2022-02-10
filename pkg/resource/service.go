@@ -10,6 +10,7 @@ type ServiceInterface interface {
 	CreateResource(ctx context.Context, res *domain.Resource) (*domain.Resource, error)
 	UpdateResource(ctx context.Context, res *domain.Resource) (*domain.Resource, error)
 	GetResource(ctx context.Context, urn string) (*domain.Resource, error)
+	ListResources(ctx context.Context, parent string, kind string) ([]*domain.Resource, error)
 }
 
 type Service struct {
@@ -49,4 +50,8 @@ func (s *Service) UpdateResource(ctx context.Context, res *domain.Resource) (*do
 
 func (s *Service) GetResource(ctx context.Context, urn string) (*domain.Resource, error) {
 	return s.resourceRepository.GetByURN(urn)
+}
+
+func (s *Service) ListResources(ctx context.Context, parent string, kind string) ([]*domain.Resource, error) {
+	return s.resourceRepository.List(parent, kind)
 }

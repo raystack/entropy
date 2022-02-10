@@ -103,6 +103,53 @@ func (_c *ResourceRepository_GetByURN_Call) Return(_a0 *domain.Resource, _a1 err
 	return _c
 }
 
+// List provides a mock function with given fields: parent, kind
+func (_m *ResourceRepository) List(parent string, kind string) ([]*domain.Resource, error) {
+	ret := _m.Called(parent, kind)
+
+	var r0 []*domain.Resource
+	if rf, ok := ret.Get(0).(func(string, string) []*domain.Resource); ok {
+		r0 = rf(parent, kind)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*domain.Resource)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(parent, kind)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ResourceRepository_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
+type ResourceRepository_List_Call struct {
+	*mock.Call
+}
+
+// List is a helper method to define mock.On call
+//  - parent string
+//  - kind string
+func (_e *ResourceRepository_Expecter) List(parent interface{}, kind interface{}) *ResourceRepository_List_Call {
+	return &ResourceRepository_List_Call{Call: _e.mock.On("List", parent, kind)}
+}
+
+func (_c *ResourceRepository_List_Call) Run(run func(parent string, kind string)) *ResourceRepository_List_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *ResourceRepository_List_Call) Return(_a0 []*domain.Resource, _a1 error) *ResourceRepository_List_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // Migrate provides a mock function with given fields:
 func (_m *ResourceRepository) Migrate() error {
 	ret := _m.Called()

@@ -97,6 +97,28 @@ func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1
 	return &response, nil
 }
 
+func (server APIServer) ListResources(ctx context.Context, request *entropyv1beta1.ListResourcesRequest) (*entropyv1beta1.ListResourcesResponse, error) {
+	var responseResources []*entropyv1beta1.Resource
+	resources, err := server.resourceService.ListResources(ctx, request.Parent, request.Kind)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch resources from db")
+	}
+	for _, res := range resources {
+		responseResource, err := resourceToProto(res)
+		if err != nil {
+			return nil, status.Error(codes.Internal, "failed to serialize resource")
+		}
+		responseResources = append(responseResources, responseResource)
+	}
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to serialize resource")
+	}
+	response := entropyv1beta1.ListResourcesResponse{
+		Resources: responseResources,
+	}
+	return &response, nil
+}
+
 func (server APIServer) syncResource(ctx context.Context, updatedResource *domain.Resource) (*domain.Resource, error) {
 	syncedResource, err := server.moduleService.Sync(ctx, updatedResource)
 	if err != nil {

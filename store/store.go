@@ -20,6 +20,7 @@ type ResourceRepository interface {
 	Update(r *domain.Resource) error
 	GetByURN(urn string) (*domain.Resource, error)
 	Migrate() error
+	List(parent string, kind string) ([]*domain.Resource, error)
 }
 
 type ModuleRepository interface {

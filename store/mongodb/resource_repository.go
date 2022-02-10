@@ -78,3 +78,19 @@ func (rc *ResourceRepository) GetByURN(urn string) (*domain.Resource, error) {
 	}
 	return res, nil
 }
+
+func (rc *ResourceRepository) List(parent string, kind string) ([]*domain.Resource, error) {
+	var res []*domain.Resource
+	cur, err := rc.collection.Find(context.TODO(), map[string]interface{}{"parent": parent, "kind": kind})
+	if err != nil {
+		return nil, err
+	}
+	err = cur.All(context.TODO(), &res)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return res, nil
+		}
+		return nil, err
+	}
+	return res, nil
+}
