@@ -53,5 +53,12 @@ func (s *Service) GetResource(ctx context.Context, urn string) (*domain.Resource
 }
 
 func (s *Service) ListResources(ctx context.Context, parent string, kind string) ([]*domain.Resource, error) {
-	return s.resourceRepository.List(parent, kind)
+	filter := map[string]string{}
+	if kind != "" {
+		filter["kind"] = kind
+	}
+	if parent != "" {
+		filter["parent"] = parent
+	}
+	return s.resourceRepository.List(filter)
 }

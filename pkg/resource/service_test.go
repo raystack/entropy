@@ -275,7 +275,7 @@ func TestService_ListResources(t *testing.T) {
 		}}
 		wantErr := error(nil)
 
-		mockRepo.EXPECT().List("p-testdata-gl", "log").Return([]*domain.Resource{{
+		mockRepo.EXPECT().List(map[string]string{"parent": "p-testdata-gl", "kind": "log"}).Return([]*domain.Resource{{
 			Urn:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",

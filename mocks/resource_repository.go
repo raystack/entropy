@@ -103,13 +103,13 @@ func (_c *ResourceRepository_GetByURN_Call) Return(_a0 *domain.Resource, _a1 err
 	return _c
 }
 
-// List provides a mock function with given fields: parent, kind
-func (_m *ResourceRepository) List(parent string, kind string) ([]*domain.Resource, error) {
-	ret := _m.Called(parent, kind)
+// List provides a mock function with given fields: filter
+func (_m *ResourceRepository) List(filter map[string]string) ([]*domain.Resource, error) {
+	ret := _m.Called(filter)
 
 	var r0 []*domain.Resource
-	if rf, ok := ret.Get(0).(func(string, string) []*domain.Resource); ok {
-		r0 = rf(parent, kind)
+	if rf, ok := ret.Get(0).(func(map[string]string) []*domain.Resource); ok {
+		r0 = rf(filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*domain.Resource)
@@ -117,8 +117,8 @@ func (_m *ResourceRepository) List(parent string, kind string) ([]*domain.Resour
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(parent, kind)
+	if rf, ok := ret.Get(1).(func(map[string]string) error); ok {
+		r1 = rf(filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -132,15 +132,14 @@ type ResourceRepository_List_Call struct {
 }
 
 // List is a helper method to define mock.On call
-//  - parent string
-//  - kind string
-func (_e *ResourceRepository_Expecter) List(parent interface{}, kind interface{}) *ResourceRepository_List_Call {
-	return &ResourceRepository_List_Call{Call: _e.mock.On("List", parent, kind)}
+//  - filter map[string]string
+func (_e *ResourceRepository_Expecter) List(filter interface{}) *ResourceRepository_List_Call {
+	return &ResourceRepository_List_Call{Call: _e.mock.On("List", filter)}
 }
 
-func (_c *ResourceRepository_List_Call) Run(run func(parent string, kind string)) *ResourceRepository_List_Call {
+func (_c *ResourceRepository_List_Call) Run(run func(filter map[string]string)) *ResourceRepository_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		run(args[0].(map[string]string))
 	})
 	return _c
 }

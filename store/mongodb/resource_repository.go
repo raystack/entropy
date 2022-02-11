@@ -79,9 +79,9 @@ func (rc *ResourceRepository) GetByURN(urn string) (*domain.Resource, error) {
 	return res, nil
 }
 
-func (rc *ResourceRepository) List(parent string, kind string) ([]*domain.Resource, error) {
+func (rc *ResourceRepository) List(filter map[string]string) ([]*domain.Resource, error) {
 	var res []*domain.Resource
-	cur, err := rc.collection.Find(context.TODO(), map[string]interface{}{"parent": parent, "kind": kind})
+	cur, err := rc.collection.Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}
