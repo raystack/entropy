@@ -99,3 +99,40 @@ func (_c *Module_ID_Call) Return(_a0 string) *Module_ID_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
+
+// Validate provides a mock function with given fields: r
+func (_m *Module) Validate(r *domain.Resource) error {
+	ret := _m.Called(r)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*domain.Resource) error); ok {
+		r0 = rf(r)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Module_Validate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Validate'
+type Module_Validate_Call struct {
+	*mock.Call
+}
+
+// Validate is a helper method to define mock.On call
+//  - r *domain.Resource
+func (_e *Module_Expecter) Validate(r interface{}) *Module_Validate_Call {
+	return &Module_Validate_Call{Call: _e.mock.On("Validate", r)}
+}
+
+func (_c *Module_Validate_Call) Run(run func(r *domain.Resource)) *Module_Validate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*domain.Resource))
+	})
+	return _c
+}
+
+func (_c *Module_Validate_Call) Return(_a0 error) *Module_Validate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}

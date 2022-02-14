@@ -22,13 +22,13 @@ func (_m *ModuleService) EXPECT() *ModuleService_Expecter {
 	return &ModuleService_Expecter{mock: &_m.Mock}
 }
 
-// Sync provides a mock function with given fields: ctx, res
-func (_m *ModuleService) Sync(ctx context.Context, res *domain.Resource) (*domain.Resource, error) {
-	ret := _m.Called(ctx, res)
+// Sync provides a mock function with given fields: ctx, r
+func (_m *ModuleService) Sync(ctx context.Context, r *domain.Resource) (*domain.Resource, error) {
+	ret := _m.Called(ctx, r)
 
 	var r0 *domain.Resource
 	if rf, ok := ret.Get(0).(func(context.Context, *domain.Resource) *domain.Resource); ok {
-		r0 = rf(ctx, res)
+		r0 = rf(ctx, r)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.Resource)
@@ -37,7 +37,7 @@ func (_m *ModuleService) Sync(ctx context.Context, res *domain.Resource) (*domai
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *domain.Resource) error); ok {
-		r1 = rf(ctx, res)
+		r1 = rf(ctx, r)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -52,12 +52,12 @@ type ModuleService_Sync_Call struct {
 
 // Sync is a helper method to define mock.On call
 //  - ctx context.Context
-//  - res *domain.Resource
-func (_e *ModuleService_Expecter) Sync(ctx interface{}, res interface{}) *ModuleService_Sync_Call {
-	return &ModuleService_Sync_Call{Call: _e.mock.On("Sync", ctx, res)}
+//  - r *domain.Resource
+func (_e *ModuleService_Expecter) Sync(ctx interface{}, r interface{}) *ModuleService_Sync_Call {
+	return &ModuleService_Sync_Call{Call: _e.mock.On("Sync", ctx, r)}
 }
 
-func (_c *ModuleService_Sync_Call) Run(run func(ctx context.Context, res *domain.Resource)) *ModuleService_Sync_Call {
+func (_c *ModuleService_Sync_Call) Run(run func(ctx context.Context, r *domain.Resource)) *ModuleService_Sync_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*domain.Resource))
 	})
@@ -66,5 +66,43 @@ func (_c *ModuleService_Sync_Call) Run(run func(ctx context.Context, res *domain
 
 func (_c *ModuleService_Sync_Call) Return(_a0 *domain.Resource, _a1 error) *ModuleService_Sync_Call {
 	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// Validate provides a mock function with given fields: ctx, res
+func (_m *ModuleService) Validate(ctx context.Context, res *domain.Resource) error {
+	ret := _m.Called(ctx, res)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Resource) error); ok {
+		r0 = rf(ctx, res)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ModuleService_Validate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Validate'
+type ModuleService_Validate_Call struct {
+	*mock.Call
+}
+
+// Validate is a helper method to define mock.On call
+//  - ctx context.Context
+//  - res *domain.Resource
+func (_e *ModuleService_Expecter) Validate(ctx interface{}, res interface{}) *ModuleService_Validate_Call {
+	return &ModuleService_Validate_Call{Call: _e.mock.On("Validate", ctx, res)}
+}
+
+func (_c *ModuleService_Validate_Call) Run(run func(ctx context.Context, res *domain.Resource)) *ModuleService_Validate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.Resource))
+	})
+	return _c
+}
+
+func (_c *ModuleService_Validate_Call) Return(_a0 error) *ModuleService_Validate_Call {
+	_c.Call.Return(_a0)
 	return _c
 }

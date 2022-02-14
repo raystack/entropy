@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/odpf/entropy/modules/log"
 	"github.com/odpf/entropy/pkg/module"
 	"github.com/odpf/entropy/pkg/resource"
@@ -14,7 +15,6 @@ import (
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 
 	"github.com/newrelic/go-agent/v3/integrations/nrgrpc"
@@ -57,7 +57,7 @@ func RunServer(c *Config) error {
 		return err
 	}
 
-	logger, err := logger.New(&c.Log)
+	loggerInstance, err := logger.New(&c.Log)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func RunServer(c *Config) error {
 	)
 
 	moduleRepository := inmemory.NewModuleRepository()
-	err = moduleRepository.Register(&log.Module{})
+	err = moduleRepository.Register(log.New(loggerInstance))
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func RunServer(c *Config) error {
 	}, server.WithMuxGRPCServerOptions(grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 		grpc_recovery.UnaryServerInterceptor(),
 		grpc_ctxtags.UnaryServerInterceptor(),
-		grpc_zap.UnaryServerInterceptor(logger),
+		grpc_zap.UnaryServerInterceptor(loggerInstance),
 		nrgrpc.UnaryServerInterceptor(nr),
 	))))
 
@@ -124,7 +124,7 @@ func RunServer(c *Config) error {
 		fmt.Fprintf(w, "pong")
 	}))
 
-	logger.Info("starting server", zap.String("host", c.Service.Host), zap.Int("port", c.Service.Port))
+	loggerInstance.Info("starting server", zap.String("host", c.Service.Host), zap.Int("port", c.Service.Port))
 
 	serverErrorChan := make(chan error)
 

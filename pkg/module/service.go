@@ -7,7 +7,8 @@ import (
 )
 
 type ServiceInterface interface {
-	Sync(ctx context.Context, res *domain.Resource) (*domain.Resource, error)
+	Sync(ctx context.Context, r *domain.Resource) (*domain.Resource, error)
+	Validate(ctx context.Context, res *domain.Resource) error
 }
 
 type Service struct {
@@ -29,4 +30,13 @@ func (s *Service) Sync(ctx context.Context, r *domain.Resource) (*domain.Resourc
 	status, err := module.Apply(r)
 	r.Status = status
 	return r, err
+}
+
+func (s *Service) Validate(ctx context.Context, r *domain.Resource) error {
+	module, err := s.moduleRepository.Get(r.Kind)
+	if err != nil {
+		return err
+	}
+	err = module.Validate(r)
+	return err
 }
