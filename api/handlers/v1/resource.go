@@ -30,6 +30,10 @@ func NewApiServer(resourceService resource.ServiceInterface, moduleService modul
 func (server APIServer) CreateResource(ctx context.Context, request *entropyv1beta1.CreateResourceRequest) (*entropyv1beta1.CreateResourceResponse, error) {
 	res := resourceFromProto(request.Resource)
 	res.Urn = domain.GenerateResourceUrn(res)
+	err := server.validateResource(ctx, res)
+	if err != nil {
+		return nil, err
+	}
 	createdResource, err := server.resourceService.CreateResource(ctx, res)
 	if err != nil {
 		if errors.Is(err, store.ResourceAlreadyExistsError) {
@@ -61,6 +65,10 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 	}
 	res.Configs = request.GetConfigs().GetStructValue().AsMap()
 	res.Status = domain.ResourceStatusPending
+	err = server.validateResource(ctx, res)
+	if err != nil {
+		return nil, err
+	}
 	updatedResource, err := server.resourceService.UpdateResource(ctx, res)
 	if err != nil {
 		return nil, err
@@ -122,9 +130,6 @@ func (server APIServer) ListResources(ctx context.Context, request *entropyv1bet
 func (server APIServer) syncResource(ctx context.Context, updatedResource *domain.Resource) (*domain.Resource, error) {
 	syncedResource, err := server.moduleService.Sync(ctx, updatedResource)
 	if err != nil {
-		if errors.Is(err, store.ModuleNotFoundError) {
-			return nil, status.Errorf(codes.Internal, "failed to find module to deploy this kind")
-		}
 		return nil, status.Error(codes.Internal, "failed to sync updated resource")
 	}
 	responseResource, err := server.resourceService.UpdateResource(ctx, syncedResource)
@@ -132,6 +137,20 @@ func (server APIServer) syncResource(ctx context.Context, updatedResource *domai
 		return nil, status.Error(codes.Internal, "failed to update resource in db")
 	}
 	return responseResource, nil
+}
+
+func (server APIServer) validateResource(ctx context.Context, res *domain.Resource) error {
+	err := server.moduleService.Validate(ctx, res)
+	if err != nil {
+		if errors.Is(err, store.ModuleNotFoundError) {
+			return status.Errorf(codes.InvalidArgument, "failed to find module to deploy this kind")
+		}
+		if errors.Is(err, domain.ModuleConfigParseFailed) {
+			return status.Errorf(codes.InvalidArgument, "failed to parse configs")
+		}
+		return status.Errorf(codes.InvalidArgument, err.Error())
+	}
+	return nil
 }
 
 func resourceToProto(res *domain.Resource) (*entropyv1beta1.Resource, error) {

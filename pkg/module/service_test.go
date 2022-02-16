@@ -6,6 +6,7 @@ import (
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/mocks"
 	"github.com/odpf/entropy/store"
+	"github.com/stretchr/testify/mock"
 	"reflect"
 	"testing"
 	"time"
@@ -137,6 +138,98 @@ func TestService_Sync(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Sync() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestService_Validate(t *testing.T) {
+	type fields struct {
+		moduleRepository store.ModuleRepository
+	}
+	type args struct {
+		ctx context.Context
+		r   *domain.Resource
+	}
+
+	currentTime := time.Now()
+	r := &domain.Resource{
+		Urn:       "p-testdata-gl-testname-mock",
+		Name:      "testname",
+		Parent:    "p-testdata-gl",
+		Kind:      "mock",
+		Configs:   map[string]interface{}{},
+		Labels:    map[string]string{},
+		Status:    domain.ResourceStatusPending,
+		CreatedAt: currentTime,
+		UpdatedAt: currentTime,
+	}
+	validateFailedErr := errors.New("some validation failure error")
+
+	mockModule := &mocks.Module{}
+	mockModule.EXPECT().ID().Return("mock")
+	mockModuleRepo := &mocks.ModuleRepository{}
+
+	tests := []struct {
+		name    string
+		setup   func(t *testing.T)
+		fields  fields
+		args    args
+		wantErr error
+	}{
+		{
+			name: "test validate success",
+			setup: func(t *testing.T) {
+				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
+				mockModule.EXPECT().Validate(mock.Anything).Return(nil).Once()
+			},
+			fields: fields{
+				moduleRepository: mockModuleRepo,
+			},
+			args: args{
+				ctx: nil,
+				r:   r,
+			},
+			wantErr: nil,
+		},
+		{
+			name: "test validate module not found error",
+			setup: func(t *testing.T) {
+				mockModuleRepo.EXPECT().Get("mock").Return(nil, store.ModuleNotFoundError).Once()
+			},
+			fields: fields{
+				moduleRepository: mockModuleRepo,
+			},
+			args: args{
+				ctx: nil,
+				r:   r,
+			},
+			wantErr: store.ModuleNotFoundError,
+		},
+		{
+			name: "test validation failed",
+			setup: func(t *testing.T) {
+				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
+				mockModule.EXPECT().Validate(mock.Anything).Return(validateFailedErr)
+			},
+			fields: fields{
+				moduleRepository: mockModuleRepo,
+			},
+			args: args{
+				ctx: nil,
+				r:   r,
+			},
+			wantErr: validateFailedErr,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Service{
+				moduleRepository: tt.fields.moduleRepository,
+			}
+			tt.setup(t)
+			if err := s.Validate(tt.args.ctx, tt.args.r); !errors.Is(err, tt.wantErr) {
+				t.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
