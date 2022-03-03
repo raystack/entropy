@@ -3,6 +3,7 @@ package handlersv1
 import (
 	"context"
 	"errors"
+
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/pkg/module"
 	"github.com/odpf/entropy/pkg/resource"
@@ -124,6 +125,29 @@ func (server APIServer) ListResources(ctx context.Context, request *entropyv1bet
 	response := entropyv1beta1.ListResourcesResponse{
 		Resources: responseResources,
 	}
+	return &response, nil
+}
+
+func (server APIServer) DeleteResource(ctx context.Context, request *entropyv1beta1.DeleteResourceRequest) (*entropyv1beta1.DeleteResourceResponse, error) {
+	urn := request.GetUrn()
+	res, err := server.resourceService.GetResource(ctx, urn)
+	if err != nil {
+		if errors.Is(err, store.ResourceNotFoundError) {
+			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
+		}
+		return nil, status.Error(codes.Internal, "failed to delete resource in db")
+	}
+
+	deletedResource, err := server.resourceService.DeleteResource(ctx, res)
+	if err != nil {
+		return nil, err
+	}
+	_, err = server.syncResource(ctx, deletedResource)
+	if err != nil {
+		return nil, err
+	}
+
+	response := entropyv1beta1.DeleteResourceResponse{}
 	return &response, nil
 }
 

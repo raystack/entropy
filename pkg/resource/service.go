@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/store"
 )
@@ -11,6 +12,7 @@ type ServiceInterface interface {
 	UpdateResource(ctx context.Context, res *domain.Resource) (*domain.Resource, error)
 	GetResource(ctx context.Context, urn string) (*domain.Resource, error)
 	ListResources(ctx context.Context, parent string, kind string) ([]*domain.Resource, error)
+	DeleteResource(ctx context.Context, res *domain.Resource) (*domain.Resource, error)
 }
 
 type Service struct {
@@ -61,4 +63,18 @@ func (s *Service) ListResources(ctx context.Context, parent string, kind string)
 		filter["parent"] = parent
 	}
 	return s.resourceRepository.List(filter)
+}
+
+func (s *Service) DeleteResource(ctx context.Context, res *domain.Resource) (*domain.Resource, error) {
+	res.IsDeleted = true
+	err := s.resourceRepository.Update(res)
+	if err != nil {
+		return nil, err
+	}
+
+	deletedRes, err := s.resourceRepository.GetByURN(res.Urn)
+	if err != nil {
+		return nil, err
+	}
+	return deletedRes, nil
 }

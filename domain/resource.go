@@ -26,6 +26,7 @@ type Resource struct {
 	Status    ResourceStatus         `bson:"status"`
 	CreatedAt time.Time              `bson:"created_at"`
 	UpdatedAt time.Time              `bson:"updated_at"`
+	IsDeleted bool                   `bson:"is_deleted"`
 }
 
 func GenerateResourceUrn(res *Resource) string {
