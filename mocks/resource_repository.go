@@ -104,11 +104,11 @@ func (_c *ResourceRepository_GetByURN_Call) Return(_a0 *domain.Resource, _a1 err
 }
 
 // List provides a mock function with given fields: filter
-func (_m *ResourceRepository) List(filter map[string]string) ([]*domain.Resource, error) {
+func (_m *ResourceRepository) List(filter interface{}) ([]*domain.Resource, error) {
 	ret := _m.Called(filter)
 
 	var r0 []*domain.Resource
-	if rf, ok := ret.Get(0).(func(map[string]string) []*domain.Resource); ok {
+	if rf, ok := ret.Get(0).(func(interface{}) []*domain.Resource); ok {
 		r0 = rf(filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -117,7 +117,7 @@ func (_m *ResourceRepository) List(filter map[string]string) ([]*domain.Resource
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(map[string]string) error); ok {
+	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
 		r1 = rf(filter)
 	} else {
 		r1 = ret.Error(1)
@@ -132,14 +132,14 @@ type ResourceRepository_List_Call struct {
 }
 
 // List is a helper method to define mock.On call
-//  - filter map[string]string
+//  - filter interface{}
 func (_e *ResourceRepository_Expecter) List(filter interface{}) *ResourceRepository_List_Call {
 	return &ResourceRepository_List_Call{Call: _e.mock.On("List", filter)}
 }
 
-func (_c *ResourceRepository_List_Call) Run(run func(filter map[string]string)) *ResourceRepository_List_Call {
+func (_c *ResourceRepository_List_Call) Run(run func(filter interface{})) *ResourceRepository_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]string))
+		run(args[0].(interface{}))
 	})
 	return _c
 }

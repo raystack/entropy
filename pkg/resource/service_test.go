@@ -3,14 +3,16 @@ package resource
 import (
 	"context"
 	"errors"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/mocks"
 	"github.com/odpf/entropy/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"reflect"
-	"testing"
-	"time"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestService_CreateResource(t *testing.T) {
@@ -275,7 +277,7 @@ func TestService_ListResources(t *testing.T) {
 		}}
 		wantErr := error(nil)
 
-		mockRepo.EXPECT().List(map[string]string{"parent": "p-testdata-gl", "kind": "log"}).Return([]*domain.Resource{{
+		mockRepo.EXPECT().List(primitive.M{"is_deleted": primitive.M{"$exists": false}, "kind": primitive.M{"$eq": "log"}, "parent": primitive.M{"$eq": "p-testdata-gl"}}).Return([]*domain.Resource{{
 			Urn:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",

@@ -3,10 +3,11 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/odpf/entropy/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 
 	"github.com/odpf/entropy/domain"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -79,7 +80,7 @@ func (rc *ResourceRepository) GetByURN(urn string) (*domain.Resource, error) {
 	return res, nil
 }
 
-func (rc *ResourceRepository) List(filter map[string]string) ([]*domain.Resource, error) {
+func (rc *ResourceRepository) List(filter interface{}) ([]*domain.Resource, error) {
 	var res []*domain.Resource
 	cur, err := rc.collection.Find(context.TODO(), filter)
 	if err != nil {

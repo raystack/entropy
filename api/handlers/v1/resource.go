@@ -113,9 +113,6 @@ func (server APIServer) ListResources(ctx context.Context, request *entropyv1bet
 		return nil, status.Error(codes.Internal, "failed to fetch resources from db")
 	}
 	for _, res := range resources {
-		if res.IsDeleted {
-			continue
-		}
 		responseResource, err := resourceToProto(res)
 		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to serialize resource")

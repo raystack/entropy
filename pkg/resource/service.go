@@ -5,6 +5,7 @@ import (
 
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/store"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type ServiceInterface interface {
@@ -55,13 +56,24 @@ func (s *Service) GetResource(ctx context.Context, urn string) (*domain.Resource
 }
 
 func (s *Service) ListResources(ctx context.Context, parent string, kind string) ([]*domain.Resource, error) {
-	filter := map[string]string{}
+	filter := bson.M{
+		"is_deleted": bson.M{
+			"$exists": false,
+		},
+	}
+
 	if kind != "" {
-		filter["kind"] = kind
+		filter["kind"] = bson.M{
+			"$eq": kind,
+		}
 	}
+
 	if parent != "" {
-		filter["parent"] = parent
+		filter["parent"] = bson.M{
+			"$eq": parent,
+		}
 	}
+
 	return s.resourceRepository.List(filter)
 }
 
