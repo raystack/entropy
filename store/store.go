@@ -2,6 +2,7 @@ package store
 
 import (
 	"errors"
+
 	"github.com/odpf/entropy/domain"
 )
 
@@ -21,6 +22,7 @@ type ResourceRepository interface {
 	GetByURN(urn string) (*domain.Resource, error)
 	Migrate() error
 	List(filter map[string]string) ([]*domain.Resource, error)
+	Delete(urn string) error
 }
 
 type ModuleRepository interface {

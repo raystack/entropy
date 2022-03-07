@@ -69,6 +69,44 @@ func (_c *ResourceService_CreateResource_Call) Return(_a0 *domain.Resource, _a1 
 	return _c
 }
 
+// DeleteResource provides a mock function with given fields: ctx, urn
+func (_m *ResourceService) DeleteResource(ctx context.Context, urn string) error {
+	ret := _m.Called(ctx, urn)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, urn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ResourceService_DeleteResource_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteResource'
+type ResourceService_DeleteResource_Call struct {
+	*mock.Call
+}
+
+// DeleteResource is a helper method to define mock.On call
+//  - ctx context.Context
+//  - urn string
+func (_e *ResourceService_Expecter) DeleteResource(ctx interface{}, urn interface{}) *ResourceService_DeleteResource_Call {
+	return &ResourceService_DeleteResource_Call{Call: _e.mock.On("DeleteResource", ctx, urn)}
+}
+
+func (_c *ResourceService_DeleteResource_Call) Run(run func(ctx context.Context, urn string)) *ResourceService_DeleteResource_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *ResourceService_DeleteResource_Call) Return(_a0 error) *ResourceService_DeleteResource_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
 // GetResource provides a mock function with given fields: ctx, urn
 func (_m *ResourceService) GetResource(ctx context.Context, urn string) (*domain.Resource, error) {
 	ret := _m.Called(ctx, urn)

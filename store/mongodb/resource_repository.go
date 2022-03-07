@@ -3,10 +3,11 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/odpf/entropy/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 
 	"github.com/odpf/entropy/domain"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -93,4 +94,15 @@ func (rc *ResourceRepository) List(filter map[string]string) ([]*domain.Resource
 		return nil, err
 	}
 	return res, nil
+}
+
+func (rc *ResourceRepository) Delete(urn string) error {
+	_, err := rc.collection.DeleteOne(context.TODO(), map[string]interface{}{"urn": urn})
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return fmt.Errorf("%w: %s", store.ResourceNotFoundError, err)
+		}
+		return err
+	}
+	return nil
 }
