@@ -1,5 +1,7 @@
 package resource
 
+//go:generate mockery --name=ServiceInterface -r --case underscore --with-expecter --structname ResourceService  --filename=resource_service.go --output=../../mocks
+
 import (
 	"context"
 	"github.com/odpf/entropy/domain"

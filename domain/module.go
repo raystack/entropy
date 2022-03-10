@@ -1,5 +1,7 @@
 package domain
 
+//go:generate mockery --name=Module -r --case underscore --with-expecter --structname Module --filename=module.go --output=../mocks
+
 import "errors"
 
 var (
