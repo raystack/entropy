@@ -1,5 +1,8 @@
 package store
 
+//go:generate mockery --name=ModuleRepository -r --case underscore --with-expecter --structname ModuleRepository --filename=module_repository.go --output=../mocks
+//go:generate mockery --name=ResourceRepository -r --case underscore --with-expecter --structname ResourceRepository --filename=resource_repository.go --output=../mocks
+
 import (
 	"errors"
 	"github.com/odpf/entropy/domain"

@@ -26,3 +26,6 @@ test:
 
 test-coverage: test
 	go tool cover -html=${COVERAGE_DIR}/coverage.out
+
+generate:
+	go generate ./...
