@@ -11,6 +11,7 @@ import (
 type ServiceInterface interface {
 	Sync(ctx context.Context, r *domain.Resource) (*domain.Resource, error)
 	Validate(ctx context.Context, res *domain.Resource) error
+	Act(ctx context.Context, r *domain.Resource, action string, params map[string]interface{}) (map[string]interface{}, error)
 }
 
 type Service struct {
@@ -41,4 +42,16 @@ func (s *Service) Validate(ctx context.Context, r *domain.Resource) error {
 	}
 	err = module.Validate(r)
 	return err
+}
+
+func (s *Service) Act(ctx context.Context, r *domain.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
+	module, err := s.moduleRepository.Get(r.Kind)
+	if err != nil {
+		return nil, err
+	}
+	output, err := module.Act(r, action, params)
+	if err != nil {
+		return nil, err
+	}
+	return output, nil
 }

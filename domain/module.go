@@ -12,4 +12,5 @@ type Module interface {
 	ID() string
 	Apply(r *Resource) (ResourceStatus, error)
 	Validate(r *Resource) error
+	Act(r *Resource, action string, params map[string]interface{}) (map[string]interface{}, error)
 }

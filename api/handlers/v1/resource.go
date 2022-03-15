@@ -8,7 +8,7 @@ import (
 	"github.com/odpf/entropy/pkg/module"
 	"github.com/odpf/entropy/pkg/resource"
 	"github.com/odpf/entropy/store"
-	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
+	entropyv1beta1 "go.buf.build/odpf/gwv/rohilsurana/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -108,7 +108,7 @@ func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1
 
 func (server APIServer) ListResources(ctx context.Context, request *entropyv1beta1.ListResourcesRequest) (*entropyv1beta1.ListResourcesResponse, error) {
 	var responseResources []*entropyv1beta1.Resource
-	resources, err := server.resourceService.ListResources(ctx, request.Parent, request.Kind)
+	resources, err := server.resourceService.ListResources(ctx, request.GetParent(), request.GetKind())
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch resources from db")
 	}
@@ -145,6 +145,35 @@ func (server APIServer) DeleteResource(ctx context.Context, request *entropyv1be
 
 	response := entropyv1beta1.DeleteResourceResponse{}
 	return &response, nil
+}
+
+func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1.ApplyActionRequest) (*entropyv1beta1.ApplyActionResponse, error) {
+	res, err := server.resourceService.GetResource(ctx, request.GetUrn())
+	if err != nil {
+		if errors.Is(err, store.ResourceNotFoundError) {
+			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
+		}
+		return nil, status.Error(codes.Internal, "failed to apply fetch resource from db")
+	}
+	action := request.GetAction()
+	params := request.GetParams().GetStructValue().AsMap()
+	resultConfig, err := server.moduleService.Act(ctx, res, action, params)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to apply action to resource")
+	}
+	res.Configs = resultConfig
+	syncedResource, err := server.syncResource(ctx, res)
+	if err != nil {
+		return nil, err
+	}
+	responseResource, err := resourceToProto(syncedResource)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to serialize resource")
+	}
+	response := &entropyv1beta1.ApplyActionResponse{
+		Resource: responseResource,
+	}
+	return response, nil
 }
 
 func (server APIServer) syncResource(ctx context.Context, updatedResource *domain.Resource) (*domain.Resource, error) {

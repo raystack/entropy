@@ -234,3 +234,79 @@ func TestService_Validate(t *testing.T) {
 		})
 	}
 }
+
+func TestService_Act(t *testing.T) {
+	type fields struct {
+		moduleRepository store.ModuleRepository
+	}
+	type args struct {
+		ctx    context.Context
+		r      *domain.Resource
+		action string
+		params map[string]interface{}
+	}
+
+	mockModule := &mocks.Module{}
+	mockModule.EXPECT().ID().Return("mock")
+	mockModuleRepo := &mocks.ModuleRepository{}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		setup   func(t *testing.T)
+		want    map[string]interface{}
+		wantErr error
+	}{
+		{
+			name: "test successfully applying action",
+			fields: fields{
+				moduleRepository: mockModuleRepo,
+			},
+			args: args{
+				ctx: nil,
+				r: &domain.Resource{
+					Urn:    "p-testdata-gl-testing-mock",
+					Name:   "testing",
+					Parent: "p-testdata-gl",
+					Kind:   "mock",
+					Configs: map[string]interface{}{
+						"mock": true,
+					},
+					Labels:    nil,
+					Status:    "COMPLETED",
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+				action: "test",
+				params: map[string]interface{}{},
+			},
+			setup: func(t *testing.T) {
+				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
+				mockModule.EXPECT().Act(mock.Anything, "test", map[string]interface{}{}).Return(map[string]interface{}{
+					"mock": true,
+				}, nil)
+			},
+			want: map[string]interface{}{
+				"mock": true,
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Service{
+				moduleRepository: tt.fields.moduleRepository,
+			}
+			tt.setup(t)
+			got, err := s.Act(tt.args.ctx, tt.args.r, tt.args.action, tt.args.params)
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("Act() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Act() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

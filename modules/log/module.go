@@ -78,3 +78,26 @@ func (m *Module) Validate(r *domain.Resource) error {
 	}
 	return nil
 }
+
+func (m *Module) Act(r *domain.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
+	switch action {
+	case "escalate":
+		r.Configs["log_level"] = increaseLogLevel(r.Configs["log_level"].(string))
+	}
+	return r.Configs, nil
+}
+
+func increaseLogLevel(currentLevel string) string {
+	switch currentLevel {
+	case "ERROR":
+		return "ERROR"
+	case "WARN":
+		return "ERROR"
+	case "INFO":
+		return "WARN"
+	case "DEBUG":
+		return "INFO"
+	default:
+		return "INFO"
+	}
+}

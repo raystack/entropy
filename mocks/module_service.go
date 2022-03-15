@@ -22,6 +22,55 @@ func (_m *ModuleService) EXPECT() *ModuleService_Expecter {
 	return &ModuleService_Expecter{mock: &_m.Mock}
 }
 
+// Act provides a mock function with given fields: ctx, r, action, params
+func (_m *ModuleService) Act(ctx context.Context, r *domain.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
+	ret := _m.Called(ctx, r, action, params)
+
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Resource, string, map[string]interface{}) map[string]interface{}); ok {
+		r0 = rf(ctx, r, action, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.Resource, string, map[string]interface{}) error); ok {
+		r1 = rf(ctx, r, action, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ModuleService_Act_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Act'
+type ModuleService_Act_Call struct {
+	*mock.Call
+}
+
+// Act is a helper method to define mock.On call
+//  - ctx context.Context
+//  - r *domain.Resource
+//  - action string
+//  - params map[string]interface{}
+func (_e *ModuleService_Expecter) Act(ctx interface{}, r interface{}, action interface{}, params interface{}) *ModuleService_Act_Call {
+	return &ModuleService_Act_Call{Call: _e.mock.On("Act", ctx, r, action, params)}
+}
+
+func (_c *ModuleService_Act_Call) Run(run func(ctx context.Context, r *domain.Resource, action string, params map[string]interface{})) *ModuleService_Act_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.Resource), args[2].(string), args[3].(map[string]interface{}))
+	})
+	return _c
+}
+
+func (_c *ModuleService_Act_Call) Return(_a0 map[string]interface{}, _a1 error) *ModuleService_Act_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // Sync provides a mock function with given fields: ctx, r
 func (_m *ModuleService) Sync(ctx context.Context, r *domain.Resource) (*domain.Resource, error) {
 	ret := _m.Called(ctx, r)

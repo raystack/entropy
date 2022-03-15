@@ -12,7 +12,7 @@ import (
 	"github.com/odpf/entropy/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
+	entropyv1beta1 "go.buf.build/odpf/gwv/rohilsurana/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -202,7 +202,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 		}
 	})
 
-	t.Run("test create resource of unknown kind", func(t *testing.T) {
+	t.Run("test create resource with validation failure", func(t *testing.T) {
 		createdAt := time.Now()
 		updatedAt := createdAt.Add(time.Minute)
 		configsStructValue, _ := structpb.NewValue(map[string]interface{}{
@@ -434,7 +434,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 		}
 	})
 
-	t.Run("test update resource with unknown kind", func(t *testing.T) {
+	t.Run("test update resource with validation failure", func(t *testing.T) {
 		configsStructValue, _ := structpb.NewValue(map[string]interface{}{
 			"replicas": "10",
 		})
@@ -655,4 +655,117 @@ func TestAPIServer_DeleteResource(t *testing.T) {
 		}
 	})
 
+}
+
+func TestAPIServer_ApplyAction(t *testing.T) {
+	t.Run("test applying action successfully", func(t *testing.T) {
+		createdAt := time.Now()
+		updatedAt := createdAt.Add(time.Minute)
+		r := &domain.Resource{
+			Urn:    "p-testdata-gl-testname-log",
+			Name:   "testname",
+			Parent: "p-testdata-gl",
+			Kind:   "log",
+			Configs: map[string]interface{}{
+				"log_level": "WARN",
+			},
+			Labels:    nil,
+			Status:    domain.ResourceStatusCompleted,
+			CreatedAt: createdAt,
+			UpdatedAt: updatedAt,
+		}
+		rDash := &domain.Resource{
+			Urn:    "p-testdata-gl-testname-log",
+			Name:   "testname",
+			Parent: "p-testdata-gl",
+			Kind:   "log",
+			Configs: map[string]interface{}{
+				"log_level": "INFO",
+			},
+			Labels:    nil,
+			Status:    domain.ResourceStatusCompleted,
+			CreatedAt: createdAt,
+			UpdatedAt: updatedAt,
+		}
+		rProto, _ := resourceToProto(r)
+		want := &entropyv1beta1.ApplyActionResponse{
+			Resource: rProto,
+		}
+		request := &entropyv1beta1.ApplyActionRequest{
+			Urn:    "p-testdata-gl-testname-log",
+			Action: "escalate",
+		}
+		wantErr := error(nil)
+
+		resourceService := &mocks.ResourceService{}
+		resourceService.EXPECT().
+			GetResource(mock.Anything, "p-testdata-gl-testname-log").
+			Return(rDash, nil).Once()
+
+		resourceService.EXPECT().
+			UpdateResource(mock.Anything, mock.Anything).
+			Return(r, error(nil)).Once()
+
+		moduleService := &mocks.ModuleService{}
+		moduleService.EXPECT().Act(mock.Anything, rDash, "escalate", map[string]interface{}{}).Return(map[string]interface{}{
+			"log_level": "WARN",
+		}, nil).Once()
+		moduleService.EXPECT().Sync(mock.Anything, mock.Anything).Run(func(_ context.Context, r *domain.Resource) {
+			assert.Equal(t, "WARN", r.Configs["log_level"])
+		}).Return(&domain.Resource{
+			Urn:    "p-testdata-gl-testname-log",
+			Name:   "testname",
+			Parent: "p-testdata-gl",
+			Kind:   "log",
+			Configs: map[string]interface{}{
+				"log_level": "WARN",
+			},
+			Labels:    nil,
+			Status:    domain.ResourceStatusCompleted,
+			CreatedAt: createdAt,
+			UpdatedAt: updatedAt,
+		}, nil).Once()
+
+		server := APIServer{
+			resourceService: resourceService,
+			moduleService:   moduleService,
+		}
+		got, err := server.ApplyAction(context.TODO(), request)
+		if !errors.Is(err, wantErr) {
+			t.Errorf("ApplyAction() error = %v, wantErr %v", err, wantErr)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("ApplyAction() got = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("test applying action on non-existent resource", func(t *testing.T) {
+		request := &entropyv1beta1.ApplyActionRequest{
+			Urn:    "p-testdata-gl-testname-log",
+			Action: "escalate",
+		}
+		want := (*entropyv1beta1.ApplyActionResponse)(nil)
+		wantErr := status.Error(codes.NotFound, "could not find resource with given urn")
+
+		resourceService := &mocks.ResourceService{}
+		resourceService.EXPECT().
+			GetResource(mock.Anything, "p-testdata-gl-testname-log").
+			Return(nil, store.ResourceNotFoundError).Once()
+
+		moduleService := &mocks.ModuleService{}
+
+		server := APIServer{
+			resourceService: resourceService,
+			moduleService:   moduleService,
+		}
+		got, err := server.ApplyAction(context.TODO(), request)
+		if !errors.Is(err, wantErr) {
+			t.Errorf("ApplyAction() error = %v, wantErr %v", err, wantErr)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("ApplyAction() got = %v, want %v", got, want)
+		}
+	})
 }
