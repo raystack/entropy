@@ -3,6 +3,10 @@ package handlersv1
 import (
 	"context"
 	"errors"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/mocks"
 	"github.com/odpf/entropy/store"
@@ -13,9 +17,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestAPIServer_CreateResource(t *testing.T) {
@@ -582,4 +583,76 @@ func TestAPIServer_ListResource(t *testing.T) {
 			t.Errorf("ListResource() got = %v, want %v", got, want)
 		}
 	})
+}
+
+func TestAPIServer_DeleteResource(t *testing.T) {
+	t.Run("test delete existing resource", func(t *testing.T) {
+		createdAt := time.Now()
+		updatedAt := createdAt.Add(time.Minute)
+		want := &entropyv1beta1.DeleteResourceResponse{}
+		wantErr := error(nil)
+
+		ctx := context.Background()
+		request := &entropyv1beta1.DeleteResourceRequest{
+			Urn: "p-testdata-gl-testname-log",
+		}
+
+		resourceService := &mocks.ResourceService{}
+		resourceService.EXPECT().
+			GetResource(mock.Anything, "p-testdata-gl-testname-log").
+			Return(&domain.Resource{
+				Urn:    "p-testdata-gl-testname-log",
+				Name:   "testname",
+				Parent: "p-testdata-gl",
+				Kind:   "log",
+				Configs: map[string]interface{}{
+					"replicas": "9",
+				},
+				Labels:    nil,
+				Status:    domain.ResourceStatusCompleted,
+				CreatedAt: createdAt,
+				UpdatedAt: updatedAt,
+			}, nil).Once()
+
+		resourceService.EXPECT().
+			DeleteResource(mock.Anything, "p-testdata-gl-testname-log").
+			Return(error(nil))
+
+		moduleService := &mocks.ModuleService{}
+
+		server := NewApiServer(resourceService, moduleService)
+		got, err := server.DeleteResource(ctx, request)
+		if !errors.Is(err, wantErr) {
+			t.Errorf("DeleteResource() error = %v, wantErr %v", err, wantErr)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("DeleteResource() got = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("test delete non-existing resource", func(t *testing.T) {
+		ctx := context.Background()
+		request := &entropyv1beta1.DeleteResourceRequest{
+			Urn: "p-testdata-gl-testname-log",
+		}
+
+		resourceService := &mocks.ResourceService{}
+		resourceService.EXPECT().
+			GetResource(mock.Anything, "p-testdata-gl-testname-log").
+			Return(nil, store.ResourceNotFoundError).Once()
+
+		moduleService := &mocks.ModuleService{}
+
+		server := NewApiServer(resourceService, moduleService)
+		got, err := server.DeleteResource(ctx, request)
+		if errors.Is(err, nil) {
+			t.Errorf("DeleteResource() got nil error")
+			return
+		}
+		if got != nil {
+			t.Errorf("DeleteResource() got = %v, want nil", got)
+		}
+	})
+
 }
