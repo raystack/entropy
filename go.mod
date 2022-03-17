@@ -13,7 +13,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.buf.build/odpf/gw/odpf/proton v1.1.9
-	go.buf.build/odpf/gwv/rohilsurana/proton v1.1.43
+	go.buf.build/odpf/gwv/odpf/proton v1.1.65
 	go.mongodb.org/mongo-driver v1.5.1
 	go.uber.org/zap v1.19.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect

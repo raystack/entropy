@@ -12,7 +12,7 @@ import (
 	"github.com/odpf/entropy/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	entropyv1beta1 "go.buf.build/odpf/gwv/rohilsurana/proton/odpf/entropy/v1beta1"
+	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
