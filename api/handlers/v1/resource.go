@@ -15,6 +15,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+var ErrInternal = status.Error(codes.Internal, "internal server error")
+
 type APIServer struct {
 	entropyv1beta1.UnimplementedResourceServiceServer
 	resourceService resource.ServiceInterface
@@ -40,7 +42,7 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 		if errors.Is(err, store.ResourceAlreadyExistsError) {
 			return nil, status.Error(codes.AlreadyExists, "resource already exists")
 		}
-		return nil, status.Error(codes.Internal, "failed to create resource in db")
+		return nil, ErrInternal
 	}
 	syncedResource, err := server.syncResource(ctx, createdResource)
 	if err != nil {
@@ -48,7 +50,7 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 	}
 	responseResource, err := resourceToProto(syncedResource)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to serialize resource")
+		return nil, ErrInternal
 	}
 	response := entropyv1beta1.CreateResourceResponse{
 		Resource: responseResource,
@@ -62,7 +64,7 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 		if errors.Is(err, store.ResourceNotFoundError) {
 			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
 		}
-		return nil, status.Error(codes.Internal, "failed to update resource in db")
+		return nil, ErrInternal
 	}
 	res.Configs = request.GetConfigs().GetStructValue().AsMap()
 	res.Status = domain.ResourceStatusPending
@@ -80,7 +82,7 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 	}
 	responseResource, err := resourceToProto(syncedResource)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to serialize resource")
+		return nil, ErrInternal
 	}
 	response := entropyv1beta1.UpdateResourceResponse{
 		Resource: responseResource,
@@ -94,11 +96,11 @@ func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1
 		if errors.Is(err, store.ResourceNotFoundError) {
 			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
 		}
-		return nil, status.Error(codes.Internal, "failed to fetch resource from db")
+		return nil, ErrInternal
 	}
 	responseResource, err := resourceToProto(res)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to serialize resource")
+		return nil, ErrInternal
 	}
 	response := entropyv1beta1.GetResourceResponse{
 		Resource: responseResource,
@@ -110,17 +112,17 @@ func (server APIServer) ListResources(ctx context.Context, request *entropyv1bet
 	var responseResources []*entropyv1beta1.Resource
 	resources, err := server.resourceService.ListResources(ctx, request.GetParent(), request.GetKind())
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to fetch resources from db")
+		return nil, ErrInternal
 	}
 	for _, res := range resources {
 		responseResource, err := resourceToProto(res)
 		if err != nil {
-			return nil, status.Error(codes.Internal, "failed to serialize resource")
+			return nil, ErrInternal
 		}
 		responseResources = append(responseResources, responseResource)
 	}
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to serialize resource")
+		return nil, ErrInternal
 	}
 	response := entropyv1beta1.ListResourcesResponse{
 		Resources: responseResources,
@@ -135,7 +137,7 @@ func (server APIServer) DeleteResource(ctx context.Context, request *entropyv1be
 		if errors.Is(err, store.ResourceNotFoundError) {
 			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
 		}
-		return nil, status.Error(codes.Internal, "failed to delete resource in db")
+		return nil, ErrInternal
 	}
 
 	err = server.resourceService.DeleteResource(ctx, urn)
@@ -153,13 +155,13 @@ func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1
 		if errors.Is(err, store.ResourceNotFoundError) {
 			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
 		}
-		return nil, status.Error(codes.Internal, "failed to apply fetch resource from db")
+		return nil, ErrInternal
 	}
 	action := request.GetAction()
 	params := request.GetParams().GetStructValue().AsMap()
 	resultConfig, err := server.moduleService.Act(ctx, res, action, params)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to apply action to resource")
+		return nil, ErrInternal
 	}
 	res.Configs = resultConfig
 	syncedResource, err := server.syncResource(ctx, res)
@@ -168,7 +170,7 @@ func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1
 	}
 	responseResource, err := resourceToProto(syncedResource)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to serialize resource")
+		return nil, ErrInternal
 	}
 	response := &entropyv1beta1.ApplyActionResponse{
 		Resource: responseResource,
@@ -179,11 +181,11 @@ func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1
 func (server APIServer) syncResource(ctx context.Context, updatedResource *domain.Resource) (*domain.Resource, error) {
 	syncedResource, err := server.moduleService.Sync(ctx, updatedResource)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to sync updated resource")
+		return nil, ErrInternal
 	}
 	responseResource, err := server.resourceService.UpdateResource(ctx, syncedResource)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to update resource in db")
+		return nil, ErrInternal
 	}
 	return responseResource, nil
 }

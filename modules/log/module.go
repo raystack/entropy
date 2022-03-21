@@ -9,13 +9,15 @@ import (
 	"strings"
 )
 
-type LogLevel string
+type Level string
 
 const (
-	Error LogLevel = "ERROR"
-	Warn  LogLevel = "WARN"
-	Info  LogLevel = "INFO"
-	Debug LogLevel = "DEBUG"
+	LevelError Level = "ERROR"
+	LevelWarn  Level = "WARN"
+	LevelInfo  Level = "INFO"
+	LevelDebug Level = "DEBUG"
+
+	levelConfigString = "log_level"
 )
 
 const configSchemaString = `
@@ -56,14 +58,14 @@ func New(logger *zap.Logger) *Module {
 }
 
 func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
-	switch r.Configs["log_level"].(LogLevel) {
-	case Error:
+	switch r.Configs[levelConfigString].(Level) {
+	case LevelError:
 		m.logger.Sugar().Error(r)
-	case Warn:
+	case LevelWarn:
 		m.logger.Sugar().Warn(r)
-	case Info:
+	case LevelInfo:
 		m.logger.Sugar().Info(r)
-	case Debug:
+	case LevelDebug:
 		m.logger.Sugar().Debug(r)
 	default:
 		return domain.ResourceStatusError, errors.New("unknown log level")
@@ -91,22 +93,22 @@ func (m *Module) Validate(r *domain.Resource) error {
 func (m *Module) Act(r *domain.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
 	switch action {
 	case "escalate":
-		r.Configs["log_level"] = increaseLogLevel(r.Configs["log_level"].(LogLevel))
+		r.Configs[levelConfigString] = increaseLogLevel(r.Configs[levelConfigString].(Level))
 	}
 	return r.Configs, nil
 }
 
-func increaseLogLevel(currentLevel LogLevel) LogLevel {
+func increaseLogLevel(currentLevel Level) Level {
 	switch currentLevel {
-	case Error:
-		return Error
-	case Warn:
-		return Error
-	case Info:
-		return Warn
-	case Debug:
-		return Info
+	case LevelError:
+		return LevelError
+	case LevelWarn:
+		return LevelError
+	case LevelInfo:
+		return LevelWarn
+	case LevelDebug:
+		return LevelInfo
 	default:
-		return Info
+		return LevelInfo
 	}
 }
