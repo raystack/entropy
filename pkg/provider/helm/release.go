@@ -82,10 +82,7 @@ func (p *Provider) create(config *releaseConfig) (*Release, error) {
 		return nil, fmt.Errorf("error while getting action configuration  : %w", err)
 	}
 
-	chartPathOptions, chartName, err := p.chartPathOptions(config)
-	if err != nil {
-		return nil, fmt.Errorf("error while getting chart path options : %w", err)
-	}
+	chartPathOptions, chartName := p.chartPathOptions(config)
 
 	chart, _, err := p.getChart(config, chartName, chartPathOptions)
 	if err != nil {
@@ -167,10 +164,7 @@ func (p *Provider) update(config *releaseConfig) (*Release, error) {
 		return nil, fmt.Errorf("error while getting action configuration  : %w", err)
 	}
 
-	chartPathOptions, chartName, err := p.chartPathOptions(config)
-	if err != nil {
-		return nil, fmt.Errorf("error while getting chart path options : %w", err)
-	}
+	chartPathOptions, chartName := p.chartPathOptions(config)
 
 	chart, _, err := p.getChart(config, chartName, chartPathOptions)
 	if err != nil {
@@ -236,31 +230,28 @@ func (p *Provider) update(config *releaseConfig) (*Release, error) {
 	}, nil
 }
 
-func (p *Provider) chartPathOptions(config *releaseConfig) (*action.ChartPathOptions, string, error) {
-	repositoryURL, chartName, err := resolveChartName(config.Repository, strings.TrimSpace(config.Chart))
+func (p *Provider) chartPathOptions(config *releaseConfig) (*action.ChartPathOptions, string) {
+	repositoryURL, chartName := resolveChartName(config.Repository, strings.TrimSpace(config.Chart))
 
-	if err != nil {
-		return nil, "", err
-	}
 	version := getVersion(config.Version)
 
 	return &action.ChartPathOptions{
 		RepoURL: repositoryURL,
 		Version: version,
-	}, chartName, nil
+	}, chartName
 }
 
-func resolveChartName(repository, name string) (string, string, error) {
+func resolveChartName(repository, name string) (string, string) {
 	_, err := url.ParseRequestURI(repository)
 	if err == nil {
-		return repository, name, nil
+		return repository, name
 	}
 
 	if !strings.Contains(name, "/") && repository != "" {
 		name = fmt.Sprintf("%s/%s", repository, name)
 	}
 
-	return "", name, nil
+	return "", name
 }
 
 func getVersion(version string) string {
