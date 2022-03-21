@@ -15,219 +15,31 @@ const configSchemaString = `
 	"$schema": "http://json-schema.org/draft-04/schema#",
 	"type": "object",
 	"properties": {
-	  "replicaCount": {
-		"type": "integer"
+		"name": { "type": "string" },
+		"title": { "type": "string" },
+		"stream_name": { "type": "string" },
+		"topic_name": { "type": "string" },
+		"image": { "type": "string" },
+		"configuration": {},
+		"replicas": { "type": "number" },
+		"namespace": { "type": "string" },
+		"cluster": { "type": "string" },
+		"organization": { "type": "string" },
+		"entity": { "type": "string" },
+		"consumer_group_id": { "type": "string" },
+		"team": { "type": "string" },
+		"landscape": { "type": "string" },
+		"environment": { "type": "string", "enum": [ "integration", "production" ] },
+		"projectID": { "type": "string" },
+		"sink_type": { "type": "string" },
+		"state": { "type": "string", "enum": [ "running", "stopped" ] },
+		"stop_date": { "type": "string", "format": "date-time" },
+		"description": { "type": "string" },
+		"created_by": { "type": "string" },
+		"updated": { "type": "string", "format": "date-time" },
+		"created": { "type": "string", "format": "date-time" }
 	  },
-	  "nameOverride": {
-		"type": "string"
-	  },
-	  "fullnameOverride": {
-		"type": "string"
-	  },
-	  "labels": {
-		"type": "object",
-		"properties": {
-		  "application": {
-			"const": "firehose"
-		  }
-		}
-	  },
-	  "firehose": {
-		"type": "object",
-		"properties": {
-		  "image": {
-			"type": "object",
-			"properties": {
-			  "repository": {
-				"const": "odpf/firehose"
-			  },
-			  "pullPolicy": {
-				"type": "string"
-			  },
-			  "tag": {
-				"type": "string"
-			  }
-			}
-		  },
-		  "config": {
-			"type": "object",
-			"properties": {
-			  "SOURCE_KAFKA_BROKERS": {
-				"type": "string"
-			  },
-			  "SOURCE_KAFKA_CONSUMER_GROUP_ID": {
-				"type": "string"
-			  },
-			  "SOURCE_KAFKA_TOPIC": {
-				"type": "string"
-			  },
-			  "SINK_TYPE": {
-				"type": "string"
-			  },
-			  "SOURCE_KAFKA_CONSUMER_CONFIG_AUTO_OFFSET_RESET": {
-				"type": "string"
-			  },
-			  "INPUT_SCHEMA_PROTO_CLASS": {
-				"type": "string"
-			  },
-			  "JAVA_TOOL_OPTIONS": {
-				"type": "string"
-			  }
-			}
-		  },
-		  "args": {
-			"type": "array",
-			"items": {
-			  "type": "string"
-			},
-			"additionalItems": true
-		  },
-		  "resources": {
-			"type": "object",
-			"properties": {
-			  "limits": {
-				"type": "object",
-				"properties": {
-				  "cpu": {
-					"type": "string"
-				  },
-				  "memory": {
-					"type": "string"
-				  }
-				}
-			  },
-			  "requests": {
-				"type": "object",
-				"properties": {
-				  "cpu": {
-					"type": "string"
-				  },
-				  "memory": {
-					"type": "string"
-				  }
-				}
-			  }
-			}
-		  }
-		}
-	  },
-	  "init-firehose": {
-		"type": "object",
-		"properties": {
-		  "enabled": {
-			"type": "boolean"
-		  },
-		  "image": {
-			"type": "object",
-			"properties": {
-			  "repository": {
-				"const": "busybox"
-			  },
-			  "pullPolicy": {
-				"type": "string"
-			  },
-			  "tag": {
-				"type": "string"
-			  }
-			}
-		  },
-		  "command": {
-			"type": "array",
-			"items": {
-			  "type": "string"
-			},
-			"additionalItems": true
-		  },
-		  "args": {
-			"type": "array",
-			"items": {
-			  "type": "string"
-			},
-			"additionalItems": true
-		  }
-		}
-	  },
-	  "telegraf": {
-		"type": "object",
-		"properties": {
-		  "enabled": {
-			"type": "boolean"
-		  },
-		  "image": {
-			"type": "object",
-			"properties": {
-			  "repository": {
-				"const": "telegraf"
-			  },
-			  "pullPolicy": {
-				"type": "string"
-			  },
-			  "tag": {
-				"type": "string"
-			  }
-			}
-		  },
-		  "config": {
-			"type": "object",
-			"properties": {
-			  "output": {
-				"type": "object",
-				"properties": {
-				  "influxdb": {
-					"type": "object",
-					"properties": {
-					  "enabled": {
-						"type": "boolean"
-					  },
-					  "urls": {
-						"type": "array",
-						"items": {
-						  "type": "string"
-						},
-						"additionalItems": true
-					  },
-					  "database": {
-						"type": "string"
-					  },
-					  "retention_policy": {
-						"type": "string"
-					  }
-					}
-				  }
-				}
-			  }
-			}
-		  },
-		  "resources": {
-			"type": "object",
-			"properties": {
-			  "limits": {
-				"type": "object",
-				"properties": {
-				  "cpu": {
-					"type": "string"
-				  },
-				  "memory": {
-					"type": "string"
-				  }
-				}
-			  },
-			  "requests": {
-				"type": "object",
-				"properties": {
-				  "cpu": {
-					"type": "string"
-				  },
-				  "memory": {
-					"type": "string"
-				  }
-				}
-			  }
-			}
-		  }
-		}
-	  }
-	}
+	  "required": [ "title", "stream_name", "image", "replicas", "namespace", "state" ]
   }
 `
 
