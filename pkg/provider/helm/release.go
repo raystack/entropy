@@ -79,17 +79,17 @@ func (p *Provider) Release(config *releaseConfig) (*Release, error) {
 func (p *Provider) create(config *releaseConfig) (*Release, error) {
 	actionConfig, err := p.getActionConfiguration(config.Namespace)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error while getting action configuration  : %w", err)
 	}
 
 	chartPathOptions, chartName, err := p.chartPathOptions(config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error while getting chart path options : %w", err)
 	}
 
 	chart, _, err := p.getChart(config, chartName, chartPathOptions)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error while getting chart : %w", err)
 	}
 
 	// TODO: check if chart has dependencies and load those dependencies
@@ -164,17 +164,17 @@ func (p *Provider) update(config *releaseConfig) (*Release, error) {
 
 	actionConfig, err := p.getActionConfiguration(config.Namespace)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error while getting action configuration  : %w", err)
 	}
 
 	chartPathOptions, chartName, err := p.chartPathOptions(config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error while getting chart path options : %w", err)
 	}
 
 	chart, _, err := p.getChart(config, chartName, chartPathOptions)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error while getting chart : %w", err)
 	}
 
 	// TODO: check if chart has dependencies and load those dependencies
