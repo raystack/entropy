@@ -37,5 +37,5 @@ func GenerateResourceUrn(res *Resource) string {
 }
 
 func sanitizeString(s string) string {
-	return strings.Replace(s, " ", "_", -1)
+	return strings.ReplaceAll(s, " ", "_")
 }
