@@ -7,7 +7,6 @@ import (
 
 	"github.com/odpf/entropy/domain"
 	gjs "github.com/xeipuuv/gojsonschema"
-	"go.uber.org/zap"
 )
 
 const configSchemaString = `
@@ -212,11 +211,7 @@ const configSchemaString = `
 				"SINK_HTTP_REQUEST_METHOD",
 				"SINK_HTTP_REQUEST_TIMEOUT_MS",
 				"SINK_HTTP_REQUEST_LOG_STATUS_CODE_RANGES",
-				"SINK_HTTP_RETRY_STATUS_CODE_RANGES",
-				"INPUT_SCHEMA_PROTO_CLASS",
-				"SOURCE_KAFKA_CONSUMER_GROUP_ID",
-				"SOURCE_KAFKA_TOPIC",
-				"SOURCE_KAFKA_BROKERS"
+				"SINK_HTTP_RETRY_STATUS_CODE_RANGES"
 			  ]
 			}
 		  }
@@ -234,14 +229,13 @@ const configSchemaString = `
 
 type Module struct {
 	schema *gjs.Schema
-	logger *zap.Logger
 }
 
 func (m *Module) ID() string {
 	return "firehose"
 }
 
-func New(logger *zap.Logger) *Module {
+func New() *Module {
 	schemaLoader := gjs.NewStringLoader(configSchemaString)
 	schema, err := gjs.NewSchema(schemaLoader)
 	if err != nil {
@@ -249,8 +243,11 @@ func New(logger *zap.Logger) *Module {
 	}
 	return &Module{
 		schema: schema,
-		logger: logger,
 	}
+}
+
+func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
+	return domain.ResourceStatusCompleted, nil
 }
 
 func (m *Module) Validate(r *domain.Resource) error {
