@@ -266,3 +266,7 @@ func (m *Module) Validate(r *domain.Resource) error {
 	}
 	return nil
 }
+
+func (m *Module) Act(r *domain.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
+	return r.Configs, nil
+}
