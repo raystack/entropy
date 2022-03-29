@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	"github.com/odpf/entropy/modules/firehose"
 	"github.com/odpf/entropy/modules/log"
 	"github.com/odpf/entropy/pkg/module"
 	"github.com/odpf/entropy/pkg/resource"
@@ -72,7 +73,13 @@ func RunServer(c *Config) error {
 	)
 
 	moduleRepository := inmemory.NewModuleRepository()
+
 	err = moduleRepository.Register(log.New(loggerInstance))
+	if err != nil {
+		return err
+	}
+
+	err = moduleRepository.Register(firehose.New())
 	if err != nil {
 		return err
 	}
