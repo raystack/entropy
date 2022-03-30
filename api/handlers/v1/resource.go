@@ -39,7 +39,7 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 	}
 	createdResource, err := server.resourceService.CreateResource(ctx, res)
 	if err != nil {
-		if errors.Is(err, store.ResourceAlreadyExistsError) {
+		if errors.Is(err, store.ErrResourceAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, "resource already exists")
 		}
 		return nil, ErrInternal
@@ -61,7 +61,7 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1beta1.UpdateResourceRequest) (*entropyv1beta1.UpdateResourceResponse, error) {
 	res, err := server.resourceService.GetResource(ctx, request.GetUrn())
 	if err != nil {
-		if errors.Is(err, store.ResourceNotFoundError) {
+		if errors.Is(err, store.ErrResourceNotFound) {
 			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
 		}
 		return nil, ErrInternal
@@ -93,7 +93,7 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1.GetResourceRequest) (*entropyv1beta1.GetResourceResponse, error) {
 	res, err := server.resourceService.GetResource(ctx, request.GetUrn())
 	if err != nil {
-		if errors.Is(err, store.ResourceNotFoundError) {
+		if errors.Is(err, store.ErrResourceNotFound) {
 			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
 		}
 		return nil, ErrInternal
@@ -134,7 +134,7 @@ func (server APIServer) DeleteResource(ctx context.Context, request *entropyv1be
 	urn := request.GetUrn()
 	_, err := server.resourceService.GetResource(ctx, urn)
 	if err != nil {
-		if errors.Is(err, store.ResourceNotFoundError) {
+		if errors.Is(err, store.ErrResourceNotFound) {
 			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
 		}
 		return nil, ErrInternal
@@ -152,7 +152,7 @@ func (server APIServer) DeleteResource(ctx context.Context, request *entropyv1be
 func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1.ApplyActionRequest) (*entropyv1beta1.ApplyActionResponse, error) {
 	res, err := server.resourceService.GetResource(ctx, request.GetUrn())
 	if err != nil {
-		if errors.Is(err, store.ResourceNotFoundError) {
+		if errors.Is(err, store.ErrResourceNotFound) {
 			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
 		}
 		return nil, ErrInternal
@@ -193,7 +193,7 @@ func (server APIServer) syncResource(ctx context.Context, updatedResource *domai
 func (server APIServer) validateResource(ctx context.Context, res *domain.Resource) error {
 	err := server.moduleService.Validate(ctx, res)
 	if err != nil {
-		if errors.Is(err, store.ModuleNotFoundError) {
+		if errors.Is(err, store.ErrModuleNotFound) {
 			return status.Errorf(codes.InvalidArgument, "failed to find module to deploy this kind")
 		}
 		if errors.Is(err, domain.ModuleConfigParseFailed) {

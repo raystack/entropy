@@ -135,7 +135,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 
 		resourceService.EXPECT().
 			CreateResource(mock.Anything, mock.Anything).
-			Return(nil, store.ResourceAlreadyExistsError).
+			Return(nil, store.ErrResourceAlreadyExists).
 			Once()
 
 		moduleService := &mocks.ModuleService{}
@@ -189,7 +189,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 		}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(store.ModuleNotFoundError)
+		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(store.ErrModuleNotFound)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.CreateResource(ctx, request)
@@ -380,7 +380,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 
 		resourceService.EXPECT().
 			GetResource(mock.Anything, mock.Anything).
-			Return(nil, store.ResourceNotFoundError).Once()
+			Return(nil, store.ErrResourceNotFound).Once()
 
 		moduleService := &mocks.ModuleService{}
 
@@ -421,7 +421,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 			}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(store.ModuleNotFoundError)
+		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(store.ErrModuleNotFound)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.UpdateResource(ctx, request)
@@ -523,7 +523,7 @@ func TestAPIServer_GetResource(t *testing.T) {
 		wantErr := status.Error(codes.NotFound, "could not find resource with given urn")
 
 		mockResourceService := &mocks.ResourceService{}
-		mockResourceService.EXPECT().GetResource(mock.Anything, mock.Anything).Return(nil, store.ResourceNotFoundError).Once()
+		mockResourceService.EXPECT().GetResource(mock.Anything, mock.Anything).Return(nil, store.ErrResourceNotFound).Once()
 
 		mockModuleService := &mocks.ModuleService{}
 
@@ -640,7 +640,7 @@ func TestAPIServer_DeleteResource(t *testing.T) {
 		resourceService := &mocks.ResourceService{}
 		resourceService.EXPECT().
 			GetResource(mock.Anything, "p-testdata-gl-testname-log").
-			Return(nil, store.ResourceNotFoundError).Once()
+			Return(nil, store.ErrResourceNotFound).Once()
 
 		moduleService := &mocks.ModuleService{}
 
@@ -751,7 +751,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 		resourceService := &mocks.ResourceService{}
 		resourceService.EXPECT().
 			GetResource(mock.Anything, "p-testdata-gl-testname-log").
-			Return(nil, store.ResourceNotFoundError).Once()
+			Return(nil, store.ErrResourceNotFound).Once()
 
 		moduleService := &mocks.ModuleService{}
 

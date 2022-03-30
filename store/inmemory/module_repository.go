@@ -17,7 +17,7 @@ func NewModuleRepository() *ModuleRepository {
 
 func (mr *ModuleRepository) Register(module domain.Module) error {
 	if _, exists := mr.collection[module.ID()]; exists {
-		return store.ModuleAlreadyExistsError
+		return store.ErrModuleAlreadyExists
 	}
 	mr.collection[module.ID()] = module
 	return nil
@@ -27,5 +27,5 @@ func (mr *ModuleRepository) Get(id string) (domain.Module, error) {
 	if module, exists := mr.collection[id]; exists {
 		return module, nil
 	}
-	return nil, store.ModuleNotFoundError
+	return nil, store.ErrModuleNotFound
 }

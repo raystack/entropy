@@ -3,13 +3,14 @@ package module
 import (
 	"context"
 	"errors"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/mocks"
 	"github.com/odpf/entropy/store"
 	"github.com/stretchr/testify/mock"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestService_Sync(t *testing.T) {
@@ -75,7 +76,7 @@ func TestService_Sync(t *testing.T) {
 		{
 			name: "test sync module not found error",
 			setup: func(t *testing.T) {
-				mockModuleRepo.EXPECT().Get("mock").Return(nil, store.ModuleNotFoundError).Once()
+				mockModuleRepo.EXPECT().Get("mock").Return(nil, store.ErrModuleNotFound).Once()
 			},
 			fields: fields{
 				moduleRepository: mockModuleRepo,
@@ -95,7 +96,7 @@ func TestService_Sync(t *testing.T) {
 				CreatedAt: currentTime,
 				UpdatedAt: currentTime,
 			},
-			wantErr: store.ModuleNotFoundError,
+			wantErr: store.ErrModuleNotFound,
 		},
 		{
 			name: "test sync module error while applying",
@@ -195,7 +196,7 @@ func TestService_Validate(t *testing.T) {
 		{
 			name: "test validate module not found error",
 			setup: func(t *testing.T) {
-				mockModuleRepo.EXPECT().Get("mock").Return(nil, store.ModuleNotFoundError).Once()
+				mockModuleRepo.EXPECT().Get("mock").Return(nil, store.ErrModuleNotFound).Once()
 			},
 			fields: fields{
 				moduleRepository: mockModuleRepo,
@@ -204,7 +205,7 @@ func TestService_Validate(t *testing.T) {
 				ctx: nil,
 				r:   r,
 			},
-			wantErr: store.ModuleNotFoundError,
+			wantErr: store.ErrModuleNotFound,
 		},
 		{
 			name: "test validation failed",

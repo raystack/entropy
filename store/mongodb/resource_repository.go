@@ -45,7 +45,7 @@ func (rc *ResourceRepository) Create(resource *domain.Resource) error {
 	_, err := rc.collection.InsertOne(context.TODO(), resource)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return fmt.Errorf("%w: %s", store.ResourceAlreadyExistsError, err)
+			return fmt.Errorf("%w: %s", store.ErrResourceAlreadyExists, err)
 		}
 		return err
 	}
@@ -61,7 +61,7 @@ func (rc *ResourceRepository) Update(r *domain.Resource) error {
 	err := singleResult.Err()
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return fmt.Errorf("%w: urn = %s", store.ResourceNotFoundError, r.Urn)
+			return fmt.Errorf("%w: urn = %s", store.ErrResourceNotFound, r.Urn)
 		}
 		return err
 	}
@@ -73,7 +73,7 @@ func (rc *ResourceRepository) GetByURN(urn string) (*domain.Resource, error) {
 	err := rc.collection.FindOne(context.TODO(), map[string]interface{}{"urn": urn}).Decode(res)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, fmt.Errorf("%w: %s", store.ResourceNotFoundError, err)
+			return nil, fmt.Errorf("%w: %s", store.ErrResourceNotFound, err)
 		}
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (rc *ResourceRepository) Delete(urn string) error {
 	_, err := rc.collection.DeleteOne(context.TODO(), map[string]interface{}{"urn": urn})
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return fmt.Errorf("%w: %s", store.ResourceNotFoundError, err)
+			return fmt.Errorf("%w: %s", store.ErrResourceNotFound, err)
 		}
 		return err
 	}
