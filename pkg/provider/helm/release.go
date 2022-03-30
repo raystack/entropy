@@ -18,45 +18,45 @@ import (
 var ErrReleaseNotFound = errors.New("release not found")
 var ErrChartNotApplication = errors.New("helm chart is not an application chart")
 
-type releaseConfig struct {
+type ReleaseConfig struct {
 	// Name - Release Name
-	Name string `valid:"required"`
+	Name string `json:"name" mapstructure:"name" valid:"required"`
 	// Repository - Repository where to locate the requested chart. If is a URL the chart is installed without installing the repository.
-	Repository string `valid:"required"`
+	Repository string `json:"repository" mapstructure:"repository" valid:"required"`
 	// Chart - Chart name to be installed. A path may be used.
-	Chart string `valid:"required"`
+	Chart string `json:"chart" mapstructure:"chart" valid:"required"`
 	// Version - Specify the exact chart version to install. If this is not specified, the latest version is installed.
-	Version string
+	Version string `json:"version" mapstructure:"version"`
 	// Values - Map of values in to pass to helm.
-	Values map[string]interface{}
+	Values map[string]interface{} `json:"values" mapstructure:"values"`
 	// Namespace - Namespace to install the release into.
-	Namespace string `default:"default"`
+	Namespace string `json:"namespace" mapstructure:"namespace" default:"default"`
 	// Timeout - Time in seconds to wait for any individual kubernetes operation.
-	Timeout int `default:"300"`
+	Timeout int `json:"timeout" mapstructure:"timeout" default:"300"`
 	// ForceUpdate - Force resource update through delete/recreate if needed.
-	ForceUpdate bool `default:"false"`
+	ForceUpdate bool `json:"force_update" mapstructure:"force_update" default:"false"`
 	// RecreatePods - Perform pods restart during upgrade/rollback
-	RecreatePods bool `default:"false"`
+	RecreatePods bool `json:"recreate_pods" mapstructure:"recreate_pods" default:"false"`
 	// Wait - Will wait until all resources are in a ready state before marking the release as successful.
-	Wait bool `default:"true"`
+	Wait bool `json:"wait" mapstructure:"wait" default:"true"`
 	// WaitForJobs - If wait is enabled, will wait until all Jobs have been completed before marking the release as successful.
-	WaitForJobs bool `default:"false"`
+	WaitForJobs bool `json:"wait_for_jobs" mapstructure:"wait_for_jobs" default:"false"`
 	// Replace - Re-use the given name, even if that name is already used. This is unsafe in production
-	Replace bool `default:"false"`
+	Replace bool `json:"replace" mapstructure:"replace" default:"false"`
 	// Description - Add a custom description
-	Description string
+	Description string `json:"description" mapstructure:"description"`
 	// CreateNamespace - Create the namespace if it does not exist
-	CreateNamespace bool `default:"false"`
+	CreateNamespace bool `json:"create_namespace" mapstructure:"create_namespace" default:"false"`
 }
 
-func DefaultReleaseConfig() *releaseConfig {
-	defaultReleaseConfig := new(releaseConfig)
+func DefaultReleaseConfig() *ReleaseConfig {
+	defaultReleaseConfig := new(ReleaseConfig)
 	defaults.SetDefaults(defaultReleaseConfig)
 	return defaultReleaseConfig
 }
 
 type Release struct {
-	Config *releaseConfig
+	Config *ReleaseConfig
 	Output ReleaseOutput
 }
 
@@ -68,7 +68,7 @@ type ReleaseOutput struct {
 }
 
 // Release - creates or updates a helm release with its configs
-func (p *Provider) Release(config *releaseConfig) (*Release, error) {
+func (p *Provider) Release(config *ReleaseConfig) (*Release, error) {
 	releaseExists, _ := p.resourceReleaseExists(config.Name, config.Namespace)
 	if releaseExists {
 		return p.update(config)
@@ -76,7 +76,7 @@ func (p *Provider) Release(config *releaseConfig) (*Release, error) {
 	return p.create(config)
 }
 
-func (p *Provider) create(config *releaseConfig) (*Release, error) {
+func (p *Provider) create(config *ReleaseConfig) (*Release, error) {
 	actionConfig, err := p.getActionConfiguration(config.Namespace)
 	if err != nil {
 		return nil, fmt.Errorf("error while getting action configuration  : %w", err)
@@ -155,7 +155,7 @@ func (p *Provider) create(config *releaseConfig) (*Release, error) {
 	}, nil
 }
 
-func (p *Provider) update(config *releaseConfig) (*Release, error) {
+func (p *Provider) update(config *ReleaseConfig) (*Release, error) {
 	var rel *release.Release
 	var err error
 
@@ -230,7 +230,7 @@ func (p *Provider) update(config *releaseConfig) (*Release, error) {
 	}, nil
 }
 
-func (p *Provider) chartPathOptions(config *releaseConfig) (*action.ChartPathOptions, string) {
+func (p *Provider) chartPathOptions(config *ReleaseConfig) (*action.ChartPathOptions, string) {
 	repositoryURL, chartName := resolveChartName(config.Repository, strings.TrimSpace(config.Chart))
 
 	version := getVersion(config.Version)
@@ -261,7 +261,7 @@ func getVersion(version string) string {
 	return strings.TrimSpace(version)
 }
 
-func (p *Provider) getChart(config *releaseConfig, name string, cpo *action.ChartPathOptions) (*chart.Chart, string, error) {
+func (p *Provider) getChart(config *ReleaseConfig, name string, cpo *action.ChartPathOptions) (*chart.Chart, string, error) {
 	// TODO: Add a lock as Load function blows up if accessed concurrently
 
 	path, err := cpo.LocateChart(name, p.cliSettings)

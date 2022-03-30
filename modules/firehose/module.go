@@ -3,10 +3,30 @@ package firehose
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/odpf/entropy/domain"
+	"github.com/odpf/entropy/pkg/provider/helm"
 	gjs "github.com/xeipuuv/gojsonschema"
+)
+
+const (
+	nameConfigString            = "name"
+	repositoryConfigString      = "repository"
+	chartConfigString           = "chart"
+	versionConfigString         = "version"
+	valuesConfigString          = "values"
+	namespaceConfigString       = "namespace"
+	timeoutConfigString         = "timeout"
+	forceUpdateConfigString     = "force_update"
+	recreatePodsConfigString    = "recreate_pods"
+	waitConfigString            = "wait"
+	waitForJobsConfigString     = "wait_for_jobs"
+	replaceConfigString         = "replace"
+	descriptionConfigString     = "description"
+	CreateNamespaceConfigString = "create_namespace"
 )
 
 const configSchemaString = `
@@ -229,13 +249,14 @@ const configSchemaString = `
 
 type Module struct {
 	schema *gjs.Schema
+	helm   *helm.Provider
 }
 
 func (m *Module) ID() string {
 	return "firehose"
 }
 
-func New() *Module {
+func New(helm *helm.Provider) *Module {
 	schemaLoader := gjs.NewStringLoader(configSchemaString)
 	schema, err := gjs.NewSchema(schemaLoader)
 	if err != nil {
@@ -243,15 +264,90 @@ func New() *Module {
 	}
 	return &Module{
 		schema: schema,
+		helm:   helm,
 	}
 }
 
 func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
+	v := reflect.ValueOf(r.Configs[valuesConfigString])
+	var values = make(map[string]interface{})
+	if v.Kind() == reflect.Map {
+		for _, key := range v.MapKeys() {
+			strct := v.MapIndex(key)
+			values[key.String()] = strct.Interface()
+		}
+	}
+
+	var rc helm.ReleaseConfig
+	if err := mapstructure.Decode(r.Configs, &rc); err != nil {
+		return domain.ResourceStatusError, err
+	}
+
+	releaseConfig := helm.DefaultReleaseConfig()
+	releaseConfig.Values = values
+
+	if r.Configs[nameConfigString] != nil {
+		releaseConfig.Name = r.Configs[nameConfigString].(string)
+	}
+
+	if r.Configs[repositoryConfigString] != nil {
+		releaseConfig.Repository = r.Configs[repositoryConfigString].(string)
+	}
+
+	if r.Configs[chartConfigString] != nil {
+		releaseConfig.Chart = r.Configs[chartConfigString].(string)
+	}
+
+	if r.Configs[versionConfigString] != nil {
+		releaseConfig.Version = r.Configs[versionConfigString].(string)
+	}
+
+	if r.Configs[namespaceConfigString] != nil {
+		releaseConfig.Namespace = r.Configs[namespaceConfigString].(string)
+	}
+
+	if r.Configs[timeoutConfigString] != nil {
+		releaseConfig.Timeout = r.Configs[timeoutConfigString].(int)
+	}
+
+	if r.Configs[descriptionConfigString] != nil {
+		releaseConfig.Description = r.Configs[descriptionConfigString].(string)
+	}
+
+	if r.Configs[forceUpdateConfigString] != nil {
+		releaseConfig.ForceUpdate = r.Configs[forceUpdateConfigString].(bool)
+	}
+
+	if r.Configs[recreatePodsConfigString] != nil {
+		releaseConfig.RecreatePods = r.Configs[recreatePodsConfigString].(bool)
+	}
+
+	if r.Configs[waitConfigString] != nil {
+		releaseConfig.Wait = r.Configs[waitConfigString].(bool)
+	}
+
+	if r.Configs[waitForJobsConfigString] != nil {
+		releaseConfig.WaitForJobs = r.Configs[waitForJobsConfigString].(bool)
+	}
+
+	if r.Configs[replaceConfigString] != nil {
+		releaseConfig.Replace = r.Configs[replaceConfigString].(bool)
+	}
+
+	if r.Configs[CreateNamespaceConfigString] != nil {
+		releaseConfig.CreateNamespace = r.Configs[CreateNamespaceConfigString].(bool)
+	}
+
+	_, err := m.helm.Release(releaseConfig)
+	if err != nil {
+		return domain.ResourceStatusError, nil
+	}
+
 	return domain.ResourceStatusCompleted, nil
 }
 
 func (m *Module) Validate(r *domain.Resource) error {
-	resourceLoader := gjs.NewGoLoader(r.Configs)
+	resourceLoader := gjs.NewGoLoader(r.Configs["values"])
 	result, err := m.schema.Validate(resourceLoader)
 	if err != nil {
 		return fmt.Errorf("%w: %s", domain.ErrModuleConfigParseFailed, err)
