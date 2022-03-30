@@ -11,12 +11,12 @@ import (
 
 // Custom errors which can be used by multiple DB vendors
 var (
-	ErrResourceAlreadyExists = errors.New("resource already exists")
-	ErrResourceNotFound      = errors.New("no resource(s) found")
-	ErrModuleAlreadyExists   = errors.New("module already exists")
-	ErrModuleNotFound        = errors.New("no module(s) found")
-	ErrProviderAlreadyExists = errors.New("provider already exists")
-	ErrProviderNotFound      = errors.New("no provider(s) found")
+	ResourceAlreadyExistsError = errors.New("resource already exists")
+	ResourceNotFoundError      = errors.New("no resource(s) found")
+	ModuleAlreadyExistsError   = errors.New("module already exists")
+	ModuleNotFoundError        = errors.New("no module(s) found")
+	ProviderAlreadyExistsError = errors.New("provider already exists")
+	ProviderNotFoundError      = errors.New("no provider(s) found")
 )
 
 var ResourceRepositoryName = "resources"
