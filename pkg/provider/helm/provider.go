@@ -10,15 +10,15 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-type providerConfig struct {
+type ProviderConfig struct {
 	// HelmDriver - The backend storage driver. Values are - configmap, secret, memory, sql
 	HelmDriver string `default:"secret"`
 	// Kubernetes configuration.
 	Kubernetes KubernetesConfig
 }
 
-func DefaultProviderConfig() *providerConfig {
-	defaultProviderConfig := new(providerConfig)
+func DefaultProviderConfig() *ProviderConfig {
+	defaultProviderConfig := new(ProviderConfig)
 	defaults.SetDefaults(defaultProviderConfig)
 	return defaultProviderConfig
 }
@@ -41,11 +41,11 @@ type KubernetesConfig struct {
 }
 
 type Provider struct {
-	config      *providerConfig
+	config      *ProviderConfig
 	cliSettings *cli.EnvSettings
 }
 
-func NewProvider(config *providerConfig) *Provider {
+func NewProvider(config *ProviderConfig) *Provider {
 	return &Provider{config: config, cliSettings: cli.New()}
 }
 
@@ -79,4 +79,14 @@ func (p *Provider) getActionConfiguration(namespace string) (*action.Configurati
 		return nil, err
 	}
 	return actionConfig, nil
+}
+
+func ToKubeConfig(providerConfig map[string]interface{}) KubernetesConfig {
+	return KubernetesConfig{
+		Host:                 providerConfig["host"].(string),
+		Insecure:             providerConfig["insecure"].(bool),
+		ClientCertificate:    providerConfig["clientCertificate"].(string),
+		ClientKey:            providerConfig["clientKey"].(string),
+		ClusterCACertificate: providerConfig["clusterCACertificate"].(string),
+	}
 }

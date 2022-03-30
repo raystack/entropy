@@ -3,16 +3,18 @@ package app
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/odpf/entropy/modules/firehose"
 	"github.com/odpf/entropy/modules/log"
 	"github.com/odpf/entropy/pkg/module"
+	"github.com/odpf/entropy/pkg/provider/helm"
 	"github.com/odpf/entropy/pkg/resource"
 	"github.com/odpf/entropy/store"
 	"github.com/odpf/entropy/store/inmemory"
 	"github.com/odpf/entropy/store/mongodb"
-	"net/http"
-	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
@@ -32,6 +34,8 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
+
+var providerURN = "provider_name-kubernetes"
 
 // Config contains the application configuration
 type Config struct {
@@ -72,14 +76,31 @@ func RunServer(c *Config) error {
 		mongoStore.Collection(store.ResourceRepositoryName),
 	)
 
-	moduleRepository := inmemory.NewModuleRepository()
+	providerRepository := mongodb.NewProviderRepository(
+		mongoStore.Collection(store.ProviderRepositoryName),
+	)
 
+	moduleRepository := inmemory.NewModuleRepository()
 	err = moduleRepository.Register(log.New(loggerInstance))
 	if err != nil {
 		return err
 	}
 
-	err = moduleRepository.Register(firehose.New())
+	providerFetched, err := providerRepository.GetByURN(providerURN)
+	if err != nil {
+		return err
+	}
+	providerConfig := providerFetched.Configs
+
+	kubeConfig := helm.ToKubeConfig(providerConfig)
+
+	helmConfig := &helm.ProviderConfig{
+		Kubernetes: kubeConfig,
+	}
+
+	hp := helm.NewProvider(helmConfig)
+
+	err = moduleRepository.Register(firehose.New(hp))
 	if err != nil {
 		return err
 	}
@@ -160,5 +181,19 @@ func RunMigrations(c *Config) error {
 		mongoStore.Collection(store.ResourceRepositoryName),
 	)
 
-	return resourceRepository.Migrate()
+	providerRepository := mongodb.NewProviderRepository(
+		mongoStore.Collection(store.ProviderRepositoryName),
+	)
+
+	err = resourceRepository.Migrate()
+	if err != nil {
+		return err
+	}
+
+	err = providerRepository.Migrate()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

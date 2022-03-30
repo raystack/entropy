@@ -11,13 +11,16 @@ import (
 
 // Custom errors which can be used by multiple DB vendors
 var (
-	ResourceAlreadyExistsError = errors.New("resource already exists")
-	ResourceNotFoundError      = errors.New("no resource(s) found")
-	ModuleAlreadyExistsError   = errors.New("module already exists")
-	ModuleNotFoundError        = errors.New("no module(s) found")
+	ErrResourceAlreadyExists = errors.New("resource already exists")
+	ErrResourceNotFound      = errors.New("no resource(s) found")
+	ErrModuleAlreadyExists   = errors.New("module already exists")
+	ErrModuleNotFound        = errors.New("no module(s) found")
+	ErrProviderAlreadyExists = errors.New("provider already exists")
+	ErrProviderNotFound      = errors.New("no provider(s) found")
 )
 
 var ResourceRepositoryName = "resources"
+var ProviderRepositoryName = "providers"
 
 type ResourceRepository interface {
 	Create(r *domain.Resource) error
@@ -26,6 +29,12 @@ type ResourceRepository interface {
 	Migrate() error
 	List(filter map[string]string) ([]*domain.Resource, error)
 	Delete(urn string) error
+}
+
+type ProviderRepository interface {
+	Create(r *domain.Resource) error
+	GetByURN(urn string) (*domain.Resource, error)
+	Migrate() error
 }
 
 type ModuleRepository interface {
