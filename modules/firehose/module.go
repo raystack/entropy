@@ -9,6 +9,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/pkg/provider/helm"
+	"github.com/odpf/entropy/store/mongodb"
 	gjs "github.com/xeipuuv/gojsonschema"
 )
 
@@ -248,27 +249,37 @@ const configSchemaString = `
 `
 
 type Module struct {
-	schema *gjs.Schema
-	helm   *helm.Provider
+	schema             *gjs.Schema
+	providerRepository *mongodb.ProviderRepository
 }
 
 func (m *Module) ID() string {
 	return "firehose"
 }
 
-func New(helm *helm.Provider) *Module {
+func New(providerRepository *mongodb.ProviderRepository) *Module {
 	schemaLoader := gjs.NewStringLoader(configSchemaString)
 	schema, err := gjs.NewSchema(schemaLoader)
 	if err != nil {
 		return nil
 	}
 	return &Module{
-		schema: schema,
-		helm:   helm,
+		schema:             schema,
+		providerRepository: providerRepository,
 	}
 }
 
 func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
+	kubeProviderConfig, err := m.providerRepository.GetConfigByURN(r.Providers["kubernetes"].Urn)
+	if err != nil {
+		return domain.ResourceStatusError, err
+	}
+	kubeConfig := helm.ToKubeConfig(kubeProviderConfig)
+	helmConfig := &helm.ProviderConfig{
+		Kubernetes: kubeConfig,
+	}
+	helmProvider := helm.NewProvider(helmConfig)
+
 	v := reflect.ValueOf(r.Configs[valuesConfigString])
 	var values = make(map[string]interface{})
 	if v.Kind() == reflect.Map {
@@ -338,7 +349,7 @@ func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
 		releaseConfig.CreateNamespace = r.Configs[CreateNamespaceConfigString].(bool)
 	}
 
-	_, err := m.helm.Release(releaseConfig)
+	_, err = helmProvider.Release(releaseConfig)
 	if err != nil {
 		return domain.ResourceStatusError, nil
 	}

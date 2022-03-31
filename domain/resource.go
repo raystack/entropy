@@ -23,6 +23,7 @@ type Resource struct {
 	Kind      string                 `bson:"kind"`
 	Configs   map[string]interface{} `bson:"configs"`
 	Labels    map[string]string      `bson:"labels"`
+	Providers map[string]Provider    `bson:"providers"`
 	Status    ResourceStatus         `bson:"status"`
 	CreatedAt time.Time              `bson:"created_at"`
 	UpdatedAt time.Time              `bson:"updated_at"`
