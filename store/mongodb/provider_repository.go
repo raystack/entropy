@@ -40,7 +40,7 @@ func (rc *ProviderRepository) Create(Provider *domain.Provider) error {
 	return nil
 }
 
-func (rc *ProviderRepository) GetByURN(urn string) (*domain.Provider, error) {
+func (rc *ProviderRepository) GetConfigByURN(urn string) (map[string]interface{}, error) {
 	res := &domain.Provider{}
 	err := rc.collection.FindOne(context.TODO(), map[string]interface{}{"urn": urn}).Decode(res)
 	if err != nil {
@@ -49,5 +49,5 @@ func (rc *ProviderRepository) GetByURN(urn string) (*domain.Provider, error) {
 		}
 		return nil, err
 	}
-	return res, nil
+	return res.Configs, nil
 }
