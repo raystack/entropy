@@ -3,7 +3,6 @@ package handlersv1
 import (
 	"context"
 	"errors"
-
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/pkg/module"
 	"github.com/odpf/entropy/pkg/provider"
@@ -182,6 +181,33 @@ func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1
 	return response, nil
 }
 
+func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream entropyv1beta1.ResourceService_GetLogServer) error {
+	ctx := stream.Context()
+	res, err := server.resourceService.GetResource(ctx, request.GetUrn())
+	if err != nil {
+		if errors.Is(err, store.ErrResourceNotFound) {
+			return status.Error(codes.NotFound, "could not find resource with given urn")
+		}
+		return ErrInternal
+	}
+	logChunks, err := server.moduleService.Log(ctx, res, request.GetFilter())
+	if err != nil {
+		return ErrInternal
+	}
+	for logChunk := range logChunks {
+		err := stream.Send(&entropyv1beta1.GetLogResponse{
+			Chunk: &entropyv1beta1.LogChunk{
+				Data:   logChunk.Data,
+				Labels: logChunk.Labels,
+			},
+		})
+		if err != nil {
+			return ErrInternal
+		}
+	}
+	return nil
+}
+
 func (server APIServer) CreateProvider(ctx context.Context, request *entropyv1beta1.CreateProviderRequest) (*entropyv1beta1.CreateProviderResponse, error) {
 	pro := providerFromProto(request.Provider)
 	pro.Urn = domain.GenerateProviderUrn(pro)
@@ -211,7 +237,7 @@ func (server APIServer) ListProviders(ctx context.Context, request *entropyv1bet
 	if err != nil {
 		return nil, ErrInternal
 	}
-	
+
 	for _, pro := range providers {
 		responseProvider, err := providerToProto(pro)
 		if err != nil {
@@ -219,7 +245,7 @@ func (server APIServer) ListProviders(ctx context.Context, request *entropyv1bet
 		}
 		responseProviders = append(responseProviders, responseProvider)
 	}
-	
+
 	response := entropyv1beta1.ListProvidersResponse{
 		Providers: responseProviders,
 	}

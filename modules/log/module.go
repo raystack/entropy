@@ -1,6 +1,7 @@
 package log
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -8,6 +9,8 @@ import (
 	"github.com/odpf/entropy/domain"
 	gjs "github.com/xeipuuv/gojsonschema"
 	"go.uber.org/zap"
+
+	"time"
 )
 
 type Level string
@@ -29,10 +32,14 @@ const configSchemaString = `
     "log_level": {
       "type": "string",
       "enum": ["ERROR", "WARN", "INFO", "DEBUG"]
+    },
+    "delay_ms": {
+      "type": "integer"
     }
   },
   "required": [
-    "log_level"
+    "log_level",
+    "delay_ms"
   ]
 }
 `
@@ -59,7 +66,7 @@ func New(logger *zap.Logger) *Module {
 }
 
 func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
-	switch r.Configs[levelConfigString].(Level) {
+	switch Level(r.Configs[levelConfigString].(string)) {
 	case LevelError:
 		m.logger.Sugar().Error(r)
 	case LevelWarn:
@@ -97,6 +104,26 @@ func (m *Module) Act(r *domain.Resource, action string, params map[string]interf
 		r.Configs[levelConfigString] = increaseLogLevel(r.Configs[levelConfigString].(Level))
 	}
 	return r.Configs, nil
+}
+
+func (m *Module) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (chan domain.LogChunk, error) {
+	delay := int(r.Configs["delay_ms"].(float64))
+	logs := make(chan domain.LogChunk)
+	go func() {
+		defer close(logs)
+		for {
+			select {
+			case logs <- domain.LogChunk{
+				Data:   []byte(fmt.Sprintf("%v", r)),
+				Labels: map[string]string{"resource": r.Urn},
+			}:
+				time.Sleep(time.Millisecond * time.Duration(delay))
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return logs, nil
 }
 
 func increaseLogLevel(currentLevel Level) Level {
