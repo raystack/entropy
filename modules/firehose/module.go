@@ -254,7 +254,7 @@ func (m *Module) Validate(r *domain.Resource) error {
 	resourceLoader := gjs.NewGoLoader(r.Configs)
 	result, err := m.schema.Validate(resourceLoader)
 	if err != nil {
-		return fmt.Errorf("%w: %s", domain.ModuleConfigParseFailed, err)
+		return fmt.Errorf("%w: %s", domain.ErrModuleConfigParseFailed, err)
 	}
 	if !result.Valid() {
 		var errorStrings []string

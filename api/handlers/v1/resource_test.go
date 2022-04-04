@@ -239,7 +239,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 		}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(domain.ModuleConfigParseFailed)
+		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(domain.ErrModuleConfigParseFailed)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.CreateResource(ctx, request)
@@ -460,7 +460,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 			}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(domain.ModuleConfigParseFailed)
+		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(domain.ErrModuleConfigParseFailed)
 
 		server := NewApiServer(resourceService, moduleService)
 		got, err := server.UpdateResource(ctx, request)

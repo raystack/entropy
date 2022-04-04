@@ -196,7 +196,7 @@ func (server APIServer) validateResource(ctx context.Context, res *domain.Resour
 		if errors.Is(err, store.ErrModuleNotFound) {
 			return status.Errorf(codes.InvalidArgument, "failed to find module to deploy this kind")
 		}
-		if errors.Is(err, domain.ModuleConfigParseFailed) {
+		if errors.Is(err, domain.ErrModuleConfigParseFailed) {
 			return status.Errorf(codes.InvalidArgument, "failed to parse configs")
 		}
 		return status.Errorf(codes.InvalidArgument, err.Error())
