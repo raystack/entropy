@@ -10,6 +10,7 @@ import (
 	"github.com/odpf/entropy/modules/firehose"
 	"github.com/odpf/entropy/modules/log"
 	"github.com/odpf/entropy/pkg/module"
+	"github.com/odpf/entropy/pkg/provider"
 	"github.com/odpf/entropy/pkg/resource"
 	"github.com/odpf/entropy/store"
 	"github.com/odpf/entropy/store/inmemory"
@@ -91,6 +92,7 @@ func RunServer(c *Config) error {
 
 	resourceService := resource.NewService(resourceRepository)
 	moduleService := module.NewService(moduleRepository)
+	providerService := provider.NewService(providerRepository)
 
 	muxServer, err := server.NewMux(server.Config{
 		Port: c.Service.Port,
@@ -121,6 +123,11 @@ func RunServer(c *Config) error {
 		return err
 	}
 
+	err = gw.RegisterHandler(ctx, entropyv1beta1.RegisterProviderServiceHandlerFromEndpoint)
+	if err != nil {
+		return err
+	}
+
 	muxServer.SetGateway("/api", gw)
 
 	muxServer.RegisterService(
@@ -129,7 +136,12 @@ func RunServer(c *Config) error {
 	)
 	muxServer.RegisterService(
 		&entropyv1beta1.ResourceService_ServiceDesc,
-		handlersv1.NewApiServer(resourceService, moduleService),
+		handlersv1.NewApiServer(resourceService, moduleService, providerService),
+	)
+
+	muxServer.RegisterService(
+		&entropyv1beta1.ProviderService_ServiceDesc,
+		handlersv1.NewApiServer(resourceService, moduleService, providerService),
 	)
 
 	muxServer.RegisterHandler("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

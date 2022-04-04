@@ -8,7 +8,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/odpf/entropy/domain"
-	"github.com/odpf/entropy/pkg/provider/helm"
+	"github.com/odpf/entropy/plugins/providers/helm"
 	"github.com/odpf/entropy/store/mongodb"
 	gjs "github.com/xeipuuv/gojsonschema"
 )
@@ -28,6 +28,7 @@ const (
 	replaceConfigString         = "replace"
 	descriptionConfigString     = "description"
 	CreateNamespaceConfigString = "create_namespace"
+	KUBERNETES                  = "kubernetes"
 )
 
 const configSchemaString = `
@@ -270,95 +271,45 @@ func New(providerRepository *mongodb.ProviderRepository) *Module {
 }
 
 func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
-	kubeProviderConfig, err := m.providerRepository.GetConfigByURN(r.Providers["kubernetes"].Urn)
-	if err != nil {
-		return domain.ResourceStatusError, err
-	}
-	kubeConfig := helm.ToKubeConfig(kubeProviderConfig)
-	helmConfig := &helm.ProviderConfig{
-		Kubernetes: kubeConfig,
-	}
-	helmProvider := helm.NewProvider(helmConfig)
-
-	v := reflect.ValueOf(r.Configs[valuesConfigString])
-	var values = make(map[string]interface{})
-	if v.Kind() == reflect.Map {
-		for _, key := range v.MapKeys() {
-			strct := v.MapIndex(key)
-			values[key.String()] = strct.Interface()
+	for _, p := range r.Providers {
+		provider, err := m.providerRepository.GetByURN(p.Urn)
+		if err != nil {
+			return domain.ResourceStatusError, err
 		}
-	}
 
-	var rc helm.ReleaseConfig
-	if err := mapstructure.Decode(r.Configs, &rc); err != nil {
-		return domain.ResourceStatusError, err
-	}
+		if provider.Kind == KUBERNETES {
+			releaseConfig := helm.DefaultReleaseConfig()
+			var values = make(map[string]interface{})
 
-	releaseConfig := helm.DefaultReleaseConfig()
-	releaseConfig.Values = values
+			kubeConfig := helm.ToKubeConfig(provider.Configs)
+			helmConfig := &helm.ProviderConfig{
+				Kubernetes: kubeConfig,
+			}
+			helmProvider := helm.NewProvider(helmConfig)
 
-	if r.Configs[nameConfigString] != nil {
-		releaseConfig.Name = r.Configs[nameConfigString].(string)
-	}
+			v := reflect.ValueOf(r.Configs[valuesConfigString])
+			if err := mapstructure.Decode(v, &values); err != nil {
+				return domain.ResourceStatusError, err
+			}
+			releaseConfig.Values = values
 
-	if r.Configs[repositoryConfigString] != nil {
-		releaseConfig.Repository = r.Configs[repositoryConfigString].(string)
-	}
+			err := mapstructure.Decode(r.Configs, &releaseConfig)
+			if err != nil {
+				return domain.ResourceStatusError, err
+			}
 
-	if r.Configs[chartConfigString] != nil {
-		releaseConfig.Chart = r.Configs[chartConfigString].(string)
-	}
-
-	if r.Configs[versionConfigString] != nil {
-		releaseConfig.Version = r.Configs[versionConfigString].(string)
-	}
-
-	if r.Configs[namespaceConfigString] != nil {
-		releaseConfig.Namespace = r.Configs[namespaceConfigString].(string)
-	}
-
-	if r.Configs[timeoutConfigString] != nil {
-		releaseConfig.Timeout = r.Configs[timeoutConfigString].(int)
-	}
-
-	if r.Configs[descriptionConfigString] != nil {
-		releaseConfig.Description = r.Configs[descriptionConfigString].(string)
-	}
-
-	if r.Configs[forceUpdateConfigString] != nil {
-		releaseConfig.ForceUpdate = r.Configs[forceUpdateConfigString].(bool)
-	}
-
-	if r.Configs[recreatePodsConfigString] != nil {
-		releaseConfig.RecreatePods = r.Configs[recreatePodsConfigString].(bool)
-	}
-
-	if r.Configs[waitConfigString] != nil {
-		releaseConfig.Wait = r.Configs[waitConfigString].(bool)
-	}
-
-	if r.Configs[waitForJobsConfigString] != nil {
-		releaseConfig.WaitForJobs = r.Configs[waitForJobsConfigString].(bool)
-	}
-
-	if r.Configs[replaceConfigString] != nil {
-		releaseConfig.Replace = r.Configs[replaceConfigString].(bool)
-	}
-
-	if r.Configs[CreateNamespaceConfigString] != nil {
-		releaseConfig.CreateNamespace = r.Configs[CreateNamespaceConfigString].(bool)
-	}
-
-	_, err = helmProvider.Release(releaseConfig)
-	if err != nil {
-		return domain.ResourceStatusError, nil
+			_, err = helmProvider.Release(releaseConfig)
+			if err != nil {
+				return domain.ResourceStatusError, nil
+			}
+		}
 	}
 
 	return domain.ResourceStatusCompleted, nil
 }
 
 func (m *Module) Validate(r *domain.Resource) error {
-	resourceLoader := gjs.NewGoLoader(r.Configs["values"])
+	resourceLoader := gjs.NewGoLoader(r.Configs[valuesConfigString])
 	result, err := m.schema.Validate(resourceLoader)
 	if err != nil {
 		return fmt.Errorf("%w: %s", domain.ModuleConfigParseFailed, err)

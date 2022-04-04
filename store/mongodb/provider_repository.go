@@ -40,14 +40,30 @@ func (rc *ProviderRepository) Create(Provider *domain.Provider) error {
 	return nil
 }
 
-func (rc *ProviderRepository) GetConfigByURN(urn string) (map[string]interface{}, error) {
-	res := &domain.Provider{}
-	err := rc.collection.FindOne(context.TODO(), map[string]interface{}{"urn": urn}).Decode(res)
+func (rc *ProviderRepository) GetByURN(urn string) (*domain.Provider, error) {
+	pro := &domain.Provider{}
+	err := rc.collection.FindOne(context.TODO(), map[string]interface{}{"urn": urn}).Decode(pro)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, fmt.Errorf("%w: %s", store.ProviderNotFoundError, err)
 		}
 		return nil, err
 	}
-	return res.Configs, nil
+	return pro, nil
+}
+
+func (rc *ProviderRepository) List(filter map[string]string) ([]*domain.Provider, error) {
+	var pro []*domain.Provider
+	cur, err := rc.collection.Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+	err = cur.All(context.TODO(), &pro)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return pro, nil
+		}
+		return nil, err
+	}
+	return pro, nil
 }
