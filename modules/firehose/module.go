@@ -14,21 +14,8 @@ import (
 )
 
 const (
-	nameConfigString            = "name"
-	repositoryConfigString      = "repository"
-	chartConfigString           = "chart"
-	versionConfigString         = "version"
-	valuesConfigString          = "values"
-	namespaceConfigString       = "namespace"
-	timeoutConfigString         = "timeout"
-	forceUpdateConfigString     = "force_update"
-	recreatePodsConfigString    = "recreate_pods"
-	waitConfigString            = "wait"
-	waitForJobsConfigString     = "wait_for_jobs"
-	replaceConfigString         = "replace"
-	descriptionConfigString     = "description"
-	CreateNamespaceConfigString = "create_namespace"
-	KUBERNETES                  = "kubernetes"
+	valuesConfigString = "values"
+	KUBERNETES         = "kubernetes"
 )
 
 const configSchemaString = `
