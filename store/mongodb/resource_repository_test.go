@@ -2,14 +2,15 @@ package mongodb
 
 import (
 	"errors"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestNewResourceRepository(t *testing.T) {
@@ -94,7 +95,7 @@ func TestResourceRepository_Create(t *testing.T) {
 					UpdatedAt: time.Now(),
 				}}
 			},
-			wantErr: store.ResourceAlreadyExistsError,
+			wantErr: store.ErrResourceAlreadyExists,
 		},
 	}
 	for _, tt := range tests {
@@ -152,7 +153,7 @@ func TestResourceRepository_GetByURN(t *testing.T) {
 			fields:  func(mt *mtest.T) fields { return fields{mt.Coll} },
 			args:    func(mt *mtest.T) args { return args{"p-testdata-gl-unknown-log"} },
 			want:    func(mt *mtest.T) *domain.Resource { return nil },
-			wantErr: store.ResourceNotFoundError,
+			wantErr: store.ErrResourceNotFound,
 		},
 	}
 	for _, tt := range tests {

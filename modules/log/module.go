@@ -3,10 +3,11 @@ package log
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/odpf/entropy/domain"
 	gjs "github.com/xeipuuv/gojsonschema"
 	"go.uber.org/zap"
-	"strings"
 )
 
 type Level string
@@ -77,7 +78,7 @@ func (m *Module) Validate(r *domain.Resource) error {
 	resourceLoader := gjs.NewGoLoader(r.Configs)
 	result, err := m.schema.Validate(resourceLoader)
 	if err != nil {
-		return fmt.Errorf("%w: %s", domain.ModuleConfigParseFailed, err)
+		return fmt.Errorf("%w: %s", domain.ErrModuleConfigParseFailed, err)
 	}
 	if !result.Valid() {
 		var errorStrings []string

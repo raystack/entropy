@@ -3,14 +3,15 @@ package resource
 import (
 	"context"
 	"errors"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/mocks"
 	"github.com/odpf/entropy/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestService_CreateResource(t *testing.T) {
@@ -76,10 +77,10 @@ func TestService_CreateResource(t *testing.T) {
 			Labels:  map[string]string{},
 		}
 		want := (*domain.Resource)(nil)
-		wantErr := store.ResourceAlreadyExistsError
+		wantErr := store.ErrResourceAlreadyExists
 		mockRepo.EXPECT().Create(mock.Anything).Run(func(r *domain.Resource) {
 			assert.Equal(t, domain.ResourceStatusPending, r.Status)
-		}).Return(store.ResourceAlreadyExistsError).Once()
+		}).Return(store.ErrResourceAlreadyExists).Once()
 
 		s := NewService(mockRepo)
 		got, err := s.CreateResource(context.Background(), argResource)
@@ -158,11 +159,11 @@ func TestService_UpdateResource(t *testing.T) {
 		mockRepo := &mocks.ResourceRepository{}
 
 		want := (*domain.Resource)(nil)
-		wantErr := store.ResourceNotFoundError
+		wantErr := store.ErrResourceNotFound
 
 		mockRepo.EXPECT().
 			Update(mock.Anything).
-			Return(store.ResourceNotFoundError).
+			Return(store.ErrResourceNotFound).
 			Once()
 
 		s := NewService(mockRepo)
@@ -236,11 +237,11 @@ func TestService_GetResource(t *testing.T) {
 		mockRepo := &mocks.ResourceRepository{}
 
 		want := (*domain.Resource)(nil)
-		wantErr := store.ResourceNotFoundError
+		wantErr := store.ErrResourceNotFound
 
 		mockRepo.EXPECT().
 			GetByURN(mock.Anything).
-			Return(nil, store.ResourceNotFoundError).
+			Return(nil, store.ErrResourceNotFound).
 			Once()
 
 		s := NewService(mockRepo)

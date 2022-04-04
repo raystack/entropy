@@ -5,7 +5,7 @@ package domain
 import "errors"
 
 var (
-	ModuleConfigParseFailed = errors.New("unable to load and validate config")
+	ErrModuleConfigParseFailed = errors.New("unable to load and validate config")
 )
 
 type Module interface {

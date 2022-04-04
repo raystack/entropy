@@ -2,11 +2,12 @@ package inmemory
 
 import (
 	"errors"
+	"reflect"
+	"testing"
+
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/modules/log"
 	"github.com/odpf/entropy/store"
-	"reflect"
-	"testing"
 )
 
 func TestModuleRepository_Get(t *testing.T) {
@@ -48,7 +49,7 @@ func TestModuleRepository_Get(t *testing.T) {
 				id: "notlog",
 			},
 			want:    nil,
-			wantErr: store.ModuleNotFoundError,
+			wantErr: store.ErrModuleNotFound,
 		},
 	}
 	for _, tt := range tests {
@@ -102,7 +103,7 @@ func TestModuleRepository_Register(t *testing.T) {
 			args: args{
 				module: mod,
 			},
-			wantErr: store.ModuleAlreadyExistsError,
+			wantErr: store.ErrModuleAlreadyExists,
 		},
 	}
 	for _, tt := range tests {
