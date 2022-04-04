@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"strings"
+
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/odpf/entropy/domain"
 	gjs "github.com/xeipuuv/gojsonschema"
@@ -44,6 +47,11 @@ const configSchemaString = `
 }
 `
 
+type config struct {
+	LogLevel Level `mapstructure:"log_level"`
+	DelayMs  int   `mapstructure:"delay_ms"`
+}
+
 type Module struct {
 	schema *gjs.Schema
 	logger *zap.Logger
@@ -66,7 +74,11 @@ func New(logger *zap.Logger) *Module {
 }
 
 func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
-	switch Level(r.Configs[levelConfigString].(string)) {
+	var cfg config
+	if err := mapstructure.Decode(r.Configs, &cfg); err != nil {
+		return domain.ResourceStatusError, errors.New("unable to parse configs")
+	}
+	switch cfg.LogLevel {
 	case LevelError:
 		m.logger.Sugar().Error(r)
 	case LevelWarn:
@@ -107,7 +119,10 @@ func (m *Module) Act(r *domain.Resource, action string, params map[string]interf
 }
 
 func (m *Module) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (chan domain.LogChunk, error) {
-	delay := int(r.Configs["delay_ms"].(float64))
+	var cfg config
+	if err := mapstructure.Decode(r.Configs, &cfg); err != nil {
+		return nil, errors.New("unable to parse configs")
+	}
 	logs := make(chan domain.LogChunk)
 	go func() {
 		defer close(logs)
@@ -117,7 +132,7 @@ func (m *Module) Log(ctx context.Context, r *domain.Resource, filter map[string]
 				Data:   []byte(fmt.Sprintf("%v", r)),
 				Labels: map[string]string{"resource": r.Urn},
 			}:
-				time.Sleep(time.Millisecond * time.Duration(delay))
+				time.Sleep(time.Millisecond * time.Duration(cfg.DelayMs))
 			case <-ctx.Done():
 				return
 			}
