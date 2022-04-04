@@ -16,9 +16,9 @@ type Provider struct {
 	UpdatedAt time.Time              `bson:"updated_at"`
 }
 
-func GenerateProviderUrn(res *Provider) string {
+func GenerateProviderUrn(pro *Provider) string {
 	return strings.Join([]string{
-		sanitizeString(res.Parent),
-		sanitizeString(res.Name),
+		sanitizeString(pro.Parent),
+		sanitizeString(pro.Name),
 	}, "-")
 }

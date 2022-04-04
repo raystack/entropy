@@ -32,8 +32,9 @@ type ResourceRepository interface {
 }
 
 type ProviderRepository interface {
-	Create(r *domain.Resource) error
-	GetByURN(urn string) (*domain.Resource, error)
+	Create(r *domain.Provider) error
+	GetByURN(urn string) (*domain.Provider, error)
+	List(filter map[string]string) ([]*domain.Provider, error)
 	Migrate() error
 }
 

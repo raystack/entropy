@@ -16,6 +16,11 @@ const (
 	ResourceStatusCompleted   ResourceStatus = "STATUS_COMPLETED"
 )
 
+type ProviderSelector struct {
+	Urn    string `bson:"urn"`
+	Target string `bson:"target"`
+}
+
 type Resource struct {
 	Urn       string                 `bson:"urn"`
 	Name      string                 `bson:"name"`
@@ -23,7 +28,7 @@ type Resource struct {
 	Kind      string                 `bson:"kind"`
 	Configs   map[string]interface{} `bson:"configs"`
 	Labels    map[string]string      `bson:"labels"`
-	Providers map[string]Provider    `bson:"providers"`
+	Providers []ProviderSelector     `bson:"providers"`
 	Status    ResourceStatus         `bson:"status"`
 	CreatedAt time.Time              `bson:"created_at"`
 	UpdatedAt time.Time              `bson:"updated_at"`
