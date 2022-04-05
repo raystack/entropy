@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/pkg/module"
 	"github.com/odpf/entropy/pkg/provider"
@@ -336,17 +335,12 @@ func providerSelectorFromProto(ps []*entropyv1beta1.ProviderSelector) []domain.P
 }
 
 func providerFromProto(pro *entropyv1beta1.Provider) *domain.Provider {
-	var conf map[string]interface{}
-	err := mapstructure.Decode(pro.GetConfigs(), &conf)
-	if err != nil {
-		return nil
-	}
 	return &domain.Provider{
 		Urn:     pro.GetUrn(),
 		Name:    pro.GetName(),
 		Parent:  pro.GetParent(),
 		Kind:    pro.GetKind(),
-		Configs: conf,
+		Configs: pro.GetConfigs().GetStructValue().AsMap(),
 		Labels:  pro.GetLabels(),
 	}
 }

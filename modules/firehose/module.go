@@ -3,7 +3,6 @@ package firehose
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -266,19 +265,12 @@ func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
 
 		if provider.Kind == KUBERNETES {
 			releaseConfig := helm.DefaultReleaseConfig()
-			var values = make(map[string]interface{})
 
 			kubeConfig := helm.ToKubeConfig(provider.Configs)
 			helmConfig := &helm.ProviderConfig{
 				Kubernetes: kubeConfig,
 			}
 			helmProvider := helm.NewProvider(helmConfig)
-
-			v := reflect.ValueOf(r.Configs[valuesConfigString])
-			if err := mapstructure.Decode(v, &values); err != nil {
-				return domain.ResourceStatusError, err
-			}
-			releaseConfig.Values = values
 
 			err := mapstructure.Decode(r.Configs, &releaseConfig)
 			if err != nil {
