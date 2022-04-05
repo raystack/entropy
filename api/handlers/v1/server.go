@@ -3,7 +3,6 @@ package handlersv1
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/odpf/entropy/domain"
@@ -342,7 +341,6 @@ func providerFromProto(pro *entropyv1beta1.Provider) *domain.Provider {
 	if err != nil {
 		return nil
 	}
-	fmt.Printf("pro.GetConfigs(): %v\n", pro.GetConfigs())
 	return &domain.Provider{
 		Urn:     pro.GetUrn(),
 		Name:    pro.GetName(),
