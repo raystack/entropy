@@ -191,7 +191,7 @@ func (server APIServer) CreateProvider(ctx context.Context, request *entropyv1be
 
 	createdProvider, err := server.providerService.CreateProvider(ctx, pro)
 	if err != nil {
-		if errors.Is(err, store.ProviderAlreadyExistsError) {
+		if errors.Is(err, store.ErrProviderAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, "provider already exists")
 		}
 		return nil, ErrInternal

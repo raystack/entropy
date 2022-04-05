@@ -33,7 +33,7 @@ func (rc *ProviderRepository) Create(Provider *domain.Provider) error {
 	_, err := rc.collection.InsertOne(context.TODO(), Provider)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return fmt.Errorf("%w: %s", store.ProviderAlreadyExistsError, err)
+			return fmt.Errorf("%w: %s", store.ErrProviderAlreadyExists, err)
 		}
 		return err
 	}
@@ -45,7 +45,7 @@ func (rc *ProviderRepository) GetByURN(urn string) (*domain.Provider, error) {
 	err := rc.collection.FindOne(context.TODO(), map[string]interface{}{"urn": urn}).Decode(pro)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, fmt.Errorf("%w: %s", store.ProviderNotFoundError, err)
+			return nil, fmt.Errorf("%w: %s", store.ErrProviderNotFound, err)
 		}
 		return nil, err
 	}
