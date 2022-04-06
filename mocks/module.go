@@ -151,15 +151,15 @@ func (_c *Module_ID_Call) Return(_a0 string) *Module_ID_Call {
 }
 
 // Log provides a mock function with given fields: ctx, r, filter
-func (_m *Module) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (chan domain.LogChunk, error) {
+func (_m *Module) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (<-chan domain.LogChunk, error) {
 	ret := _m.Called(ctx, r, filter)
 
-	var r0 chan domain.LogChunk
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.Resource, map[string]string) chan domain.LogChunk); ok {
+	var r0 <-chan domain.LogChunk
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Resource, map[string]string) <-chan domain.LogChunk); ok {
 		r0 = rf(ctx, r, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(chan domain.LogChunk)
+			r0 = ret.Get(0).(<-chan domain.LogChunk)
 		}
 	}
 
@@ -193,7 +193,7 @@ func (_c *Module_Log_Call) Run(run func(ctx context.Context, r *domain.Resource,
 	return _c
 }
 
-func (_c *Module_Log_Call) Return(_a0 chan domain.LogChunk, _a1 error) *Module_Log_Call {
+func (_c *Module_Log_Call) Return(_a0 <-chan domain.LogChunk, _a1 error) *Module_Log_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }

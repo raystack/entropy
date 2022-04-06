@@ -16,7 +16,7 @@ type Module interface {
 	Apply(r *Resource) (ResourceStatus, error)
 	Validate(r *Resource) error
 	Act(r *Resource, action string, params map[string]interface{}) (map[string]interface{}, error)
-	Log(ctx context.Context, r *Resource, filter map[string]string) (chan LogChunk, error)
+	Log(ctx context.Context, r *Resource, filter map[string]string) (<-chan LogChunk, error)
 }
 
 type LogChunk struct {

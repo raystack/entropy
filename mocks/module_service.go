@@ -72,15 +72,15 @@ func (_c *ModuleService_Act_Call) Return(_a0 map[string]interface{}, _a1 error) 
 }
 
 // Log provides a mock function with given fields: ctx, r, filter
-func (_m *ModuleService) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (chan domain.LogChunk, error) {
+func (_m *ModuleService) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (<-chan domain.LogChunk, error) {
 	ret := _m.Called(ctx, r, filter)
 
-	var r0 chan domain.LogChunk
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.Resource, map[string]string) chan domain.LogChunk); ok {
+	var r0 <-chan domain.LogChunk
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Resource, map[string]string) <-chan domain.LogChunk); ok {
 		r0 = rf(ctx, r, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(chan domain.LogChunk)
+			r0 = ret.Get(0).(<-chan domain.LogChunk)
 		}
 	}
 
@@ -114,7 +114,7 @@ func (_c *ModuleService_Log_Call) Run(run func(ctx context.Context, r *domain.Re
 	return _c
 }
 
-func (_c *ModuleService_Log_Call) Return(_a0 chan domain.LogChunk, _a1 error) *ModuleService_Log_Call {
+func (_c *ModuleService_Log_Call) Return(_a0 <-chan domain.LogChunk, _a1 error) *ModuleService_Log_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }

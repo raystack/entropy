@@ -12,7 +12,7 @@ type ServiceInterface interface {
 	Sync(ctx context.Context, r *domain.Resource) (*domain.Resource, error)
 	Validate(ctx context.Context, r *domain.Resource) error
 	Act(ctx context.Context, r *domain.Resource, action string, params map[string]interface{}) (map[string]interface{}, error)
-	Log(ctx context.Context, r *domain.Resource, filter map[string]string) (chan domain.LogChunk, error)
+	Log(ctx context.Context, r *domain.Resource, filter map[string]string) (<-chan domain.LogChunk, error)
 }
 
 type Service struct {
@@ -57,7 +57,7 @@ func (s *Service) Act(ctx context.Context, r *domain.Resource, action string, pa
 	return output, nil
 }
 
-func (s *Service) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (chan domain.LogChunk, error) {
+func (s *Service) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (<-chan domain.LogChunk, error) {
 	module, err := s.moduleRepository.Get(r.Kind)
 	if err != nil {
 		return nil, err

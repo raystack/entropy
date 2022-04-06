@@ -364,6 +364,6 @@ func (m *Module) Act(r *domain.Resource, action string, params map[string]interf
 	return r.Configs, nil
 }
 
-func (m *Module) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (chan domain.LogChunk, error) {
+func (m *Module) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (<-chan domain.LogChunk, error) {
 	return nil, errors.New("firehose module method Logs not implemented")
 }

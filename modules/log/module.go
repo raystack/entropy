@@ -118,7 +118,7 @@ func (m *Module) Act(r *domain.Resource, action string, params map[string]interf
 	return r.Configs, nil
 }
 
-func (m *Module) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (chan domain.LogChunk, error) {
+func (m *Module) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (<-chan domain.LogChunk, error) {
 	var cfg config
 	if err := mapstructure.Decode(r.Configs, &cfg); err != nil {
 		return nil, errors.New("unable to parse configs")

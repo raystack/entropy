@@ -332,7 +332,7 @@ func TestService_Log(t *testing.T) {
 		fields  fields
 		args    args
 		setup   func(*testing.T)
-		want    func(*testing.T, chan domain.LogChunk) bool
+		want    func(*testing.T, <-chan domain.LogChunk) bool
 		wantErr error
 	}{
 		{
@@ -361,7 +361,7 @@ func TestService_Log(t *testing.T) {
 				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
 				mockModule.EXPECT().Log(mock.Anything, mock.Anything, map[string]string{}).Return(make(chan domain.LogChunk), nil)
 			},
-			want: func(t *testing.T, chunks chan domain.LogChunk) bool {
+			want: func(t *testing.T, chunks <-chan domain.LogChunk) bool {
 				return assert.NotNil(t, chunks)
 			},
 			wantErr: nil,
