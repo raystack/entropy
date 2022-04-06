@@ -20,13 +20,13 @@ var ErrChartNotApplication = errors.New("helm chart is not an application chart"
 
 type ReleaseConfig struct {
 	// Name - Release Name
-	Name string `json:"name" mapstructure:"name" valid:"required"`
+	Name string `json:"name" mapstructure:"name"`
 	// Repository - Repository where to locate the requested chart. If is a URL the chart is installed without installing the repository.
-	Repository string `json:"repository" mapstructure:"repository" valid:"required"`
+	Repository string `json:"repository" mapstructure:"repository" default:"https://odpf.github.io/charts/"`
 	// Chart - Chart name to be installed. A path may be used.
-	Chart string `json:"chart" mapstructure:"chart" valid:"required"`
+	Chart string `json:"chart" mapstructure:"chart" default:"firehose"`
 	// Version - Specify the exact chart version to install. If this is not specified, the latest version is installed.
-	Version string `json:"version" mapstructure:"version"`
+	Version string `json:"version" mapstructure:"version" default:"0.1.1"`
 	// Values - Map of values in to pass to helm.
 	Values map[string]interface{} `json:"values" mapstructure:"values"`
 	// Namespace - Namespace to install the release into.
@@ -46,7 +46,8 @@ type ReleaseConfig struct {
 	// Description - Add a custom description
 	Description string `json:"description" mapstructure:"description"`
 	// CreateNamespace - Create the namespace if it does not exist
-	CreateNamespace bool `json:"create_namespace" mapstructure:"create_namespace" default:"false"`
+	CreateNamespace bool   `json:"create_namespace" mapstructure:"create_namespace" default:"false"`
+	State           string `json:"state" mapstructure:"state"`
 }
 
 func DefaultReleaseConfig() *ReleaseConfig {
