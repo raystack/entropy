@@ -1,18 +1,11 @@
-package cmd
+package main
 
 import (
-	"github.com/odpf/entropy/app"
 	"github.com/odpf/salt/config"
 	"github.com/spf13/cobra"
-)
 
-func init() {
-	rootCmd.AddCommand(&cobra.Command{
-		Use:   "migrate",
-		Short: "Run DB migrations",
-		RunE:  migrate,
-	})
-}
+	"github.com/odpf/entropy/app"
+)
 
 func migrate(cmd *cobra.Command, args []string) error {
 	var c app.Config
