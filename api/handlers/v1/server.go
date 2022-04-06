@@ -211,6 +211,7 @@ func (server APIServer) ListProviders(ctx context.Context, request *entropyv1bet
 	if err != nil {
 		return nil, ErrInternal
 	}
+	
 	for _, pro := range providers {
 		responseProvider, err := providerToProto(pro)
 		if err != nil {
@@ -218,9 +219,7 @@ func (server APIServer) ListProviders(ctx context.Context, request *entropyv1bet
 		}
 		responseProviders = append(responseProviders, responseProvider)
 	}
-	if err != nil {
-		return nil, ErrInternal
-	}
+	
 	response := entropyv1beta1.ListProvidersResponse{
 		Providers: responseProviders,
 	}
