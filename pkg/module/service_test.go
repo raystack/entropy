@@ -325,6 +325,8 @@ func TestService_Log(t *testing.T) {
 
 	mockModule := &mocks.Module{}
 	mockModule.EXPECT().ID().Return("mock")
+	mockModuleLogger := &mocks.ModuleLogger{}
+	mockModuleLogger.EXPECT().ID().Return("mock")
 	mockModuleRepo := &mocks.ModuleRepository{}
 
 	tests := []struct {
@@ -336,7 +338,7 @@ func TestService_Log(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "test streaming logs",
+			name: "test log streaming not supported",
 			fields: fields{
 				moduleRepository: mockModuleRepo,
 			},
@@ -359,7 +361,37 @@ func TestService_Log(t *testing.T) {
 			},
 			setup: func(t *testing.T) {
 				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
-				mockModule.EXPECT().Log(mock.Anything, mock.Anything, map[string]string{}).Return(make(chan domain.LogChunk), nil)
+			},
+			want: func(t *testing.T, chunks <-chan domain.LogChunk) bool {
+				return assert.Nil(t, chunks)
+			},
+			wantErr: ErrModuleLogStreamingNotSupported,
+		},
+		{
+			name: "test log streaming",
+			fields: fields{
+				moduleRepository: mockModuleRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+				r: &domain.Resource{
+					Urn:    "p-testdata-gl-testing-mock",
+					Name:   "testing",
+					Parent: "p-testdata-gl",
+					Kind:   "mock",
+					Configs: map[string]interface{}{
+						"mock": true,
+					},
+					Labels:    nil,
+					Status:    "COMPLETED",
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+				filter: map[string]string{},
+			},
+			setup: func(t *testing.T) {
+				mockModuleRepo.EXPECT().Get("mock").Return(mockModuleLogger, nil).Once()
+				mockModuleLogger.EXPECT().Log(mock.Anything, mock.Anything, map[string]string{}).Return(make(chan domain.LogChunk), nil)
 			},
 			want: func(t *testing.T, chunks <-chan domain.LogChunk) bool {
 				return assert.NotNil(t, chunks)

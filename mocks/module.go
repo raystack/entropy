@@ -3,8 +3,6 @@
 package mocks
 
 import (
-	context "context"
-
 	domain "github.com/odpf/entropy/domain"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -147,54 +145,6 @@ func (_c *Module_ID_Call) Run(run func()) *Module_ID_Call {
 
 func (_c *Module_ID_Call) Return(_a0 string) *Module_ID_Call {
 	_c.Call.Return(_a0)
-	return _c
-}
-
-// Log provides a mock function with given fields: ctx, r, filter
-func (_m *Module) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (<-chan domain.LogChunk, error) {
-	ret := _m.Called(ctx, r, filter)
-
-	var r0 <-chan domain.LogChunk
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.Resource, map[string]string) <-chan domain.LogChunk); ok {
-		r0 = rf(ctx, r, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(<-chan domain.LogChunk)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *domain.Resource, map[string]string) error); ok {
-		r1 = rf(ctx, r, filter)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Module_Log_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Log'
-type Module_Log_Call struct {
-	*mock.Call
-}
-
-// Log is a helper method to define mock.On call
-//  - ctx context.Context
-//  - r *domain.Resource
-//  - filter map[string]string
-func (_e *Module_Expecter) Log(ctx interface{}, r interface{}, filter interface{}) *Module_Log_Call {
-	return &Module_Log_Call{Call: _e.mock.On("Log", ctx, r, filter)}
-}
-
-func (_c *Module_Log_Call) Run(run func(ctx context.Context, r *domain.Resource, filter map[string]string)) *Module_Log_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*domain.Resource), args[2].(map[string]string))
-	})
-	return _c
-}
-
-func (_c *Module_Log_Call) Return(_a0 <-chan domain.LogChunk, _a1 error) *Module_Log_Call {
-	_c.Call.Return(_a0, _a1)
 	return _c
 }
 

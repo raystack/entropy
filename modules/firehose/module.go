@@ -1,7 +1,6 @@
 package firehose
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -362,8 +361,4 @@ func (m *Module) Validate(r *domain.Resource) error {
 
 func (m *Module) Act(r *domain.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
 	return r.Configs, nil
-}
-
-func (m *Module) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (<-chan domain.LogChunk, error) {
-	return nil, errors.New("firehose module method Logs not implemented")
 }

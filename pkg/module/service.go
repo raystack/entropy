@@ -4,8 +4,13 @@ package module
 
 import (
 	"context"
+	"errors"
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/store"
+)
+
+var (
+	ErrModuleLogStreamingNotSupported = errors.New("log streaming is not supported for this module")
 )
 
 type ServiceInterface interface {
@@ -62,9 +67,16 @@ func (s *Service) Log(ctx context.Context, r *domain.Resource, filter map[string
 	if err != nil {
 		return nil, err
 	}
-	logOutput, err := module.Log(ctx, r, filter)
+
+	moduleLogStream, supported := module.(domain.ModuleLogger)
+	if !supported {
+		return nil, ErrModuleLogStreamingNotSupported
+	}
+
+	logOutput, err := moduleLogStream.Log(ctx, r, filter)
 	if err != nil {
 		return nil, err
 	}
+
 	return logOutput, nil
 }
