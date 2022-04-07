@@ -102,7 +102,8 @@ func TestAPIServer_CreateResource(t *testing.T) {
 			UpdatedAt: createdAt,
 		}, nil)
 
-		server := NewApiServer(resourceService, moduleService)
+		providerService := &mocks.ProviderService{}
+		server := NewApiServer(resourceService, moduleService, providerService)
 		got, err := server.CreateResource(ctx, request)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("CreateResource() error = %v, wantErr %v", err, wantErr)
@@ -141,7 +142,8 @@ func TestAPIServer_CreateResource(t *testing.T) {
 		moduleService := &mocks.ModuleService{}
 		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(nil)
 
-		server := NewApiServer(resourceService, moduleService)
+		providerService := &mocks.ProviderService{}
+		server := NewApiServer(resourceService, moduleService, providerService)
 		got, err := server.CreateResource(ctx, request)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("CreateResource() error = %v, wantErr %v", err, wantErr)
@@ -191,7 +193,8 @@ func TestAPIServer_CreateResource(t *testing.T) {
 		moduleService := &mocks.ModuleService{}
 		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(store.ErrModuleNotFound)
 
-		server := NewApiServer(resourceService, moduleService)
+		providerService := &mocks.ProviderService{}
+		server := NewApiServer(resourceService, moduleService, providerService)
 		got, err := server.CreateResource(ctx, request)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("CreateResource() error = %v, wantErr %v", err, wantErr)
@@ -241,7 +244,8 @@ func TestAPIServer_CreateResource(t *testing.T) {
 		moduleService := &mocks.ModuleService{}
 		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(domain.ErrModuleConfigParseFailed)
 
-		server := NewApiServer(resourceService, moduleService)
+		providerService := &mocks.ProviderService{}
+		server := NewApiServer(resourceService, moduleService, providerService)
 		got, err := server.CreateResource(ctx, request)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("CreateResource() error = %v, wantErr %v", err, wantErr)
@@ -352,7 +356,8 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 			UpdatedAt: updatedAt,
 		}, nil)
 
-		server := NewApiServer(resourceService, moduleService)
+		providerService := &mocks.ProviderService{}
+		server := NewApiServer(resourceService, moduleService, providerService)
 		got, err := server.UpdateResource(ctx, request)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("UpdateResource() error = %v, wantErr %v", err, wantErr)
@@ -384,7 +389,8 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 
 		moduleService := &mocks.ModuleService{}
 
-		server := NewApiServer(resourceService, moduleService)
+		providerService := &mocks.ProviderService{}
+		server := NewApiServer(resourceService, moduleService, providerService)
 		got, err := server.UpdateResource(ctx, request)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("UpdateResource() error = %v, wantErr %v", err, wantErr)
@@ -423,7 +429,8 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 		moduleService := &mocks.ModuleService{}
 		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(store.ErrModuleNotFound)
 
-		server := NewApiServer(resourceService, moduleService)
+		providerService := &mocks.ProviderService{}
+		server := NewApiServer(resourceService, moduleService, providerService)
 		got, err := server.UpdateResource(ctx, request)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("UpdateResource() error = %v, wantErr %v", err, wantErr)
@@ -462,7 +469,8 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 		moduleService := &mocks.ModuleService{}
 		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(domain.ErrModuleConfigParseFailed)
 
-		server := NewApiServer(resourceService, moduleService)
+		providerService := &mocks.ProviderService{}
+		server := NewApiServer(resourceService, moduleService, providerService)
 		got, err := server.UpdateResource(ctx, request)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("UpdateResource() error = %v, wantErr %v", err, wantErr)
@@ -620,7 +628,8 @@ func TestAPIServer_DeleteResource(t *testing.T) {
 
 		moduleService := &mocks.ModuleService{}
 
-		server := NewApiServer(resourceService, moduleService)
+		providerService := &mocks.ProviderService{}
+		server := NewApiServer(resourceService, moduleService, providerService)
 		got, err := server.DeleteResource(ctx, request)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("DeleteResource() error = %v, wantErr %v", err, wantErr)
@@ -644,7 +653,8 @@ func TestAPIServer_DeleteResource(t *testing.T) {
 
 		moduleService := &mocks.ModuleService{}
 
-		server := NewApiServer(resourceService, moduleService)
+		providerService := &mocks.ProviderService{}
+		server := NewApiServer(resourceService, moduleService, providerService)
 		got, err := server.DeleteResource(ctx, request)
 		if errors.Is(err, nil) {
 			t.Errorf("DeleteResource() got nil error")

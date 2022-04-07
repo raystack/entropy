@@ -6,6 +6,7 @@ import (
 
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/pkg/module"
+	"github.com/odpf/entropy/pkg/provider"
 	"github.com/odpf/entropy/pkg/resource"
 	"github.com/odpf/entropy/store"
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
@@ -19,14 +20,17 @@ var ErrInternal = status.Error(codes.Internal, "internal server error")
 
 type APIServer struct {
 	entropyv1beta1.UnimplementedResourceServiceServer
+	entropyv1beta1.UnimplementedProviderServiceServer
 	resourceService resource.ServiceInterface
 	moduleService   module.ServiceInterface
+	providerService provider.ServiceInterface
 }
 
-func NewApiServer(resourceService resource.ServiceInterface, moduleService module.ServiceInterface) *APIServer {
+func NewApiServer(resourceService resource.ServiceInterface, moduleService module.ServiceInterface, providerService provider.ServiceInterface) *APIServer {
 	return &APIServer{
 		resourceService: resourceService,
 		moduleService:   moduleService,
+		providerService: providerService,
 	}
 }
 
@@ -178,6 +182,50 @@ func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1
 	return response, nil
 }
 
+func (server APIServer) CreateProvider(ctx context.Context, request *entropyv1beta1.CreateProviderRequest) (*entropyv1beta1.CreateProviderResponse, error) {
+	pro := providerFromProto(request.Provider)
+	pro.Urn = domain.GenerateProviderUrn(pro)
+	// TODO: add provider validation
+
+	createdProvider, err := server.providerService.CreateProvider(ctx, pro)
+	if err != nil {
+		if errors.Is(err, store.ErrProviderAlreadyExists) {
+			return nil, status.Error(codes.AlreadyExists, "provider already exists")
+		}
+		return nil, ErrInternal
+	}
+
+	responseProvider, err := providerToProto(createdProvider)
+	if err != nil {
+		return nil, ErrInternal
+	}
+	response := entropyv1beta1.CreateProviderResponse{
+		Provider: responseProvider,
+	}
+	return &response, nil
+}
+
+func (server APIServer) ListProviders(ctx context.Context, request *entropyv1beta1.ListProvidersRequest) (*entropyv1beta1.ListProvidersResponse, error) {
+	var responseProviders []*entropyv1beta1.Provider
+	providers, err := server.providerService.ListProviders(ctx, request.GetParent(), request.GetKind())
+	if err != nil {
+		return nil, ErrInternal
+	}
+	
+	for _, pro := range providers {
+		responseProvider, err := providerToProto(pro)
+		if err != nil {
+			return nil, ErrInternal
+		}
+		responseProviders = append(responseProviders, responseProvider)
+	}
+	
+	response := entropyv1beta1.ListProvidersResponse{
+		Providers: responseProviders,
+	}
+	return &response, nil
+}
+
 func (server APIServer) syncResource(ctx context.Context, updatedResource *domain.Resource) (*domain.Resource, error) {
 	syncedResource, err := server.moduleService.Sync(ctx, updatedResource)
 	if err != nil {
@@ -216,9 +264,40 @@ func resourceToProto(res *domain.Resource) (*entropyv1beta1.Resource, error) {
 		Kind:      res.Kind,
 		Configs:   conf,
 		Labels:    res.Labels,
+		Providers: resourceProvidersToProto(res.Providers),
 		Status:    resourceStatusToProto(string(res.Status)),
 		CreatedAt: timestamppb.New(res.CreatedAt),
 		UpdatedAt: timestamppb.New(res.UpdatedAt),
+	}, nil
+}
+
+func resourceProvidersToProto(ps []domain.ProviderSelector) []*entropyv1beta1.ProviderSelector {
+	var providerSelectors []*entropyv1beta1.ProviderSelector
+
+	for _, p := range ps {
+		selector := &entropyv1beta1.ProviderSelector{
+			Urn:    p.Urn,
+			Target: p.Target,
+		}
+		providerSelectors = append(providerSelectors, selector)
+	}
+	return providerSelectors
+}
+
+func providerToProto(pro *domain.Provider) (*entropyv1beta1.Provider, error) {
+	conf, err := structpb.NewValue(pro.Configs)
+	if err != nil {
+		return nil, err
+	}
+	return &entropyv1beta1.Provider{
+		Urn:       pro.Urn,
+		Name:      pro.Name,
+		Parent:    pro.Parent,
+		Kind:      pro.Kind,
+		Configs:   conf,
+		Labels:    pro.Labels,
+		CreatedAt: timestamppb.New(pro.CreatedAt),
+		UpdatedAt: timestamppb.New(pro.UpdatedAt),
 	}, nil
 }
 
@@ -231,11 +310,36 @@ func resourceStatusToProto(status string) entropyv1beta1.Resource_Status {
 
 func resourceFromProto(res *entropyv1beta1.Resource) *domain.Resource {
 	return &domain.Resource{
-		Urn:     res.GetUrn(),
-		Name:    res.GetName(),
-		Parent:  res.GetParent(),
-		Kind:    res.GetKind(),
-		Configs: res.GetConfigs().GetStructValue().AsMap(),
-		Labels:  res.GetLabels(),
+		Urn:       res.GetUrn(),
+		Name:      res.GetName(),
+		Parent:    res.GetParent(),
+		Kind:      res.GetKind(),
+		Configs:   res.GetConfigs().GetStructValue().AsMap(),
+		Labels:    res.GetLabels(),
+		Providers: providerSelectorFromProto(res.GetProviders()),
+	}
+}
+
+func providerSelectorFromProto(ps []*entropyv1beta1.ProviderSelector) []domain.ProviderSelector {
+	var providerSelectors []domain.ProviderSelector
+
+	for _, p := range ps {
+		selector := domain.ProviderSelector{
+			Urn:    p.GetUrn(),
+			Target: p.GetTarget(),
+		}
+		providerSelectors = append(providerSelectors, selector)
+	}
+	return providerSelectors
+}
+
+func providerFromProto(pro *entropyv1beta1.Provider) *domain.Provider {
+	return &domain.Provider{
+		Urn:     pro.GetUrn(),
+		Name:    pro.GetName(),
+		Parent:  pro.GetParent(),
+		Kind:    pro.GetKind(),
+		Configs: pro.GetConfigs().GetStructValue().AsMap(),
+		Labels:  pro.GetLabels(),
 	}
 }

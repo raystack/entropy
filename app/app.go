@@ -3,16 +3,18 @@ package app
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/odpf/entropy/modules/firehose"
 	"github.com/odpf/entropy/modules/log"
 	"github.com/odpf/entropy/pkg/module"
+	"github.com/odpf/entropy/pkg/provider"
 	"github.com/odpf/entropy/pkg/resource"
 	"github.com/odpf/entropy/store"
 	"github.com/odpf/entropy/store/inmemory"
 	"github.com/odpf/entropy/store/mongodb"
-	"net/http"
-	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
@@ -72,6 +74,10 @@ func RunServer(c *Config) error {
 		mongoStore.Collection(store.ResourceRepositoryName),
 	)
 
+	providerRepository := mongodb.NewProviderRepository(
+		mongoStore.Collection(store.ProviderRepositoryName),
+	)
+
 	moduleRepository := inmemory.NewModuleRepository()
 
 	err = moduleRepository.Register(log.New(loggerInstance))
@@ -79,13 +85,14 @@ func RunServer(c *Config) error {
 		return err
 	}
 
-	err = moduleRepository.Register(firehose.New())
+	err = moduleRepository.Register(firehose.New(providerRepository))
 	if err != nil {
 		return err
 	}
 
 	resourceService := resource.NewService(resourceRepository)
 	moduleService := module.NewService(moduleRepository)
+	providerService := provider.NewService(providerRepository)
 
 	muxServer, err := server.NewMux(server.Config{
 		Port: c.Service.Port,
@@ -116,6 +123,11 @@ func RunServer(c *Config) error {
 		return err
 	}
 
+	err = gw.RegisterHandler(ctx, entropyv1beta1.RegisterProviderServiceHandlerFromEndpoint)
+	if err != nil {
+		return err
+	}
+
 	muxServer.SetGateway("/api", gw)
 
 	muxServer.RegisterService(
@@ -124,7 +136,12 @@ func RunServer(c *Config) error {
 	)
 	muxServer.RegisterService(
 		&entropyv1beta1.ResourceService_ServiceDesc,
-		handlersv1.NewApiServer(resourceService, moduleService),
+		handlersv1.NewApiServer(resourceService, moduleService, providerService),
+	)
+
+	muxServer.RegisterService(
+		&entropyv1beta1.ProviderService_ServiceDesc,
+		handlersv1.NewApiServer(resourceService, moduleService, providerService),
 	)
 
 	muxServer.RegisterHandler("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -160,5 +177,19 @@ func RunMigrations(c *Config) error {
 		mongoStore.Collection(store.ResourceRepositoryName),
 	)
 
-	return resourceRepository.Migrate()
+	providerRepository := mongodb.NewProviderRepository(
+		mongoStore.Collection(store.ProviderRepositoryName),
+	)
+
+	err = resourceRepository.Migrate()
+	if err != nil {
+		return err
+	}
+
+	err = providerRepository.Migrate()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
