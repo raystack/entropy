@@ -22,11 +22,11 @@ type ReleaseConfig struct {
 	// Name - Release Name
 	Name string `json:"name" mapstructure:"name"`
 	// Repository - Repository where to locate the requested chart. If is a URL the chart is installed without installing the repository.
-	Repository string `json:"repository" mapstructure:"repository" default:"https://odpf.github.io/charts/"`
+	Repository string `json:"repository" mapstructure:"repository"`
 	// Chart - Chart name to be installed. A path may be used.
-	Chart string `json:"chart" mapstructure:"chart" default:"firehose"`
+	Chart string `json:"chart" mapstructure:"chart"`
 	// Version - Specify the exact chart version to install. If this is not specified, the latest version is installed.
-	Version string `json:"version" mapstructure:"version" default:"0.1.1"`
+	Version string `json:"version" mapstructure:"version"`
 	// Values - Map of values in to pass to helm.
 	Values map[string]interface{} `json:"values" mapstructure:"values"`
 	// Namespace - Namespace to install the release into.

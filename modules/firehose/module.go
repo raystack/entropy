@@ -13,8 +13,11 @@ import (
 )
 
 const (
-	releaseConfigString = "release_configs"
-	KUBERNETES          = "kubernetes"
+	releaseConfigString     = "release_configs"
+	KUBERNETES              = "kubernetes"
+	defaultRepositoryString = "https://odpf.github.io/charts/"
+	defaultChartString      = "firehose"
+	defaultVersionString    = "0.1.1"
 )
 
 const configSchemaString = `
@@ -316,18 +319,19 @@ func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
 
 		if provider.Kind == KUBERNETES {
 			releaseConfig := helm.DefaultReleaseConfig()
+			releaseConfig.Repository = defaultRepositoryString
+			releaseConfig.Chart = defaultChartString
+			releaseConfig.Version = defaultVersionString
+			err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig)
+			if err != nil {
+				return domain.ResourceStatusError, err
+			}
 
 			kubeConfig := helm.ToKubeConfig(provider.Configs)
 			helmConfig := &helm.ProviderConfig{
 				Kubernetes: kubeConfig,
 			}
 			helmProvider := helm.NewProvider(helmConfig)
-
-			err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig)
-			if err != nil {
-				return domain.ResourceStatusError, err
-			}
-
 			_, err = helmProvider.Release(releaseConfig)
 			if err != nil {
 				return domain.ResourceStatusError, nil
