@@ -14,6 +14,9 @@ import (
 
 const (
 	releaseConfigString     = "release_configs"
+	replicasString          = "replicas"
+	RUNNING                 = "RUNNING"
+	STOPPED                 = "STOPPED"
 	KUBERNETES              = "kubernetes"
 	defaultRepositoryString = "https://odpf.github.io/charts/"
 	defaultChartString      = "firehose"
@@ -318,11 +321,7 @@ func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
 		}
 
 		if provider.Kind == KUBERNETES {
-			releaseConfig := helm.DefaultReleaseConfig()
-			releaseConfig.Repository = defaultRepositoryString
-			releaseConfig.Chart = defaultChartString
-			releaseConfig.Version = defaultVersionString
-			err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig)
+			releaseConfig, err := getReleaseConfig(r)
 			if err != nil {
 				return domain.ResourceStatusError, err
 			}
@@ -360,5 +359,32 @@ func (m *Module) Validate(r *domain.Resource) error {
 }
 
 func (m *Module) Act(r *domain.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
+	releaseConfig, err := getReleaseConfig(r)
+	if err != nil {
+		return nil, err
+	}
+
+	switch action {
+	case "start":
+		releaseConfig.State = RUNNING
+	case "stop":
+		releaseConfig.State = STOPPED
+	case "scale":
+		releaseConfig.Values[replicasString] = params[replicasString]
+	}
+	r.Configs[releaseConfigString] = releaseConfig
 	return r.Configs, nil
+}
+
+func getReleaseConfig(r *domain.Resource) (*helm.ReleaseConfig, error) {
+	releaseConfig := helm.DefaultReleaseConfig()
+	releaseConfig.Repository = defaultRepositoryString
+	releaseConfig.Chart = defaultChartString
+	releaseConfig.Version = defaultVersionString
+	err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig)
+	if err != nil {
+		return releaseConfig, err
+	}
+
+	return releaseConfig, nil
 }
