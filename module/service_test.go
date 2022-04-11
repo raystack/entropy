@@ -1,4 +1,4 @@
-package module
+package module_test
 
 import (
 	"context"
@@ -7,30 +7,31 @@ import (
 	"testing"
 	"time"
 
-	"github.com/odpf/entropy/domain"
-	"github.com/odpf/entropy/mocks"
-	"github.com/odpf/entropy/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/odpf/entropy/mocks"
+	"github.com/odpf/entropy/module"
+	"github.com/odpf/entropy/resource"
 )
 
 func TestService_Sync(t *testing.T) {
 	type fields struct {
-		moduleRepository store.ModuleRepository
+		moduleRepository module.Repository
 	}
 	type args struct {
 		ctx context.Context
-		r   *domain.Resource
+		r   *resource.Resource
 	}
 	currentTime := time.Now()
-	r := &domain.Resource{
-		Urn:       "p-testdata-gl-testname-mock",
+	r := &resource.Resource{
+		URN:       "p-testdata-gl-testname-mock",
 		Name:      "testname",
 		Parent:    "p-testdata-gl",
 		Kind:      "mock",
 		Configs:   map[string]interface{}{},
 		Labels:    map[string]string{},
-		Status:    domain.ResourceStatusPending,
+		Status:    resource.StatusPending,
 		CreatedAt: currentTime,
 		UpdatedAt: currentTime,
 	}
@@ -45,13 +46,13 @@ func TestService_Sync(t *testing.T) {
 		setup   func(t *testing.T)
 		fields  fields
 		args    args
-		want    *domain.Resource
+		want    *resource.Resource
 		wantErr error
 	}{
 		{
 			name: "test sync completed",
 			setup: func(t *testing.T) {
-				mockModule.EXPECT().Apply(r).Return(domain.ResourceStatusCompleted, nil).Once()
+				mockModule.EXPECT().Apply(r).Return(resource.StatusCompleted, nil).Once()
 				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
 			},
 			fields: fields{
@@ -61,14 +62,14 @@ func TestService_Sync(t *testing.T) {
 				ctx: nil,
 				r:   r,
 			},
-			want: &domain.Resource{
-				Urn:       "p-testdata-gl-testname-mock",
+			want: &resource.Resource{
+				URN:       "p-testdata-gl-testname-mock",
 				Name:      "testname",
 				Parent:    "p-testdata-gl",
 				Kind:      "mock",
 				Configs:   map[string]interface{}{},
 				Labels:    map[string]string{},
-				Status:    domain.ResourceStatusCompleted,
+				Status:    resource.StatusCompleted,
 				CreatedAt: currentTime,
 				UpdatedAt: currentTime,
 			},
@@ -77,7 +78,7 @@ func TestService_Sync(t *testing.T) {
 		{
 			name: "test sync module not found error",
 			setup: func(t *testing.T) {
-				mockModuleRepo.EXPECT().Get("mock").Return(nil, store.ErrModuleNotFound).Once()
+				mockModuleRepo.EXPECT().Get("mock").Return(nil, module.ErrModuleNotFound).Once()
 			},
 			fields: fields{
 				moduleRepository: mockModuleRepo,
@@ -86,23 +87,23 @@ func TestService_Sync(t *testing.T) {
 				ctx: nil,
 				r:   r,
 			},
-			want: &domain.Resource{
-				Urn:       "p-testdata-gl-testname-mock",
+			want: &resource.Resource{
+				URN:       "p-testdata-gl-testname-mock",
 				Name:      "testname",
 				Parent:    "p-testdata-gl",
 				Kind:      "mock",
 				Configs:   map[string]interface{}{},
 				Labels:    map[string]string{},
-				Status:    domain.ResourceStatusError,
+				Status:    resource.StatusError,
 				CreatedAt: currentTime,
 				UpdatedAt: currentTime,
 			},
-			wantErr: store.ErrModuleNotFound,
+			wantErr: module.ErrModuleNotFound,
 		},
 		{
 			name: "test sync module error while applying",
 			setup: func(t *testing.T) {
-				mockModule.EXPECT().Apply(r).Return(domain.ResourceStatusError, applyFailedErr).Once()
+				mockModule.EXPECT().Apply(r).Return(resource.StatusError, applyFailedErr).Once()
 
 				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
 			},
@@ -113,14 +114,14 @@ func TestService_Sync(t *testing.T) {
 				ctx: nil,
 				r:   r,
 			},
-			want: &domain.Resource{
-				Urn:       "p-testdata-gl-testname-mock",
+			want: &resource.Resource{
+				URN:       "p-testdata-gl-testname-mock",
 				Name:      "testname",
 				Parent:    "p-testdata-gl",
 				Kind:      "mock",
 				Configs:   map[string]interface{}{},
 				Labels:    map[string]string{},
-				Status:    domain.ResourceStatusError,
+				Status:    resource.StatusError,
 				CreatedAt: currentTime,
 				UpdatedAt: currentTime,
 			},
@@ -129,10 +130,9 @@ func TestService_Sync(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Service{
-				moduleRepository: tt.fields.moduleRepository,
-			}
+			s := module.NewService(tt.fields.moduleRepository)
 			tt.setup(t)
+
 			got, err := s.Sync(tt.args.ctx, tt.args.r)
 			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("Sync() error = %v, wantErr %v", err, tt.wantErr)
@@ -147,22 +147,22 @@ func TestService_Sync(t *testing.T) {
 
 func TestService_Validate(t *testing.T) {
 	type fields struct {
-		moduleRepository store.ModuleRepository
+		moduleRepository module.Repository
 	}
 	type args struct {
 		ctx context.Context
-		r   *domain.Resource
+		r   *resource.Resource
 	}
 
 	currentTime := time.Now()
-	r := &domain.Resource{
-		Urn:       "p-testdata-gl-testname-mock",
+	r := &resource.Resource{
+		URN:       "p-testdata-gl-testname-mock",
 		Name:      "testname",
 		Parent:    "p-testdata-gl",
 		Kind:      "mock",
 		Configs:   map[string]interface{}{},
 		Labels:    map[string]string{},
-		Status:    domain.ResourceStatusPending,
+		Status:    resource.StatusPending,
 		CreatedAt: currentTime,
 		UpdatedAt: currentTime,
 	}
@@ -197,7 +197,7 @@ func TestService_Validate(t *testing.T) {
 		{
 			name: "test validate module not found error",
 			setup: func(t *testing.T) {
-				mockModuleRepo.EXPECT().Get("mock").Return(nil, store.ErrModuleNotFound).Once()
+				mockModuleRepo.EXPECT().Get("mock").Return(nil, module.ErrModuleNotFound).Once()
 			},
 			fields: fields{
 				moduleRepository: mockModuleRepo,
@@ -206,7 +206,7 @@ func TestService_Validate(t *testing.T) {
 				ctx: nil,
 				r:   r,
 			},
-			wantErr: store.ErrModuleNotFound,
+			wantErr: module.ErrModuleNotFound,
 		},
 		{
 			name: "test validation failed",
@@ -226,9 +226,7 @@ func TestService_Validate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Service{
-				moduleRepository: tt.fields.moduleRepository,
-			}
+			s := module.NewService(tt.fields.moduleRepository)
 			tt.setup(t)
 			if err := s.Validate(tt.args.ctx, tt.args.r); !errors.Is(err, tt.wantErr) {
 				t.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)
@@ -239,11 +237,11 @@ func TestService_Validate(t *testing.T) {
 
 func TestService_Act(t *testing.T) {
 	type fields struct {
-		moduleRepository store.ModuleRepository
+		moduleRepository module.Repository
 	}
 	type args struct {
 		ctx    context.Context
-		r      *domain.Resource
+		r      *resource.Resource
 		action string
 		params map[string]interface{}
 	}
@@ -267,8 +265,8 @@ func TestService_Act(t *testing.T) {
 			},
 			args: args{
 				ctx: nil,
-				r: &domain.Resource{
-					Urn:    "p-testdata-gl-testing-mock",
+				r: &resource.Resource{
+					URN:    "p-testdata-gl-testing-mock",
 					Name:   "testing",
 					Parent: "p-testdata-gl",
 					Kind:   "mock",
@@ -297,9 +295,7 @@ func TestService_Act(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Service{
-				moduleRepository: tt.fields.moduleRepository,
-			}
+			s := module.NewService(tt.fields.moduleRepository)
 			tt.setup(t)
 			got, err := s.Act(tt.args.ctx, tt.args.r, tt.args.action, tt.args.params)
 			if !errors.Is(err, tt.wantErr) {
@@ -315,17 +311,17 @@ func TestService_Act(t *testing.T) {
 
 func TestService_Log(t *testing.T) {
 	type fields struct {
-		moduleRepository store.ModuleRepository
+		moduleRepository module.Repository
 	}
 	type args struct {
 		ctx    context.Context
-		r      *domain.Resource
+		r      *resource.Resource
 		filter map[string]string
 	}
 
 	mockModule := &mocks.Module{}
 	mockModule.EXPECT().ID().Return("mock")
-	mockModuleLogger := &mocks.ModuleLogger{}
+	mockModuleLogger := &mocks.LoggableModule{}
 	mockModuleLogger.EXPECT().ID().Return("mock")
 	mockModuleRepo := &mocks.ModuleRepository{}
 
@@ -334,7 +330,7 @@ func TestService_Log(t *testing.T) {
 		fields  fields
 		args    args
 		setup   func(*testing.T)
-		want    func(*testing.T, <-chan domain.LogChunk) bool
+		want    func(*testing.T, <-chan module.LogChunk) bool
 		wantErr error
 	}{
 		{
@@ -344,8 +340,8 @@ func TestService_Log(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				r: &domain.Resource{
-					Urn:    "p-testdata-gl-testing-mock",
+				r: &resource.Resource{
+					URN:    "p-testdata-gl-testing-mock",
 					Name:   "testing",
 					Parent: "p-testdata-gl",
 					Kind:   "mock",
@@ -362,10 +358,10 @@ func TestService_Log(t *testing.T) {
 			setup: func(t *testing.T) {
 				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
 			},
-			want: func(t *testing.T, chunks <-chan domain.LogChunk) bool {
+			want: func(t *testing.T, chunks <-chan module.LogChunk) bool {
 				return assert.Nil(t, chunks)
 			},
-			wantErr: ErrModuleLogStreamingNotSupported,
+			wantErr: module.ErrLogStreamingUnsupported,
 		},
 		{
 			name: "test log streaming",
@@ -374,8 +370,8 @@ func TestService_Log(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				r: &domain.Resource{
-					Urn:    "p-testdata-gl-testing-mock",
+				r: &resource.Resource{
+					URN:    "p-testdata-gl-testing-mock",
 					Name:   "testing",
 					Parent: "p-testdata-gl",
 					Kind:   "mock",
@@ -391,9 +387,9 @@ func TestService_Log(t *testing.T) {
 			},
 			setup: func(t *testing.T) {
 				mockModuleRepo.EXPECT().Get("mock").Return(mockModuleLogger, nil).Once()
-				mockModuleLogger.EXPECT().Log(mock.Anything, mock.Anything, map[string]string{}).Return(make(chan domain.LogChunk), nil)
+				mockModuleLogger.EXPECT().Log(mock.Anything, mock.Anything, map[string]string{}).Return(make(chan module.LogChunk), nil)
 			},
-			want: func(t *testing.T, chunks <-chan domain.LogChunk) bool {
+			want: func(t *testing.T, chunks <-chan module.LogChunk) bool {
 				return assert.NotNil(t, chunks)
 			},
 			wantErr: nil,
@@ -402,9 +398,8 @@ func TestService_Log(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup(t)
-			s := &Service{
-				moduleRepository: tt.fields.moduleRepository,
-			}
+			s := module.NewService(tt.fields.moduleRepository)
+
 			got, err := s.Log(tt.args.ctx, tt.args.r, tt.args.filter)
 			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("Log() error = %v, wantErr %v", err, tt.wantErr)

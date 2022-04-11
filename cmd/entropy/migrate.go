@@ -36,12 +36,11 @@ func runMigrations(cfg mongodb.DBConfig) error {
 	}
 
 	resourceRepository := mongodb.NewResourceRepository(mongoStore.Collection(resourceRepoName))
-	providerRepository := mongodb.NewProviderRepository(mongoStore.Collection(providerRepoName))
-
 	if err = resourceRepository.Migrate(); err != nil {
 		return err
 	}
 
+	providerRepository := mongodb.NewProviderRepository(mongoStore.Collection(providerRepoName))
 	if err = providerRepository.Migrate(); err != nil {
 		return err
 	}

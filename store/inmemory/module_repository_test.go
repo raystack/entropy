@@ -5,14 +5,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/odpf/entropy/domain"
+	"github.com/odpf/entropy/module"
 	"github.com/odpf/entropy/modules/log"
-	"github.com/odpf/entropy/store"
 )
 
 func TestModuleRepository_Get(t *testing.T) {
 	type fields struct {
-		collection map[string]domain.Module
+		collection map[string]module.Module
 	}
 	type args struct {
 		id string
@@ -22,13 +21,13 @@ func TestModuleRepository_Get(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    domain.Module
+		want    module.Module
 		wantErr error
 	}{
 		{
 			name: "test get module from repository",
 			fields: fields{
-				collection: map[string]domain.Module{
+				collection: map[string]module.Module{
 					mod.ID(): mod,
 				},
 			},
@@ -41,7 +40,7 @@ func TestModuleRepository_Get(t *testing.T) {
 		{
 			name: "test get non-existent module from repository",
 			fields: fields{
-				collection: map[string]domain.Module{
+				collection: map[string]module.Module{
 					mod.ID(): mod,
 				},
 			},
@@ -49,7 +48,7 @@ func TestModuleRepository_Get(t *testing.T) {
 				id: "notlog",
 			},
 			want:    nil,
-			wantErr: store.ErrModuleNotFound,
+			wantErr: module.ErrModuleNotFound,
 		},
 	}
 	for _, tt := range tests {
@@ -71,10 +70,10 @@ func TestModuleRepository_Get(t *testing.T) {
 
 func TestModuleRepository_Register(t *testing.T) {
 	type fields struct {
-		collection map[string]domain.Module
+		collection map[string]module.Module
 	}
 	type args struct {
-		module domain.Module
+		module module.Module
 	}
 	mod := &log.Module{}
 	tests := []struct {
@@ -86,7 +85,7 @@ func TestModuleRepository_Register(t *testing.T) {
 		{
 			name: "test register module",
 			fields: fields{
-				collection: map[string]domain.Module{},
+				collection: map[string]module.Module{},
 			},
 			args: args{
 				module: mod,
@@ -96,14 +95,14 @@ func TestModuleRepository_Register(t *testing.T) {
 		{
 			name: "test register already added module",
 			fields: fields{
-				collection: map[string]domain.Module{
+				collection: map[string]module.Module{
 					mod.ID(): mod,
 				},
 			},
 			args: args{
 				module: mod,
 			},
-			wantErr: store.ErrModuleAlreadyExists,
+			wantErr: module.ErrModuleAlreadyExists,
 		},
 	}
 	for _, tt := range tests {

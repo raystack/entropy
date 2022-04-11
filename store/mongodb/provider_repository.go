@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/odpf/entropy/store"
-
-	"github.com/odpf/entropy/domain"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/odpf/entropy/provider"
 )
 
 type ProviderRepository struct {
@@ -25,35 +24,35 @@ func (rc *ProviderRepository) Migrate() error {
 	return createUniqueIndex(rc.collection, "urn", 1)
 }
 
-func (rc *ProviderRepository) Create(Provider *domain.Provider) error {
-	Provider.Urn = domain.GenerateProviderUrn(Provider)
+func (rc *ProviderRepository) Create(Provider *provider.Provider) error {
+	Provider.URN = provider.GenerateURN(*Provider)
 	Provider.CreatedAt = time.Now()
 	Provider.UpdatedAt = time.Now()
 
 	_, err := rc.collection.InsertOne(context.TODO(), Provider)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return fmt.Errorf("%w: %s", store.ErrProviderAlreadyExists, err)
+			return fmt.Errorf("%w: %s", provider.ErrProviderAlreadyExists, err)
 		}
 		return err
 	}
 	return nil
 }
 
-func (rc *ProviderRepository) GetByURN(urn string) (*domain.Provider, error) {
-	pro := &domain.Provider{}
+func (rc *ProviderRepository) GetByURN(urn string) (*provider.Provider, error) {
+	pro := &provider.Provider{}
 	err := rc.collection.FindOne(context.TODO(), map[string]interface{}{"urn": urn}).Decode(pro)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, fmt.Errorf("%w: %s", store.ErrProviderNotFound, err)
+			return nil, fmt.Errorf("%w: %s", provider.ErrProviderNotFound, err)
 		}
 		return nil, err
 	}
 	return pro, nil
 }
 
-func (rc *ProviderRepository) List(filter map[string]string) ([]*domain.Provider, error) {
-	var pro []*domain.Provider
+func (rc *ProviderRepository) List(filter map[string]string) ([]*provider.Provider, error) {
+	var pro []*provider.Provider
 	cur, err := rc.collection.Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err

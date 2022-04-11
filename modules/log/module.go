@@ -4,16 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"strings"
+	"time"
 
 	"github.com/mitchellh/mapstructure"
-
-	"github.com/odpf/entropy/domain"
 	gjs "github.com/xeipuuv/gojsonschema"
 	"go.uber.org/zap"
 
-	"time"
+	"github.com/odpf/entropy/module"
+	"github.com/odpf/entropy/resource"
 )
 
 type Level string
@@ -73,10 +72,10 @@ func New(logger *zap.Logger) *Module {
 	}
 }
 
-func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
+func (m *Module) Apply(r *resource.Resource) (resource.Status, error) {
 	var cfg config
 	if err := mapstructure.Decode(r.Configs, &cfg); err != nil {
-		return domain.ResourceStatusError, errors.New("unable to parse configs")
+		return resource.StatusError, errors.New("unable to parse configs")
 	}
 	switch cfg.LogLevel {
 	case LevelError:
@@ -88,16 +87,17 @@ func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
 	case LevelDebug:
 		m.logger.Sugar().Debug(r)
 	default:
-		return domain.ResourceStatusError, errors.New("unknown log level")
+		return resource.StatusError, errors.New("unknown log level")
 	}
-	return domain.ResourceStatusCompleted, nil
+
+	return resource.StatusCompleted, nil
 }
 
-func (m *Module) Validate(r *domain.Resource) error {
+func (m *Module) Validate(r *resource.Resource) error {
 	resourceLoader := gjs.NewGoLoader(r.Configs)
 	result, err := m.schema.Validate(resourceLoader)
 	if err != nil {
-		return fmt.Errorf("%w: %s", domain.ErrModuleConfigParseFailed, err)
+		return fmt.Errorf("%w: %s", module.ErrModuleConfigParseFailed, err)
 	}
 	if !result.Valid() {
 		var errorStrings []string
@@ -110,7 +110,7 @@ func (m *Module) Validate(r *domain.Resource) error {
 	return nil
 }
 
-func (m *Module) Act(r *domain.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
+func (m *Module) Act(r *resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
 	switch action {
 	case "escalate":
 		r.Configs[levelConfigString] = increaseLogLevel(r.Configs[levelConfigString].(Level))
@@ -118,19 +118,19 @@ func (m *Module) Act(r *domain.Resource, action string, params map[string]interf
 	return r.Configs, nil
 }
 
-func (m *Module) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (<-chan domain.LogChunk, error) {
+func (m *Module) Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<-chan module.LogChunk, error) {
 	var cfg config
 	if err := mapstructure.Decode(r.Configs, &cfg); err != nil {
 		return nil, errors.New("unable to parse configs")
 	}
-	logs := make(chan domain.LogChunk)
+	logs := make(chan module.LogChunk)
 	go func() {
 		defer close(logs)
 		for {
 			select {
-			case logs <- domain.LogChunk{
+			case logs <- module.LogChunk{
 				Data:   []byte(fmt.Sprintf("%v", r)),
-				Labels: map[string]string{"resource": r.Urn},
+				Labels: map[string]string{"resource": r.URN},
 			}:
 				time.Sleep(time.Millisecond * time.Duration(cfg.DelayMs))
 			case <-ctx.Done():

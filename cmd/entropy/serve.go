@@ -7,13 +7,13 @@ import (
 	"github.com/spf13/cobra"
 
 	entropyserver "github.com/odpf/entropy/internal/server"
+	"github.com/odpf/entropy/module"
 	"github.com/odpf/entropy/modules/firehose"
 	"github.com/odpf/entropy/modules/log"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
-	"github.com/odpf/entropy/pkg/module"
-	"github.com/odpf/entropy/pkg/provider"
-	"github.com/odpf/entropy/pkg/resource"
+	"github.com/odpf/entropy/provider"
+	"github.com/odpf/entropy/resource"
 	"github.com/odpf/entropy/store/inmemory"
 	"github.com/odpf/entropy/store/mongodb"
 )

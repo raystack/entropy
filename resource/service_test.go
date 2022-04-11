@@ -1,4 +1,4 @@
-package resource
+package resource_test
 
 import (
 	"context"
@@ -7,17 +7,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/odpf/entropy/domain"
-	"github.com/odpf/entropy/mocks"
-	"github.com/odpf/entropy/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/odpf/entropy/mocks"
+	"github.com/odpf/entropy/resource"
 )
 
 func TestService_CreateResource(t *testing.T) {
 	t.Run("test create new resource", func(t *testing.T) {
-		argResource := &domain.Resource{
-			Urn:     "p-testdata-gl-testname-log",
+		argResource := &resource.Resource{
+			URN:     "p-testdata-gl-testname-log",
 			Name:    "testname",
 			Parent:  "p-testdata-gl",
 			Kind:    "log",
@@ -25,37 +25,37 @@ func TestService_CreateResource(t *testing.T) {
 			Labels:  map[string]string{},
 		}
 		currentTime := time.Now()
-		want := &domain.Resource{
-			Urn:       "p-testdata-gl-testname-log",
+		want := &resource.Resource{
+			URN:       "p-testdata-gl-testname-log",
 			Name:      "testname",
 			Parent:    "p-testdata-gl",
 			Kind:      "log",
 			Configs:   map[string]interface{}{},
 			Labels:    map[string]string{},
-			Status:    domain.ResourceStatusPending,
+			Status:    resource.StatusPending,
 			CreatedAt: currentTime,
 			UpdatedAt: currentTime,
 		}
 		wantErr := error(nil)
 
 		mockRepo := &mocks.ResourceRepository{}
-		mockRepo.EXPECT().Create(mock.Anything).Run(func(r *domain.Resource) {
-			assert.Equal(t, domain.ResourceStatusPending, r.Status)
+		mockRepo.EXPECT().Create(mock.Anything).Run(func(r *resource.Resource) {
+			assert.Equal(t, resource.StatusPending, r.Status)
 		}).Return(nil).Once()
 
-		mockRepo.EXPECT().GetByURN("p-testdata-gl-testname-log").Return(&domain.Resource{
-			Urn:       "p-testdata-gl-testname-log",
+		mockRepo.EXPECT().GetByURN("p-testdata-gl-testname-log").Return(&resource.Resource{
+			URN:       "p-testdata-gl-testname-log",
 			Name:      "testname",
 			Parent:    "p-testdata-gl",
 			Kind:      "log",
 			Configs:   map[string]interface{}{},
 			Labels:    map[string]string{},
-			Status:    domain.ResourceStatusPending,
+			Status:    resource.StatusPending,
 			CreatedAt: currentTime,
 			UpdatedAt: currentTime,
 		}, nil).Once()
 
-		s := NewService(mockRepo)
+		s := resource.NewService(mockRepo)
 		got, err := s.CreateResource(context.Background(), argResource)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("CreateResource() error = %v, wantErr %v", err, wantErr)
@@ -68,21 +68,21 @@ func TestService_CreateResource(t *testing.T) {
 
 	t.Run("test create duplicate resource", func(t *testing.T) {
 		mockRepo := &mocks.ResourceRepository{}
-		argResource := &domain.Resource{
-			Urn:     "p-testdata-gl-testname-log",
+		argResource := &resource.Resource{
+			URN:     "p-testdata-gl-testname-log",
 			Name:    "testname",
 			Parent:  "p-testdata-gl",
 			Kind:    "log",
 			Configs: map[string]interface{}{},
 			Labels:  map[string]string{},
 		}
-		want := (*domain.Resource)(nil)
-		wantErr := store.ErrResourceAlreadyExists
-		mockRepo.EXPECT().Create(mock.Anything).Run(func(r *domain.Resource) {
-			assert.Equal(t, domain.ResourceStatusPending, r.Status)
-		}).Return(store.ErrResourceAlreadyExists).Once()
+		want := (*resource.Resource)(nil)
+		wantErr := resource.ErrResourceAlreadyExists
+		mockRepo.EXPECT().Create(mock.Anything).Run(func(r *resource.Resource) {
+			assert.Equal(t, resource.StatusPending, r.Status)
+		}).Return(resource.ErrResourceAlreadyExists).Once()
 
-		s := NewService(mockRepo)
+		s := resource.NewService(mockRepo)
 		got, err := s.CreateResource(context.Background(), argResource)
 		if !errors.Is(err, wantErr) {
 			t.Errorf("CreateResource() error = %v, wantErr %v", err, wantErr)
@@ -99,8 +99,8 @@ func TestService_UpdateResource(t *testing.T) {
 		mockRepo := &mocks.ResourceRepository{}
 		currentTime := time.Now()
 		updatedTime := time.Now()
-		want := &domain.Resource{
-			Urn:    "p-testdata-gl-testname-log",
+		want := &resource.Resource{
+			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "log",
@@ -108,20 +108,20 @@ func TestService_UpdateResource(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    map[string]string{},
-			Status:    domain.ResourceStatusPending,
+			Status:    resource.StatusPending,
 			CreatedAt: currentTime,
 			UpdatedAt: updatedTime,
 		}
 		wantErr := error(nil)
 
-		mockRepo.EXPECT().Update(mock.Anything).Run(func(r *domain.Resource) {
-			assert.Equal(t, "p-testdata-gl-testname-log", r.Urn)
-			assert.Equal(t, domain.ResourceStatusPending, r.Status)
+		mockRepo.EXPECT().Update(mock.Anything).Run(func(r *resource.Resource) {
+			assert.Equal(t, "p-testdata-gl-testname-log", r.URN)
+			assert.Equal(t, resource.StatusPending, r.Status)
 			assert.Equal(t, currentTime, r.CreatedAt)
 		}).Return(nil)
 
-		mockRepo.EXPECT().GetByURN("p-testdata-gl-testname-log").Return(&domain.Resource{
-			Urn:    "p-testdata-gl-testname-log",
+		mockRepo.EXPECT().GetByURN("p-testdata-gl-testname-log").Return(&resource.Resource{
+			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "log",
@@ -129,20 +129,20 @@ func TestService_UpdateResource(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    map[string]string{},
-			Status:    domain.ResourceStatusPending,
+			Status:    resource.StatusPending,
 			CreatedAt: currentTime,
 			UpdatedAt: updatedTime,
 		}, nil).Once()
 
-		s := NewService(mockRepo)
-		got, err := s.UpdateResource(context.Background(), &domain.Resource{
-			Urn:       "p-testdata-gl-testname-log",
+		s := resource.NewService(mockRepo)
+		got, err := s.UpdateResource(context.Background(), &resource.Resource{
+			URN:       "p-testdata-gl-testname-log",
 			Name:      "testname",
 			Parent:    "p-testdata-gl",
 			Kind:      "log",
 			Configs:   map[string]interface{}{},
 			Labels:    map[string]string{},
-			Status:    domain.ResourceStatusPending,
+			Status:    resource.StatusPending,
 			CreatedAt: currentTime,
 			UpdatedAt: currentTime,
 		})
@@ -158,23 +158,23 @@ func TestService_UpdateResource(t *testing.T) {
 	t.Run("test update non-existent resource", func(t *testing.T) {
 		mockRepo := &mocks.ResourceRepository{}
 
-		want := (*domain.Resource)(nil)
-		wantErr := store.ErrResourceNotFound
+		want := (*resource.Resource)(nil)
+		wantErr := resource.ErrResourceNotFound
 
 		mockRepo.EXPECT().
 			Update(mock.Anything).
-			Return(store.ErrResourceNotFound).
+			Return(resource.ErrResourceNotFound).
 			Once()
 
-		s := NewService(mockRepo)
-		got, err := s.UpdateResource(context.Background(), &domain.Resource{
-			Urn:       "p-testdata-gl-testname-log",
+		s := resource.NewService(mockRepo)
+		got, err := s.UpdateResource(context.Background(), &resource.Resource{
+			URN:       "p-testdata-gl-testname-log",
 			Name:      "testname",
 			Parent:    "p-testdata-gl",
 			Kind:      "log",
 			Configs:   map[string]interface{}{},
 			Labels:    map[string]string{},
-			Status:    domain.ResourceStatusPending,
+			Status:    resource.StatusPending,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		})
@@ -193,8 +193,8 @@ func TestService_GetResource(t *testing.T) {
 		mockRepo := &mocks.ResourceRepository{}
 		currentTime := time.Now()
 		updatedTime := time.Now()
-		want := &domain.Resource{
-			Urn:    "p-testdata-gl-testname-log",
+		want := &resource.Resource{
+			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "log",
@@ -202,14 +202,14 @@ func TestService_GetResource(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    map[string]string{},
-			Status:    domain.ResourceStatusPending,
+			Status:    resource.StatusPending,
 			CreatedAt: currentTime,
 			UpdatedAt: updatedTime,
 		}
 		wantErr := error(nil)
 
-		mockRepo.EXPECT().GetByURN("p-testdata-gl-testname-log").Return(&domain.Resource{
-			Urn:    "p-testdata-gl-testname-log",
+		mockRepo.EXPECT().GetByURN("p-testdata-gl-testname-log").Return(&resource.Resource{
+			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "log",
@@ -217,12 +217,12 @@ func TestService_GetResource(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    map[string]string{},
-			Status:    domain.ResourceStatusPending,
+			Status:    resource.StatusPending,
 			CreatedAt: currentTime,
 			UpdatedAt: updatedTime,
 		}, nil).Once()
 
-		s := NewService(mockRepo)
+		s := resource.NewService(mockRepo)
 		got, err := s.GetResource(context.Background(), "p-testdata-gl-testname-log")
 		if !errors.Is(err, wantErr) {
 			t.Errorf("GetResource() error = %v, wantErr %v", err, wantErr)
@@ -236,15 +236,15 @@ func TestService_GetResource(t *testing.T) {
 	t.Run("test get non-existent resource", func(t *testing.T) {
 		mockRepo := &mocks.ResourceRepository{}
 
-		want := (*domain.Resource)(nil)
-		wantErr := store.ErrResourceNotFound
+		want := (*resource.Resource)(nil)
+		wantErr := resource.ErrResourceNotFound
 
 		mockRepo.EXPECT().
 			GetByURN(mock.Anything).
-			Return(nil, store.ErrResourceNotFound).
+			Return(nil, resource.ErrResourceNotFound).
 			Once()
 
-		s := NewService(mockRepo)
+		s := resource.NewService(mockRepo)
 		got, err := s.GetResource(context.Background(), "p-testdata-gl-testname-log")
 		if !errors.Is(err, wantErr) {
 			t.Errorf("GetResource() error = %v, wantErr %v", err, wantErr)
@@ -261,8 +261,8 @@ func TestService_ListResources(t *testing.T) {
 		mockRepo := &mocks.ResourceRepository{}
 		currentTime := time.Now()
 		updatedTime := time.Now()
-		want := []*domain.Resource{{
-			Urn:    "p-testdata-gl-testname-log",
+		want := []*resource.Resource{{
+			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "log",
@@ -270,14 +270,14 @@ func TestService_ListResources(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    map[string]string{},
-			Status:    domain.ResourceStatusCompleted,
+			Status:    resource.StatusCompleted,
 			CreatedAt: currentTime,
 			UpdatedAt: updatedTime,
 		}}
 		wantErr := error(nil)
 
-		mockRepo.EXPECT().List(map[string]string{"parent": "p-testdata-gl", "kind": "log"}).Return([]*domain.Resource{{
-			Urn:    "p-testdata-gl-testname-log",
+		mockRepo.EXPECT().List(map[string]string{"parent": "p-testdata-gl", "kind": "log"}).Return([]*resource.Resource{{
+			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "log",
@@ -285,12 +285,12 @@ func TestService_ListResources(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    map[string]string{},
-			Status:    domain.ResourceStatusCompleted,
+			Status:    resource.StatusCompleted,
 			CreatedAt: currentTime,
 			UpdatedAt: updatedTime,
 		}}, nil).Once()
 
-		s := NewService(mockRepo)
+		s := resource.NewService(mockRepo)
 		got, err := s.ListResources(context.Background(), "p-testdata-gl", "log")
 		if !errors.Is(err, wantErr) {
 			t.Errorf("ListResources() error = %v, wantErr %v", err, wantErr)

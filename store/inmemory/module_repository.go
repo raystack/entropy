@@ -1,31 +1,30 @@
 package inmemory
 
 import (
-	"github.com/odpf/entropy/domain"
-	"github.com/odpf/entropy/store"
+	"github.com/odpf/entropy/module"
 )
 
 type ModuleRepository struct {
-	collection map[string]domain.Module
+	collection map[string]module.Module
 }
 
 func NewModuleRepository() *ModuleRepository {
 	return &ModuleRepository{
-		collection: map[string]domain.Module{},
+		collection: map[string]module.Module{},
 	}
 }
 
-func (mr *ModuleRepository) Register(module domain.Module) error {
-	if _, exists := mr.collection[module.ID()]; exists {
-		return store.ErrModuleAlreadyExists
+func (mr *ModuleRepository) Get(id string) (module.Module, error) {
+	if m, exists := mr.collection[id]; exists {
+		return m, nil
 	}
-	mr.collection[module.ID()] = module
+	return nil, module.ErrModuleNotFound
+}
+
+func (mr *ModuleRepository) Register(m module.Module) error {
+	if _, exists := mr.collection[m.ID()]; exists {
+		return module.ErrModuleAlreadyExists
+	}
+	mr.collection[m.ID()] = m
 	return nil
-}
-
-func (mr *ModuleRepository) Get(id string) (domain.Module, error) {
-	if module, exists := mr.collection[id]; exists {
-		return module, nil
-	}
-	return nil, store.ErrModuleNotFound
 }

@@ -7,9 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/odpf/entropy/domain"
-	"github.com/odpf/entropy/mocks"
-	"github.com/odpf/entropy/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
@@ -17,6 +14,10 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/odpf/entropy/mocks"
+	"github.com/odpf/entropy/module"
+	"github.com/odpf/entropy/resource"
 )
 
 func TestAPIServer_CreateResource(t *testing.T) {
@@ -53,10 +54,10 @@ func TestAPIServer_CreateResource(t *testing.T) {
 		}
 
 		resourceService := &mocks.ResourceService{}
-		resourceService.EXPECT().CreateResource(mock.Anything, mock.Anything).Run(func(ctx context.Context, res *domain.Resource) {
-			assert.Equal(t, "p-testdata-gl-testname-log", res.Urn)
-		}).Return(&domain.Resource{
-			Urn:    "p-testdata-gl-testname-log",
+		resourceService.EXPECT().CreateResource(mock.Anything, mock.Anything).Run(func(ctx context.Context, res *resource.Resource) {
+			assert.Equal(t, "p-testdata-gl-testname-log", res.URN)
+		}).Return(&resource.Resource{
+			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "log",
@@ -64,16 +65,16 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    nil,
-			Status:    domain.ResourceStatusPending,
+			Status:    resource.StatusPending,
 			CreatedAt: createdAt,
 			UpdatedAt: createdAt,
 		}, nil).Once()
 
-		resourceService.EXPECT().UpdateResource(mock.Anything, mock.Anything).Run(func(ctx context.Context, res *domain.Resource) {
-			assert.Equal(t, "p-testdata-gl-testname-log", res.Urn)
-			assert.Equal(t, domain.ResourceStatusCompleted, res.Status)
-		}).Return(&domain.Resource{
-			Urn:    "p-testdata-gl-testname-log",
+		resourceService.EXPECT().UpdateResource(mock.Anything, mock.Anything).Run(func(ctx context.Context, res *resource.Resource) {
+			assert.Equal(t, "p-testdata-gl-testname-log", res.URN)
+			assert.Equal(t, resource.StatusCompleted, res.Status)
+		}).Return(&resource.Resource{
+			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "log",
@@ -81,15 +82,15 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    nil,
-			Status:    domain.ResourceStatusCompleted,
+			Status:    resource.StatusCompleted,
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
 		}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
 		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(nil)
-		moduleService.EXPECT().Sync(mock.Anything, mock.Anything).Return(&domain.Resource{
-			Urn:    "p-testdata-gl-testname-log",
+		moduleService.EXPECT().Sync(mock.Anything, mock.Anything).Return(&resource.Resource{
+			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "log",
@@ -97,7 +98,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    nil,
-			Status:    domain.ResourceStatusCompleted,
+			Status:    resource.StatusCompleted,
 			CreatedAt: createdAt,
 			UpdatedAt: createdAt,
 		}, nil)
@@ -136,7 +137,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 
 		resourceService.EXPECT().
 			CreateResource(mock.Anything, mock.Anything).
-			Return(nil, store.ErrResourceAlreadyExists).
+			Return(nil, resource.ErrResourceAlreadyExists).
 			Once()
 
 		moduleService := &mocks.ModuleService{}
@@ -176,8 +177,8 @@ func TestAPIServer_CreateResource(t *testing.T) {
 
 		resourceService := &mocks.ResourceService{}
 
-		resourceService.EXPECT().CreateResource(mock.Anything, mock.Anything).Return(&domain.Resource{
-			Urn:    "p-testdata-gl-testname-unknown",
+		resourceService.EXPECT().CreateResource(mock.Anything, mock.Anything).Return(&resource.Resource{
+			URN:    "p-testdata-gl-testname-unknown",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "unkown",
@@ -185,13 +186,13 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    nil,
-			Status:    domain.ResourceStatusPending,
+			Status:    resource.StatusPending,
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
 		}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(store.ErrModuleNotFound)
+		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(module.ErrModuleNotFound)
 
 		providerService := &mocks.ProviderService{}
 		server := NewApiServer(resourceService, moduleService, providerService)
@@ -227,8 +228,8 @@ func TestAPIServer_CreateResource(t *testing.T) {
 
 		resourceService := &mocks.ResourceService{}
 
-		resourceService.EXPECT().CreateResource(mock.Anything, mock.Anything).Return(&domain.Resource{
-			Urn:    "p-testdata-gl-testname-unknown",
+		resourceService.EXPECT().CreateResource(mock.Anything, mock.Anything).Return(&resource.Resource{
+			URN:    "p-testdata-gl-testname-unknown",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "unkown",
@@ -236,13 +237,13 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    nil,
-			Status:    domain.ResourceStatusPending,
+			Status:    resource.StatusPending,
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
 		}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(domain.ErrModuleConfigParseFailed)
+		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(module.ErrModuleConfigParseFailed)
 
 		providerService := &mocks.ProviderService{}
 		server := NewApiServer(resourceService, moduleService, providerService)
@@ -288,8 +289,8 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 		resourceService := &mocks.ResourceService{}
 		resourceService.EXPECT().
 			GetResource(mock.Anything, "p-testdata-gl-testname-log").
-			Return(&domain.Resource{
-				Urn:    "p-testdata-gl-testname-log",
+			Return(&resource.Resource{
+				URN:    "p-testdata-gl-testname-log",
 				Name:   "testname",
 				Parent: "p-testdata-gl",
 				Kind:   "log",
@@ -297,18 +298,18 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 					"replicas": "9",
 				},
 				Labels:    nil,
-				Status:    domain.ResourceStatusCompleted,
+				Status:    resource.StatusCompleted,
 				CreatedAt: createdAt,
 				UpdatedAt: createdAt,
 			}, nil).Once()
 
 		resourceService.EXPECT().
 			UpdateResource(mock.Anything, mock.Anything).
-			Run(func(ctx context.Context, res *domain.Resource) {
-				assert.Equal(t, domain.ResourceStatusPending, res.Status)
+			Run(func(ctx context.Context, res *resource.Resource) {
+				assert.Equal(t, resource.StatusPending, res.Status)
 			}).
-			Return(&domain.Resource{
-				Urn:    "p-testdata-gl-testname-log",
+			Return(&resource.Resource{
+				URN:    "p-testdata-gl-testname-log",
 				Name:   "testname",
 				Parent: "p-testdata-gl",
 				Kind:   "log",
@@ -316,18 +317,18 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 					"replicas": "10",
 				},
 				Labels:    nil,
-				Status:    domain.ResourceStatusPending,
+				Status:    resource.StatusPending,
 				CreatedAt: createdAt,
 				UpdatedAt: updatedAt,
 			}, nil).Once()
 
 		resourceService.EXPECT().
 			UpdateResource(mock.Anything, mock.Anything).
-			Run(func(ctx context.Context, res *domain.Resource) {
-				assert.Equal(t, domain.ResourceStatusCompleted, res.Status)
+			Run(func(ctx context.Context, res *resource.Resource) {
+				assert.Equal(t, resource.StatusCompleted, res.Status)
 			}).
-			Return(&domain.Resource{
-				Urn:    "p-testdata-gl-testname-log",
+			Return(&resource.Resource{
+				URN:    "p-testdata-gl-testname-log",
 				Name:   "testname",
 				Parent: "p-testdata-gl",
 				Kind:   "log",
@@ -335,15 +336,15 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 					"replicas": "10",
 				},
 				Labels:    nil,
-				Status:    domain.ResourceStatusCompleted,
+				Status:    resource.StatusCompleted,
 				CreatedAt: createdAt,
 				UpdatedAt: updatedAt,
 			}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
 		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(nil)
-		moduleService.EXPECT().Sync(mock.Anything, mock.Anything).Return(&domain.Resource{
-			Urn:    "p-testdata-gl-testname-log",
+		moduleService.EXPECT().Sync(mock.Anything, mock.Anything).Return(&resource.Resource{
+			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "log",
@@ -351,7 +352,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				"replicas": "10",
 			},
 			Labels:    nil,
-			Status:    domain.ResourceStatusCompleted,
+			Status:    resource.StatusCompleted,
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
 		}, nil)
@@ -385,7 +386,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 
 		resourceService.EXPECT().
 			GetResource(mock.Anything, mock.Anything).
-			Return(nil, store.ErrResourceNotFound).Once()
+			Return(nil, resource.ErrResourceNotFound).Once()
 
 		moduleService := &mocks.ModuleService{}
 
@@ -417,17 +418,17 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 		resourceService := &mocks.ResourceService{}
 		resourceService.EXPECT().
 			UpdateResource(mock.Anything, mock.Anything).
-			Return(&domain.Resource{
-				Urn: "p-testdata-gl-testname-log",
+			Return(&resource.Resource{
+				URN: "p-testdata-gl-testname-log",
 			}, nil).Once()
 		resourceService.EXPECT().
 			GetResource(mock.Anything, mock.Anything).
-			Return(&domain.Resource{
-				Urn: "p-testdata-gl-testname-log",
+			Return(&resource.Resource{
+				URN: "p-testdata-gl-testname-log",
 			}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(store.ErrModuleNotFound)
+		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(module.ErrModuleNotFound)
 
 		providerService := &mocks.ProviderService{}
 		server := NewApiServer(resourceService, moduleService, providerService)
@@ -457,17 +458,17 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 		resourceService := &mocks.ResourceService{}
 		resourceService.EXPECT().
 			UpdateResource(mock.Anything, mock.Anything).
-			Return(&domain.Resource{
-				Urn: "p-testdata-gl-testname-log",
+			Return(&resource.Resource{
+				URN: "p-testdata-gl-testname-log",
 			}, nil).Once()
 		resourceService.EXPECT().
 			GetResource(mock.Anything, mock.Anything).
-			Return(&domain.Resource{
-				Urn: "p-testdata-gl-testname-log",
+			Return(&resource.Resource{
+				URN: "p-testdata-gl-testname-log",
 			}, nil).Once()
 
 		moduleService := &mocks.ModuleService{}
-		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(domain.ErrModuleConfigParseFailed)
+		moduleService.EXPECT().Validate(mock.Anything, mock.Anything).Return(module.ErrModuleConfigParseFailed)
 
 		providerService := &mocks.ProviderService{}
 		server := NewApiServer(resourceService, moduleService, providerService)
@@ -484,14 +485,14 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 
 func TestAPIServer_GetResource(t *testing.T) {
 	t.Run("test get resource", func(t *testing.T) {
-		r := &domain.Resource{
-			Urn:       "p-testdata-gl-testname-mock",
+		r := &resource.Resource{
+			URN:       "p-testdata-gl-testname-mock",
 			Name:      "testname",
 			Parent:    "p-testdata-gl",
 			Kind:      "mock",
 			Configs:   map[string]interface{}{},
 			Labels:    map[string]string{},
-			Status:    domain.ResourceStatusCompleted,
+			Status:    resource.StatusCompleted,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
@@ -531,7 +532,7 @@ func TestAPIServer_GetResource(t *testing.T) {
 		wantErr := status.Error(codes.NotFound, "could not find resource with given urn")
 
 		mockResourceService := &mocks.ResourceService{}
-		mockResourceService.EXPECT().GetResource(mock.Anything, mock.Anything).Return(nil, store.ErrResourceNotFound).Once()
+		mockResourceService.EXPECT().GetResource(mock.Anything, mock.Anything).Return(nil, resource.ErrResourceNotFound).Once()
 
 		mockModuleService := &mocks.ModuleService{}
 
@@ -552,14 +553,14 @@ func TestAPIServer_GetResource(t *testing.T) {
 
 func TestAPIServer_ListResource(t *testing.T) {
 	t.Run("test list resource", func(t *testing.T) {
-		r := &domain.Resource{
-			Urn:       "p-testdata-gl-testname-mock",
+		r := &resource.Resource{
+			URN:       "p-testdata-gl-testname-mock",
 			Name:      "testname",
 			Parent:    "p-testdata-gl",
 			Kind:      "mock",
 			Configs:   map[string]interface{}{},
 			Labels:    map[string]string{},
-			Status:    domain.ResourceStatusCompleted,
+			Status:    resource.StatusCompleted,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
@@ -574,7 +575,7 @@ func TestAPIServer_ListResource(t *testing.T) {
 		wantErr := error(nil)
 
 		mockResourceService := &mocks.ResourceService{}
-		mockResourceService.EXPECT().ListResources(mock.Anything, r.Parent, r.Kind).Return([]*domain.Resource{r}, nil).Once()
+		mockResourceService.EXPECT().ListResources(mock.Anything, r.Parent, r.Kind).Return([]*resource.Resource{r}, nil).Once()
 
 		mockModuleService := &mocks.ModuleService{}
 
@@ -608,8 +609,8 @@ func TestAPIServer_DeleteResource(t *testing.T) {
 		resourceService := &mocks.ResourceService{}
 		resourceService.EXPECT().
 			GetResource(mock.Anything, "p-testdata-gl-testname-log").
-			Return(&domain.Resource{
-				Urn:    "p-testdata-gl-testname-log",
+			Return(&resource.Resource{
+				URN:    "p-testdata-gl-testname-log",
 				Name:   "testname",
 				Parent: "p-testdata-gl",
 				Kind:   "log",
@@ -617,7 +618,7 @@ func TestAPIServer_DeleteResource(t *testing.T) {
 					"replicas": "9",
 				},
 				Labels:    nil,
-				Status:    domain.ResourceStatusCompleted,
+				Status:    resource.StatusCompleted,
 				CreatedAt: createdAt,
 				UpdatedAt: updatedAt,
 			}, nil).Once()
@@ -649,7 +650,7 @@ func TestAPIServer_DeleteResource(t *testing.T) {
 		resourceService := &mocks.ResourceService{}
 		resourceService.EXPECT().
 			GetResource(mock.Anything, "p-testdata-gl-testname-log").
-			Return(nil, store.ErrResourceNotFound).Once()
+			Return(nil, resource.ErrResourceNotFound).Once()
 
 		moduleService := &mocks.ModuleService{}
 
@@ -671,8 +672,8 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 	t.Run("test applying action successfully", func(t *testing.T) {
 		createdAt := time.Now()
 		updatedAt := createdAt.Add(time.Minute)
-		r := &domain.Resource{
-			Urn:    "p-testdata-gl-testname-log",
+		r := &resource.Resource{
+			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "log",
@@ -680,12 +681,12 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 				"log_level": "WARN",
 			},
 			Labels:    nil,
-			Status:    domain.ResourceStatusCompleted,
+			Status:    resource.StatusCompleted,
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
 		}
-		rDash := &domain.Resource{
-			Urn:    "p-testdata-gl-testname-log",
+		rDash := &resource.Resource{
+			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "log",
@@ -693,7 +694,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 				"log_level": "INFO",
 			},
 			Labels:    nil,
-			Status:    domain.ResourceStatusCompleted,
+			Status:    resource.StatusCompleted,
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
 		}
@@ -720,10 +721,10 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 		moduleService.EXPECT().Act(mock.Anything, rDash, "escalate", map[string]interface{}{}).Return(map[string]interface{}{
 			"log_level": "WARN",
 		}, nil).Once()
-		moduleService.EXPECT().Sync(mock.Anything, mock.Anything).Run(func(_ context.Context, r *domain.Resource) {
+		moduleService.EXPECT().Sync(mock.Anything, mock.Anything).Run(func(_ context.Context, r *resource.Resource) {
 			assert.Equal(t, "WARN", r.Configs["log_level"])
-		}).Return(&domain.Resource{
-			Urn:    "p-testdata-gl-testname-log",
+		}).Return(&resource.Resource{
+			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
 			Kind:   "log",
@@ -731,7 +732,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 				"log_level": "WARN",
 			},
 			Labels:    nil,
-			Status:    domain.ResourceStatusCompleted,
+			Status:    resource.StatusCompleted,
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
 		}, nil).Once()
@@ -761,7 +762,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 		resourceService := &mocks.ResourceService{}
 		resourceService.EXPECT().
 			GetResource(mock.Anything, "p-testdata-gl-testname-log").
-			Return(nil, store.ErrResourceNotFound).Once()
+			Return(nil, resource.ErrResourceNotFound).Once()
 
 		moduleService := &mocks.ModuleService{}
 

@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/odpf/entropy/domain"
-	"github.com/odpf/entropy/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
+
+	"github.com/odpf/entropy/resource"
 )
 
 func TestNewResourceRepository(t *testing.T) {
@@ -42,7 +42,7 @@ func TestResourceRepository_Create(t *testing.T) {
 		collection *mongo.Collection
 	}
 	type args struct {
-		resource *domain.Resource
+		resource *resource.Resource
 	}
 	tests := []struct {
 		name    string
@@ -56,14 +56,14 @@ func TestResourceRepository_Create(t *testing.T) {
 			setup:  func(mt *mtest.T) { mt.AddMockResponses(mtest.CreateSuccessResponse()) },
 			fields: func(mt *mtest.T) fields { return fields{mt.Coll} },
 			args: func(mt *mtest.T) args {
-				return args{&domain.Resource{
-					Urn:       "p-testdata-gl-testname-log",
+				return args{&resource.Resource{
+					URN:       "p-testdata-gl-testname-log",
 					Name:      "testname",
 					Parent:    "p-testdata-gl",
 					Kind:      "log",
 					Configs:   map[string]interface{}{},
 					Labels:    map[string]string{},
-					Status:    domain.ResourceStatusPending,
+					Status:    resource.StatusPending,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
 				}}
@@ -83,19 +83,19 @@ func TestResourceRepository_Create(t *testing.T) {
 				return fields{mt.Coll}
 			},
 			args: func(mt *mtest.T) args {
-				return args{&domain.Resource{
-					Urn:       "p-testdata-gl-testname-log",
+				return args{&resource.Resource{
+					URN:       "p-testdata-gl-testname-log",
 					Name:      "testname",
 					Parent:    "p-testdata-gl",
 					Kind:      "log",
 					Configs:   map[string]interface{}{},
 					Labels:    map[string]string{},
-					Status:    domain.ResourceStatusPending,
+					Status:    resource.StatusPending,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
 				}}
 			},
-			wantErr: store.ErrResourceAlreadyExists,
+			wantErr: resource.ErrResourceAlreadyExists,
 		},
 	}
 	for _, tt := range tests {
@@ -123,7 +123,7 @@ func TestResourceRepository_GetByURN(t *testing.T) {
 		setup   func(mt *mtest.T)
 		fields  func(mt *mtest.T) fields
 		args    func(mt *mtest.T) args
-		want    func(mt *mtest.T) *domain.Resource
+		want    func(mt *mtest.T) *resource.Resource
 		wantErr error
 	}{
 		{
@@ -135,7 +135,7 @@ func TestResourceRepository_GetByURN(t *testing.T) {
 			},
 			fields:  func(mt *mtest.T) fields { return fields{mt.Coll} },
 			args:    func(mt *mtest.T) args { return args{"p-testdata-gl-testname-log"} },
-			want:    func(mt *mtest.T) *domain.Resource { return &domain.Resource{Urn: "p-testdata-gl-testname-log"} },
+			want:    func(mt *mtest.T) *resource.Resource { return &resource.Resource{URN: "p-testdata-gl-testname-log"} },
 			wantErr: nil,
 		},
 		{
@@ -152,8 +152,8 @@ func TestResourceRepository_GetByURN(t *testing.T) {
 			},
 			fields:  func(mt *mtest.T) fields { return fields{mt.Coll} },
 			args:    func(mt *mtest.T) args { return args{"p-testdata-gl-unknown-log"} },
-			want:    func(mt *mtest.T) *domain.Resource { return nil },
-			wantErr: store.ErrResourceNotFound,
+			want:    func(mt *mtest.T) *resource.Resource { return nil },
+			wantErr: resource.ErrResourceNotFound,
 		},
 	}
 	for _, tt := range tests {

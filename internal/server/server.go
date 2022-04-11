@@ -20,9 +20,6 @@ import (
 	"google.golang.org/grpc"
 
 	handlersv1 "github.com/odpf/entropy/internal/server/v1"
-	"github.com/odpf/entropy/pkg/module"
-	"github.com/odpf/entropy/pkg/provider"
-	"github.com/odpf/entropy/pkg/resource"
 	"github.com/odpf/entropy/pkg/version"
 )
 
@@ -34,7 +31,7 @@ type Config struct {
 func (cfg Config) addr() string { return fmt.Sprintf("%s:%d", cfg.Host, cfg.Port) }
 
 func Serve(ctx context.Context, cfg Config, logger *zap.Logger, nr *newrelic.Application,
-	resourceSvc resource.ServiceInterface, moduleSvc module.ServiceInterface, providerSvc provider.ServiceInterface,
+	resourceSvc handlersv1.ResourceService, moduleSvc handlersv1.ModuleService, providerSvc handlersv1.ProviderService,
 ) error {
 	serverCfg := server.Config{
 		Host: cfg.Host,

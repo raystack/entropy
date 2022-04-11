@@ -6,10 +6,12 @@ import (
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/odpf/entropy/domain"
-	"github.com/odpf/entropy/plugins/providers/helm"
-	"github.com/odpf/entropy/store/mongodb"
 	gjs "github.com/xeipuuv/gojsonschema"
+
+	"github.com/odpf/entropy/module"
+	"github.com/odpf/entropy/plugins/providers/helm"
+	"github.com/odpf/entropy/resource"
+	"github.com/odpf/entropy/store/mongodb"
 )
 
 const (
@@ -314,17 +316,17 @@ func New(providerRepository *mongodb.ProviderRepository) *Module {
 	}
 }
 
-func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
+func (m *Module) Apply(r *resource.Resource) (resource.Status, error) {
 	for _, p := range r.Providers {
-		provider, err := m.providerRepository.GetByURN(p.Urn)
+		provider, err := m.providerRepository.GetByURN(p.URN)
 		if err != nil {
-			return domain.ResourceStatusError, err
+			return resource.StatusError, err
 		}
 
 		if provider.Kind == providerKindKubernetes {
 			releaseConfig, err := getReleaseConfig(r)
 			if err != nil {
-				return domain.ResourceStatusError, err
+				return resource.StatusError, err
 			}
 
 			if releaseConfig.State == releaseStateStopped {
@@ -338,19 +340,19 @@ func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
 			helmProvider := helm.NewProvider(helmConfig)
 			_, err = helmProvider.Release(releaseConfig)
 			if err != nil {
-				return domain.ResourceStatusError, nil
+				return resource.StatusError, nil
 			}
 		}
 	}
 
-	return domain.ResourceStatusCompleted, nil
+	return resource.StatusCompleted, nil
 }
 
-func (m *Module) Validate(r *domain.Resource) error {
+func (m *Module) Validate(r *resource.Resource) error {
 	resourceLoader := gjs.NewGoLoader(r.Configs)
 	result, err := m.schema.Validate(resourceLoader)
 	if err != nil {
-		return fmt.Errorf("%w: %s", domain.ErrModuleConfigParseFailed, err)
+		return fmt.Errorf("%w: %s", module.ErrModuleConfigParseFailed, err)
 	}
 	if !result.Valid() {
 		var errorStrings []string
@@ -363,7 +365,7 @@ func (m *Module) Validate(r *domain.Resource) error {
 	return nil
 }
 
-func (m *Module) Act(r *domain.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
+func (m *Module) Act(r *resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
 	releaseConfig, err := getReleaseConfig(r)
 	if err != nil {
 		return nil, err
@@ -381,13 +383,13 @@ func (m *Module) Act(r *domain.Resource, action string, params map[string]interf
 	return r.Configs, nil
 }
 
-func getReleaseConfig(r *domain.Resource) (*helm.ReleaseConfig, error) {
+func getReleaseConfig(r *resource.Resource) (*helm.ReleaseConfig, error) {
 	releaseConfig := helm.DefaultReleaseConfig()
 	releaseConfig.Repository = defaultRepositoryString
 	releaseConfig.Chart = defaultChartString
 	releaseConfig.Version = defaultVersionString
 	releaseConfig.Namespace = defaultNamespaceString
-	releaseConfig.Name = r.Urn
+	releaseConfig.Name = r.URN
 	err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig)
 	if err != nil {
 		return releaseConfig, err

@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/odpf/entropy/store"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/odpf/entropy/domain"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/odpf/entropy/resource"
 )
 
 type ResourceRepository struct {
@@ -38,50 +37,50 @@ func createUniqueIndex(collection *mongo.Collection, key string, order int) erro
 	return err
 }
 
-func (rc *ResourceRepository) Create(resource *domain.Resource) error {
-	resource.CreatedAt = time.Now()
-	resource.UpdatedAt = time.Now()
+func (rc *ResourceRepository) Create(res *resource.Resource) error {
+	res.CreatedAt = time.Now()
+	res.UpdatedAt = time.Now()
 
-	_, err := rc.collection.InsertOne(context.TODO(), resource)
+	_, err := rc.collection.InsertOne(context.TODO(), res)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return fmt.Errorf("%w: %s", store.ErrResourceAlreadyExists, err)
+			return fmt.Errorf("%w: %s", resource.ErrResourceAlreadyExists, err)
 		}
 		return err
 	}
 	return nil
 }
 
-func (rc *ResourceRepository) Update(r *domain.Resource) error {
+func (rc *ResourceRepository) Update(r *resource.Resource) error {
 	r.UpdatedAt = time.Now()
 	singleResult := rc.collection.FindOneAndUpdate(context.TODO(),
-		map[string]interface{}{"urn": r.Urn},
+		map[string]interface{}{"urn": r.URN},
 		map[string]interface{}{"$set": r},
 	)
 	err := singleResult.Err()
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return fmt.Errorf("%w: urn = %s", store.ErrResourceNotFound, r.Urn)
+			return fmt.Errorf("%w: urn = %s", resource.ErrResourceNotFound, r.URN)
 		}
 		return err
 	}
 	return nil
 }
 
-func (rc *ResourceRepository) GetByURN(urn string) (*domain.Resource, error) {
-	res := &domain.Resource{}
+func (rc *ResourceRepository) GetByURN(urn string) (*resource.Resource, error) {
+	res := &resource.Resource{}
 	err := rc.collection.FindOne(context.TODO(), map[string]interface{}{"urn": urn}).Decode(res)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, fmt.Errorf("%w: %s", store.ErrResourceNotFound, err)
+			return nil, fmt.Errorf("%w: %s", resource.ErrResourceNotFound, err)
 		}
 		return nil, err
 	}
 	return res, nil
 }
 
-func (rc *ResourceRepository) List(filter map[string]string) ([]*domain.Resource, error) {
-	var res []*domain.Resource
+func (rc *ResourceRepository) List(filter map[string]string) ([]*resource.Resource, error) {
+	var res []*resource.Resource
 	cur, err := rc.collection.Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err
@@ -100,7 +99,7 @@ func (rc *ResourceRepository) Delete(urn string) error {
 	_, err := rc.collection.DeleteOne(context.TODO(), map[string]interface{}{"urn": urn})
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return fmt.Errorf("%w: %s", store.ErrResourceNotFound, err)
+			return fmt.Errorf("%w: %s", resource.ErrResourceNotFound, err)
 		}
 		return err
 	}
