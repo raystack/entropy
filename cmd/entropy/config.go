@@ -5,9 +5,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/odpf/entropy/internal/server"
+	"github.com/odpf/entropy/internal/store/mongodb"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
-	"github.com/odpf/entropy/store/mongodb"
 )
 
 const configFlag = "config"

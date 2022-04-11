@@ -9,9 +9,9 @@ import (
 	gjs "github.com/xeipuuv/gojsonschema"
 
 	"github.com/odpf/entropy/module"
-	"github.com/odpf/entropy/plugins/providers/helm"
+	"github.com/odpf/entropy/provider"
+	"github.com/odpf/entropy/provider/helm"
 	"github.com/odpf/entropy/resource"
-	"github.com/odpf/entropy/store/mongodb"
 )
 
 const (
@@ -297,14 +297,14 @@ const configSchemaString = `
 
 type Module struct {
 	schema             *gjs.Schema
-	providerRepository *mongodb.ProviderRepository
+	providerRepository provider.Repository
 }
 
 func (m *Module) ID() string {
 	return "firehose"
 }
 
-func New(providerRepository *mongodb.ProviderRepository) *Module {
+func New(providerRepository provider.Repository) *Module {
 	schemaLoader := gjs.NewStringLoader(configSchemaString)
 	schema, err := gjs.NewSchema(schemaLoader)
 	if err != nil {
@@ -318,12 +318,12 @@ func New(providerRepository *mongodb.ProviderRepository) *Module {
 
 func (m *Module) Apply(r *resource.Resource) (resource.Status, error) {
 	for _, p := range r.Providers {
-		provider, err := m.providerRepository.GetByURN(p.URN)
+		p, err := m.providerRepository.GetByURN(p.URN)
 		if err != nil {
 			return resource.StatusError, err
 		}
 
-		if provider.Kind == providerKindKubernetes {
+		if p.Kind == providerKindKubernetes {
 			releaseConfig, err := getReleaseConfig(r)
 			if err != nil {
 				return resource.StatusError, err
@@ -333,7 +333,7 @@ func (m *Module) Apply(r *resource.Resource) (resource.Status, error) {
 				releaseConfig.Values[replicaCountString] = 0
 			}
 
-			kubeConfig := helm.ToKubeConfig(provider.Configs)
+			kubeConfig := helm.ToKubeConfig(p.Configs)
 			helmConfig := &helm.ProviderConfig{
 				Kubernetes: kubeConfig,
 			}

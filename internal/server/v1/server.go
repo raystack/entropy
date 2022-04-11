@@ -1,8 +1,8 @@
 package handlersv1
 
-//go:generate mockery --name=ModuleService -r --case underscore --with-expecter --structname ModuleService  --filename=module_service.go --output=../../../mocks
-//go:generate mockery --name=ResourceService -r --case underscore --with-expecter --structname ResourceService  --filename=resource_service.go --output=../../../mocks
-//go:generate mockery --name=ProviderService -r --case underscore --with-expecter --structname ProviderService  --filename=provider_service.go --output=../../../mocks
+//go:generate mockery --name=ModuleService -r --case underscore --with-expecter --structname ModuleService  --filename=module_service.go --output=../../mocks
+//go:generate mockery --name=ResourceService -r --case underscore --with-expecter --structname ResourceService  --filename=resource_service.go --output=../../mocks
+//go:generate mockery --name=ProviderService -r --case underscore --with-expecter --structname ProviderService  --filename=provider_service.go --output=../../mocks
 
 import (
 	"context"

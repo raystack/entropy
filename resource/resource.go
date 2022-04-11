@@ -1,6 +1,6 @@
 package resource
 
-//go:generate mockery --name=Repository -r --case underscore --with-expecter --structname ResourceRepository --filename=resource_repository.go --output=../mocks
+//go:generate mockery --name=Repository -r --case underscore --with-expecter --structname ResourceRepository --filename=resource_repository.go --output=../internal/mocks
 
 import (
 	"errors"

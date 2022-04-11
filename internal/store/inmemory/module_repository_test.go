@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/odpf/entropy/module"
-	"github.com/odpf/entropy/modules/log"
+	"github.com/odpf/entropy/module/log"
 )
 
 func TestModuleRepository_Get(t *testing.T) {

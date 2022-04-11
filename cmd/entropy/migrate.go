@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/odpf/entropy/store/mongodb"
+	"github.com/odpf/entropy/internal/store/mongodb"
 )
 
 const (
