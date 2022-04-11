@@ -15,9 +15,9 @@ import (
 const (
 	releaseConfigString     = "release_configs"
 	replicasString          = "replicas"
-	RUNNING                 = "RUNNING"
-	STOPPED                 = "STOPPED"
-	KUBERNETES              = "kubernetes"
+	releaseStateRunning     = "RUNNING"
+	releaseStateStopped     = "STOPPED"
+	providerKindKubernetes  = "kubernetes"
 	defaultRepositoryString = "https://odpf.github.io/charts/"
 	defaultChartString      = "firehose"
 	defaultVersionString    = "0.1.1"
@@ -320,7 +320,7 @@ func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
 			return domain.ResourceStatusError, err
 		}
 
-		if provider.Kind == KUBERNETES {
+		if provider.Kind == providerKindKubernetes {
 			releaseConfig, err := getReleaseConfig(r)
 			if err != nil {
 				return domain.ResourceStatusError, err
@@ -366,9 +366,9 @@ func (m *Module) Act(r *domain.Resource, action string, params map[string]interf
 
 	switch action {
 	case "start":
-		releaseConfig.State = RUNNING
+		releaseConfig.State = releaseStateRunning
 	case "stop":
-		releaseConfig.State = STOPPED
+		releaseConfig.State = releaseStateStopped
 	case "scale":
 		releaseConfig.Values[replicasString] = params[replicasString]
 	}
