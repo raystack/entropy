@@ -1,7 +1,7 @@
 # Configuration
 
 | Go struct                     | YAML path        | ENV var          | default     | Valid values                             |
-| ----------------------------- | ---------------- | ---------------- | ----------- | ---------------------------------------- |
+|-------------------------------|------------------|------------------|-------------|------------------------------------------|
 | Config.Service.Port           | service.port     | SERVICE_PORT     | 8080        | 0-65535                                  |
 | Config.Service.Host           | service.host     | SERVICE_HOST     | ""          | valid hostname or IP address             |
 | Config.DBConfig.Name          | db.name          | DB_NAME          | entropy     |                                          |
@@ -33,16 +33,15 @@ This will run the service on port 9999 instead of the default 8080
 
 ### Using a yaml file
 
-For default values and the structure of the yaml file check - [config.yaml.example](config.yaml.example)
+Create a custom configuration file by referring to [entropy.yaml](entropy.yaml) and use it with `--config` flag.
 
 Usage example:
 
 ```sh
-cp config.yaml.example config.yaml
 # make any modifications to the configs as required
-go run main.go serve
+go run main.go serve --config entropy.yaml
 ```
 
-### Using a combinnation of both
+### Using a combination of both
 
 If any key that is set via both env vars and yaml the value set in env vars will take effect.

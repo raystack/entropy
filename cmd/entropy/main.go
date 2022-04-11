@@ -3,38 +3,23 @@ package main
 import (
 	"github.com/odpf/salt/cmdx"
 	"github.com/spf13/cobra"
-
-	v "github.com/odpf/entropy/pkg/version"
 )
 
 var rootCmd = &cobra.Command{
 	Use: "entropy",
+	Long: `Entropy is a framework to safely and predictably create, change, 
+and improve modern cloud applications and infrastructure using 
+familiar languages, tools, and engineering practices.`,
 }
 
 func main() {
-	cmdx.SetHelp(rootCmd)
-
+	rootCmd.PersistentFlags().StringP(configFlag, "c", "", "Override config file")
 	rootCmd.AddCommand(
-		&cobra.Command{
-			Use:   "migrate",
-			Short: "Run DB migrations",
-			RunE:  migrate,
-		},
-		&cobra.Command{
-			Use:   "serve",
-			Short: "Run server",
-			RunE:  serve,
-		},
-		&cobra.Command{
-			Use:   "version",
-			Short: "Show version",
-			RunE:  version,
-		},
+		cmdServe(),
+		cmdMigrate(),
+		cmdVersion(),
 	)
 
+	cmdx.SetHelp(rootCmd)
 	_ = rootCmd.Execute()
-}
-
-func version(cmd *cobra.Command, args []string) error {
-	return v.Print()
 }
