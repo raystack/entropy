@@ -2,24 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"net/http"
-	"time"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/newrelic/go-agent/v3/integrations/nrgrpc"
-	"github.com/odpf/salt/common"
 	"github.com/odpf/salt/server"
 	"github.com/spf13/cobra"
-	commonv1 "go.buf.build/odpf/gw/odpf/proton/odpf/common/v1"
-	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
 
-	handlersv1 "github.com/odpf/entropy/api/handlers/v1"
+	entropyserver "github.com/odpf/entropy/internal/server"
 	"github.com/odpf/entropy/modules/firehose"
 	"github.com/odpf/entropy/modules/log"
 	"github.com/odpf/entropy/pkg/logger"
@@ -27,8 +14,6 @@ import (
 	"github.com/odpf/entropy/pkg/module"
 	"github.com/odpf/entropy/pkg/provider"
 	"github.com/odpf/entropy/pkg/resource"
-	"github.com/odpf/entropy/pkg/version"
-	"github.com/odpf/entropy/store"
 	"github.com/odpf/entropy/store/inmemory"
 	"github.com/odpf/entropy/store/mongodb"
 )
@@ -71,16 +56,10 @@ func runServer(c Config) error {
 		return err
 	}
 
-	resourceRepository := mongodb.NewResourceRepository(
-		mongoStore.Collection(store.ResourceRepositoryName),
-	)
-
-	providerRepository := mongodb.NewProviderRepository(
-		mongoStore.Collection(store.ProviderRepositoryName),
-	)
+	resourceRepository := mongodb.NewResourceRepository(mongoStore.Collection(resourceRepoName))
+	providerRepository := mongodb.NewProviderRepository(mongoStore.Collection(providerRepoName))
 
 	moduleRepository := inmemory.NewModuleRepository()
-
 	err = moduleRepository.Register(log.New(loggerInstance))
 	if err != nil {
 		return err
@@ -95,75 +74,5 @@ func runServer(c Config) error {
 	moduleService := module.NewService(moduleRepository)
 	providerService := provider.NewService(providerRepository)
 
-	muxServer, err := server.NewMux(server.Config{
-		Port: c.Service.Port,
-		Host: c.Service.Host,
-	}, server.WithMuxGRPCServerOptions(grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-		grpc_recovery.UnaryServerInterceptor(),
-		grpc_ctxtags.UnaryServerInterceptor(),
-		grpc_zap.UnaryServerInterceptor(loggerInstance),
-		nrgrpc.UnaryServerInterceptor(nr),
-	))))
-
-	if err != nil {
-		return err
-	}
-
-	gw, err := server.NewGateway(c.Service.Host, c.Service.Port)
-	if err != nil {
-		return err
-	}
-
-	err = gw.RegisterHandler(ctx, commonv1.RegisterCommonServiceHandlerFromEndpoint)
-	if err != nil {
-		return err
-	}
-
-	err = gw.RegisterHandler(ctx, entropyv1beta1.RegisterResourceServiceHandlerFromEndpoint)
-	if err != nil {
-		return err
-	}
-
-	err = gw.RegisterHandler(ctx, entropyv1beta1.RegisterProviderServiceHandlerFromEndpoint)
-	if err != nil {
-		return err
-	}
-
-	muxServer.SetGateway("/api", gw)
-
-	muxServer.RegisterService(
-		&commonv1.CommonService_ServiceDesc,
-		common.New(version.GetVersionAndBuildInfo()),
-	)
-	muxServer.RegisterService(
-		&entropyv1beta1.ResourceService_ServiceDesc,
-		handlersv1.NewApiServer(resourceService, moduleService, providerService),
-	)
-
-	muxServer.RegisterService(
-		&entropyv1beta1.ProviderService_ServiceDesc,
-		handlersv1.NewApiServer(resourceService, moduleService, providerService),
-	)
-
-	muxServer.RegisterHandler("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprintf(w, "pong")
-	}))
-
-	loggerInstance.Info("starting server", zap.String("host", c.Service.Host), zap.Int("port", c.Service.Port))
-
-	serverErrorChan := make(chan error)
-
-	go func() {
-		serverErrorChan <- muxServer.Serve()
-	}()
-
-	select {
-	case <-ctx.Done():
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), time.Second*30)
-		defer shutdownCancel()
-		muxServer.Shutdown(shutdownCtx)
-	case serverError := <-serverErrorChan:
-		return serverError
-	}
-	return nil
+	return entropyserver.Serve(ctx, c.Service, loggerInstance, nr, resourceService, moduleService, providerService)
 }

@@ -3,16 +3,18 @@ package handlersv1
 import (
 	"context"
 	"errors"
-	"github.com/odpf/entropy/domain"
-	"github.com/odpf/entropy/pkg/module"
-	"github.com/odpf/entropy/pkg/provider"
-	"github.com/odpf/entropy/pkg/resource"
-	"github.com/odpf/entropy/store"
+
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/odpf/entropy/domain"
+	"github.com/odpf/entropy/pkg/module"
+	"github.com/odpf/entropy/pkg/provider"
+	"github.com/odpf/entropy/pkg/resource"
+	"github.com/odpf/entropy/store"
 )
 
 var ErrInternal = status.Error(codes.Internal, "internal server error")
@@ -20,6 +22,7 @@ var ErrInternal = status.Error(codes.Internal, "internal server error")
 type APIServer struct {
 	entropyv1beta1.UnimplementedResourceServiceServer
 	entropyv1beta1.UnimplementedProviderServiceServer
+
 	resourceService resource.ServiceInterface
 	moduleService   module.ServiceInterface
 	providerService provider.ServiceInterface

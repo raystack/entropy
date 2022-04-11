@@ -4,6 +4,7 @@ import (
 	"github.com/odpf/salt/config"
 	"github.com/spf13/cobra"
 
+	"github.com/odpf/entropy/internal/server"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
 	"github.com/odpf/entropy/store/mongodb"
@@ -15,13 +16,8 @@ const configFlag = "config"
 type Config struct {
 	DB       mongodb.DBConfig      `mapstructure:"db"`
 	Log      logger.LogConfig      `mapstructure:"log"`
-	Service  ServiceConfig         `mapstructure:"service"`
+	Service  server.Config         `mapstructure:"service"`
 	NewRelic metric.NewRelicConfig `mapstructure:"newrelic"`
-}
-
-type ServiceConfig struct {
-	Port int    `mapstructure:"port" default:"8080"`
-	Host string `mapstructure:"host" default:""`
 }
 
 func loadConfig(cmd *cobra.Command) (Config, error) {

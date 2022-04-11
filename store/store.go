@@ -19,9 +19,6 @@ var (
 	ErrProviderNotFound      = errors.New("no provider(s) found")
 )
 
-var ResourceRepositoryName = "resources"
-var ProviderRepositoryName = "providers"
-
 type ResourceRepository interface {
 	Create(r *domain.Resource) error
 	Update(r *domain.Resource) error
