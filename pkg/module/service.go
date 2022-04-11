@@ -4,14 +4,20 @@ package module
 
 import (
 	"context"
+	"errors"
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/store"
 )
 
+var (
+	ErrModuleLogStreamingNotSupported = errors.New("log streaming is not supported for this module")
+)
+
 type ServiceInterface interface {
 	Sync(ctx context.Context, r *domain.Resource) (*domain.Resource, error)
-	Validate(ctx context.Context, res *domain.Resource) error
+	Validate(ctx context.Context, r *domain.Resource) error
 	Act(ctx context.Context, r *domain.Resource, action string, params map[string]interface{}) (map[string]interface{}, error)
+	Log(ctx context.Context, r *domain.Resource, filter map[string]string) (<-chan domain.LogChunk, error)
 }
 
 type Service struct {
@@ -54,4 +60,23 @@ func (s *Service) Act(ctx context.Context, r *domain.Resource, action string, pa
 		return nil, err
 	}
 	return output, nil
+}
+
+func (s *Service) Log(ctx context.Context, r *domain.Resource, filter map[string]string) (<-chan domain.LogChunk, error) {
+	module, err := s.moduleRepository.Get(r.Kind)
+	if err != nil {
+		return nil, err
+	}
+
+	moduleLogStream, supported := module.(domain.ModuleLogger)
+	if !supported {
+		return nil, ErrModuleLogStreamingNotSupported
+	}
+
+	logOutput, err := moduleLogStream.Log(ctx, r, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return logOutput, nil
 }

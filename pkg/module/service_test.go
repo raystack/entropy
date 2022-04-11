@@ -10,6 +10,7 @@ import (
 	"github.com/odpf/entropy/domain"
 	"github.com/odpf/entropy/mocks"
 	"github.com/odpf/entropy/store"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -307,6 +308,110 @@ func TestService_Act(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Act() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestService_Log(t *testing.T) {
+	type fields struct {
+		moduleRepository store.ModuleRepository
+	}
+	type args struct {
+		ctx    context.Context
+		r      *domain.Resource
+		filter map[string]string
+	}
+
+	mockModule := &mocks.Module{}
+	mockModule.EXPECT().ID().Return("mock")
+	mockModuleLogger := &mocks.ModuleLogger{}
+	mockModuleLogger.EXPECT().ID().Return("mock")
+	mockModuleRepo := &mocks.ModuleRepository{}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		setup   func(*testing.T)
+		want    func(*testing.T, <-chan domain.LogChunk) bool
+		wantErr error
+	}{
+		{
+			name: "test log streaming not supported",
+			fields: fields{
+				moduleRepository: mockModuleRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+				r: &domain.Resource{
+					Urn:    "p-testdata-gl-testing-mock",
+					Name:   "testing",
+					Parent: "p-testdata-gl",
+					Kind:   "mock",
+					Configs: map[string]interface{}{
+						"mock": true,
+					},
+					Labels:    nil,
+					Status:    "COMPLETED",
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+				filter: map[string]string{},
+			},
+			setup: func(t *testing.T) {
+				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
+			},
+			want: func(t *testing.T, chunks <-chan domain.LogChunk) bool {
+				return assert.Nil(t, chunks)
+			},
+			wantErr: ErrModuleLogStreamingNotSupported,
+		},
+		{
+			name: "test log streaming",
+			fields: fields{
+				moduleRepository: mockModuleRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+				r: &domain.Resource{
+					Urn:    "p-testdata-gl-testing-mock",
+					Name:   "testing",
+					Parent: "p-testdata-gl",
+					Kind:   "mock",
+					Configs: map[string]interface{}{
+						"mock": true,
+					},
+					Labels:    nil,
+					Status:    "COMPLETED",
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+				filter: map[string]string{},
+			},
+			setup: func(t *testing.T) {
+				mockModuleRepo.EXPECT().Get("mock").Return(mockModuleLogger, nil).Once()
+				mockModuleLogger.EXPECT().Log(mock.Anything, mock.Anything, map[string]string{}).Return(make(chan domain.LogChunk), nil)
+			},
+			want: func(t *testing.T, chunks <-chan domain.LogChunk) bool {
+				return assert.NotNil(t, chunks)
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setup(t)
+			s := &Service{
+				moduleRepository: tt.fields.moduleRepository,
+			}
+			got, err := s.Log(tt.args.ctx, tt.args.r, tt.args.filter)
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("Log() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.want(t, got) {
+				t.Errorf("Log() got = %v, want not nil", got)
 			}
 		})
 	}
