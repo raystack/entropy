@@ -14,7 +14,7 @@ import (
 
 const (
 	releaseConfigString     = "release_configs"
-	replicasString          = "replicas"
+	replicaCountString      = "replicaCount"
 	releaseStateRunning     = "RUNNING"
 	releaseStateStopped     = "STOPPED"
 	providerKindKubernetes  = "kubernetes"
@@ -85,7 +85,7 @@ const configSchemaString = `
 			  "image": {
 				"type": "string"
 			  },
-			  "replicas": {
+			  "replicaCount": {
 				"type": "number"
 			  },
 			  "namespace": {
@@ -280,7 +280,7 @@ const configSchemaString = `
 			],
 			"required": [
 			  "image",
-			  "replicas",
+			  "replicaCount",
 			  "namespace"
 			]
 		  }
@@ -328,7 +328,7 @@ func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
 			}
 
 			if releaseConfig.State == releaseStateStopped {
-				releaseConfig.Values[replicasString] = 0
+				releaseConfig.Values[replicaCountString] = 0
 			}
 
 			kubeConfig := helm.ToKubeConfig(provider.Configs)
@@ -375,7 +375,7 @@ func (m *Module) Act(r *domain.Resource, action string, params map[string]interf
 	case "stop":
 		releaseConfig.State = releaseStateStopped
 	case "scale":
-		releaseConfig.Values[replicasString] = params[replicasString]
+		releaseConfig.Values[replicaCountString] = params[replicaCountString]
 	}
 	r.Configs[releaseConfigString] = releaseConfig
 	return r.Configs, nil
