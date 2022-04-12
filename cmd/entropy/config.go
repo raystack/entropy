@@ -27,7 +27,10 @@ func loadConfig(cmd *cobra.Command) (Config, error) {
 	if cfgFile != "" {
 		opts = append(opts, config.WithFile(cfgFile))
 	} else {
-		opts = append(opts, config.WithPath("./"))
+		opts = append(opts,
+			config.WithPath("./"),
+			config.WithName("entropy"),
+		)
 	}
 
 	var cfg Config
