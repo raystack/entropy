@@ -326,6 +326,10 @@ func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
 				return domain.ResourceStatusError, err
 			}
 
+			if releaseConfig.State == releaseStateStopped {
+				releaseConfig.Values[replicasString] = 0
+			}
+
 			kubeConfig := helm.ToKubeConfig(provider.Configs)
 			helmConfig := &helm.ProviderConfig{
 				Kubernetes: kubeConfig,
