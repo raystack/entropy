@@ -14,10 +14,14 @@ import (
 
 const (
 	releaseConfigString     = "release_configs"
-	KUBERNETES              = "kubernetes"
+	replicaCountString      = "replicaCount"
+	releaseStateRunning     = "RUNNING"
+	releaseStateStopped     = "STOPPED"
+	providerKindKubernetes  = "kubernetes"
 	defaultRepositoryString = "https://odpf.github.io/charts/"
 	defaultChartString      = "firehose"
 	defaultVersionString    = "0.1.1"
+	defaultNamespaceString  = "firehose"
 )
 
 const configSchemaString = `
@@ -81,7 +85,7 @@ const configSchemaString = `
 			  "image": {
 				"type": "string"
 			  },
-			  "replicas": {
+			  "replicaCount": {
 				"type": "number"
 			  },
 			  "namespace": {
@@ -276,7 +280,7 @@ const configSchemaString = `
 			],
 			"required": [
 			  "image",
-			  "replicas",
+			  "replicaCount",
 			  "namespace"
 			]
 		  }
@@ -317,14 +321,14 @@ func (m *Module) Apply(r *domain.Resource) (domain.ResourceStatus, error) {
 			return domain.ResourceStatusError, err
 		}
 
-		if provider.Kind == KUBERNETES {
-			releaseConfig := helm.DefaultReleaseConfig()
-			releaseConfig.Repository = defaultRepositoryString
-			releaseConfig.Chart = defaultChartString
-			releaseConfig.Version = defaultVersionString
-			err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig)
+		if provider.Kind == providerKindKubernetes {
+			releaseConfig, err := getReleaseConfig(r)
 			if err != nil {
 				return domain.ResourceStatusError, err
+			}
+
+			if releaseConfig.State == releaseStateStopped {
+				releaseConfig.Values[replicaCountString] = 0
 			}
 
 			kubeConfig := helm.ToKubeConfig(provider.Configs)
@@ -360,5 +364,34 @@ func (m *Module) Validate(r *domain.Resource) error {
 }
 
 func (m *Module) Act(r *domain.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
+	releaseConfig, err := getReleaseConfig(r)
+	if err != nil {
+		return nil, err
+	}
+
+	switch action {
+	case "start":
+		releaseConfig.State = releaseStateRunning
+	case "stop":
+		releaseConfig.State = releaseStateStopped
+	case "scale":
+		releaseConfig.Values[replicaCountString] = params[replicaCountString]
+	}
+	r.Configs[releaseConfigString] = releaseConfig
 	return r.Configs, nil
+}
+
+func getReleaseConfig(r *domain.Resource) (*helm.ReleaseConfig, error) {
+	releaseConfig := helm.DefaultReleaseConfig()
+	releaseConfig.Repository = defaultRepositoryString
+	releaseConfig.Chart = defaultChartString
+	releaseConfig.Version = defaultVersionString
+	releaseConfig.Namespace = defaultNamespaceString
+	releaseConfig.Name = r.Urn
+	err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig)
+	if err != nil {
+		return releaseConfig, err
+	}
+
+	return releaseConfig, nil
 }
