@@ -21,6 +21,7 @@ const (
 	defaultRepositoryString = "https://odpf.github.io/charts/"
 	defaultChartString      = "firehose"
 	defaultVersionString    = "0.1.1"
+	defaultNamespaceString  = "firehose"
 )
 
 const configSchemaString = `
@@ -385,6 +386,8 @@ func getReleaseConfig(r *domain.Resource) (*helm.ReleaseConfig, error) {
 	releaseConfig.Repository = defaultRepositoryString
 	releaseConfig.Chart = defaultChartString
 	releaseConfig.Version = defaultVersionString
+	releaseConfig.Namespace = defaultNamespaceString
+	releaseConfig.Name = r.Urn
 	err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig)
 	if err != nil {
 		return releaseConfig, err
