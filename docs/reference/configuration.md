@@ -25,21 +25,22 @@ There are 3 ways to configure app:
 Example:
 
 ```sh
-export PORT=9999
-go run main.go serve
+$ export PORT=9999
+$ entropy serve
 ```
 
 This will run the service on port 9999 instead of the default 8080
 
 ### Using a yaml file
 
-Create a custom configuration file by referring to [entropy.yaml](entropy.yaml) and use it with `--config` flag.
+By default `entropy` looks for a configuration file at `./entropy.yaml`. 
+
+This behaviour can be overriden by using `--config <config-file>` flag.
 
 Usage example:
 
 ```sh
-# make any modifications to the configs as required
-go run main.go serve --config entropy.yaml
+$ entropy serve --config entropy.yaml
 ```
 
 ### Using a combination of both
