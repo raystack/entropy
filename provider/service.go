@@ -3,21 +3,21 @@ package provider
 import "context"
 
 type Service struct {
-	providerRepository Repository
+	repo Repository
 }
 
 func NewService(repository Repository) *Service {
 	return &Service{
-		providerRepository: repository,
+		repo: repository,
 	}
 }
 
 func (s *Service) CreateProvider(ctx context.Context, pro *Provider) (*Provider, error) {
-	err := s.providerRepository.Create(pro)
+	err := s.repo.Create(pro)
 	if err != nil {
 		return nil, err
 	}
-	createdProvider, err := s.providerRepository.GetByURN(pro.URN)
+	createdProvider, err := s.repo.GetByURN(pro.URN)
 	if err != nil {
 		return nil, err
 	}
@@ -32,5 +32,5 @@ func (s *Service) ListProviders(ctx context.Context, parent string, kind string)
 	if parent != "" {
 		filter["parent"] = parent
 	}
-	return s.providerRepository.List(filter)
+	return s.repo.List(filter)
 }
