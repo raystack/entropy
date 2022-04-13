@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 
-	"github.com/odpf/entropy/resource"
+	"github.com/odpf/entropy/core/resource"
 )
 
 func TestNewResourceRepository(t *testing.T) {

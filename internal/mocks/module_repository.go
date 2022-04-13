@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	module "github.com/odpf/entropy/module"
+	module "github.com/odpf/entropy/core/module"
 	mock "github.com/stretchr/testify/mock"
 )
 

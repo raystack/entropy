@@ -7,7 +7,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/odpf/entropy/provider"
+	"github.com/odpf/entropy/core/provider"
 )
 
 type ProviderRepository struct {

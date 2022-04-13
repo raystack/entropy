@@ -1,14 +1,14 @@
 package module
 
-//go:generate mockery --name=Module -r --case underscore --with-expecter --structname Module --filename=module.go --output=../internal/mocks
-//go:generate mockery --name=Loggable -r --case underscore --with-expecter --structname LoggableModule --filename=loggable_module.go --output=../internal/mocks
-//go:generate mockery --name=Repository -r --case underscore --with-expecter --structname ModuleRepository --filename=module_repository.go --output=../internal/mocks
+//go:generate mockery --name=Module -r --case underscore --with-expecter --structname Module --filename=module.go --output=../../internal/mocks
+//go:generate mockery --name=Loggable -r --case underscore --with-expecter --structname LoggableModule --filename=loggable_module.go --output=../../internal/mocks
+//go:generate mockery --name=Repository -r --case underscore --with-expecter --structname ModuleRepository --filename=module_repository.go --output=../../internal/mocks
 
 import (
 	"context"
 	"errors"
 
-	"github.com/odpf/entropy/resource"
+	"github.com/odpf/entropy/core/resource"
 )
 
 var (

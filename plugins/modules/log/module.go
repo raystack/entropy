@@ -11,8 +11,8 @@ import (
 	gjs "github.com/xeipuuv/gojsonschema"
 	"go.uber.org/zap"
 
-	"github.com/odpf/entropy/module"
-	"github.com/odpf/entropy/resource"
+	"github.com/odpf/entropy/core/module"
+	"github.com/odpf/entropy/core/resource"
 )
 
 type Level string

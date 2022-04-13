@@ -8,10 +8,10 @@ import (
 	"github.com/mitchellh/mapstructure"
 	gjs "github.com/xeipuuv/gojsonschema"
 
-	"github.com/odpf/entropy/module"
-	"github.com/odpf/entropy/provider"
-	"github.com/odpf/entropy/provider/helm"
-	"github.com/odpf/entropy/resource"
+	"github.com/odpf/entropy/core/module"
+	"github.com/odpf/entropy/core/provider"
+	"github.com/odpf/entropy/core/resource"
+	"github.com/odpf/entropy/plugins/providers/helm"
 )
 
 const (

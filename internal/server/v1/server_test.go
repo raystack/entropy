@@ -15,9 +15,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/odpf/entropy/core/module"
+	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/internal/mocks"
-	"github.com/odpf/entropy/module"
-	"github.com/odpf/entropy/resource"
 )
 
 func TestAPIServer_CreateResource(t *testing.T) {

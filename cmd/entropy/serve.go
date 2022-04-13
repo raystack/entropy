@@ -6,16 +6,16 @@ import (
 	"github.com/odpf/salt/server"
 	"github.com/spf13/cobra"
 
+	"github.com/odpf/entropy/core/module"
+	"github.com/odpf/entropy/core/provider"
+	"github.com/odpf/entropy/core/resource"
 	entropyserver "github.com/odpf/entropy/internal/server"
 	"github.com/odpf/entropy/internal/store/inmemory"
 	"github.com/odpf/entropy/internal/store/mongodb"
-	"github.com/odpf/entropy/module"
-	"github.com/odpf/entropy/module/firehose"
-	"github.com/odpf/entropy/module/log"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
-	"github.com/odpf/entropy/provider"
-	"github.com/odpf/entropy/resource"
+	"github.com/odpf/entropy/plugins/modules/firehose"
+	"github.com/odpf/entropy/plugins/modules/log"
 )
 
 func cmdServe() *cobra.Command {

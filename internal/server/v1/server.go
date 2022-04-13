@@ -14,9 +14,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/odpf/entropy/module"
-	"github.com/odpf/entropy/provider"
-	"github.com/odpf/entropy/resource"
+	"github.com/odpf/entropy/core/module"
+	"github.com/odpf/entropy/core/provider"
+	"github.com/odpf/entropy/core/resource"
 )
 
 var ErrInternal = status.Error(codes.Internal, "internal server error")

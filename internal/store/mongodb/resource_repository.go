@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/odpf/entropy/resource"
+	"github.com/odpf/entropy/core/resource"
 )
 
 type ResourceRepository struct {

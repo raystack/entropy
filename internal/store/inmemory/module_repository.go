@@ -1,7 +1,7 @@
 package inmemory
 
 import (
-	"github.com/odpf/entropy/module"
+	"github.com/odpf/entropy/core/module"
 )
 
 type ModuleRepository struct {

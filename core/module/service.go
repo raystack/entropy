@@ -3,7 +3,7 @@ package module
 import (
 	"context"
 
-	"github.com/odpf/entropy/resource"
+	"github.com/odpf/entropy/core/resource"
 )
 
 type Service struct {
