@@ -131,90 +131,100 @@ func TestService_Sync(t *testing.T) {
 }
 
 func TestService_Validate(t *testing.T) {
-	type fields struct {
-		moduleRepository module.Repository
-	}
-	type args struct {
-		ctx context.Context
-		r   *resource.Resource
-	}
+	t.Parallel()
 
 	currentTime := time.Now()
-	r := &resource.Resource{
-		URN:       "p-testdata-gl-testname-mock",
-		Name:      "testname",
-		Parent:    "p-testdata-gl",
-		Kind:      "mock",
-		Configs:   map[string]interface{}{},
-		Labels:    map[string]string{},
-		Status:    resource.StatusPending,
-		CreatedAt: currentTime,
-		UpdatedAt: currentTime,
-	}
-	validateFailedErr := errors.New("some validation failure error")
+	sampleError := errors.New("some validation failure error")
 
-	mockModule := &mocks.Module{}
-	mockModule.EXPECT().ID().Return("mock")
-	mockModuleRepo := &mocks.ModuleRepository{}
-
-	tests := []struct {
+	testsx := []struct {
 		name    string
-		setup   func(t *testing.T)
-		fields  fields
-		args    args
+		setup   func(t *testing.T) *module.Service
+		r       resource.Resource
 		wantErr error
 	}{
 		{
-			name: "test validate success",
-			setup: func(t *testing.T) {
-				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
-				mockModule.EXPECT().Validate(mock.Anything).Return(nil).Once()
-			},
-			fields: fields{
-				moduleRepository: mockModuleRepo,
-			},
-			args: args{
-				ctx: nil,
-				r:   r,
-			},
-			wantErr: nil,
-		},
-		{
-			name: "test validate module not found error",
-			setup: func(t *testing.T) {
+			name: "ModuleNotFound",
+			setup: func(t *testing.T) *module.Service {
+				mockModuleRepo := &mocks.ModuleRepository{}
 				mockModuleRepo.EXPECT().Get("mock").Return(nil, module.ErrModuleNotFound).Once()
+
+				return module.NewService(mockModuleRepo)
 			},
-			fields: fields{
-				moduleRepository: mockModuleRepo,
-			},
-			args: args{
-				ctx: nil,
-				r:   r,
+			r: resource.Resource{
+				URN:       "p-testdata-gl-testname-mock",
+				Name:      "testname",
+				Parent:    "p-testdata-gl",
+				Kind:      "mock",
+				Configs:   map[string]interface{}{},
+				Labels:    map[string]string{},
+				Status:    resource.StatusPending,
+				CreatedAt: currentTime,
+				UpdatedAt: currentTime,
 			},
 			wantErr: module.ErrModuleNotFound,
 		},
 		{
-			name: "test validation failed",
-			setup: func(t *testing.T) {
+			name: "ValidationError",
+			setup: func(t *testing.T) *module.Service {
+				mockModule := &mocks.Module{}
+				mockModule.EXPECT().ID().Return("mock")
+				mockModule.EXPECT().Validate(mock.Anything).Return(sampleError).Once()
+
+				mockModuleRepo := &mocks.ModuleRepository{}
 				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
-				mockModule.EXPECT().Validate(mock.Anything).Return(validateFailedErr)
+
+				return module.NewService(mockModuleRepo)
 			},
-			fields: fields{
-				moduleRepository: mockModuleRepo,
+			r: resource.Resource{
+				URN:       "p-testdata-gl-testname-mock",
+				Name:      "testname",
+				Parent:    "p-testdata-gl",
+				Kind:      "mock",
+				Configs:   map[string]interface{}{},
+				Labels:    map[string]string{},
+				Status:    resource.StatusPending,
+				CreatedAt: currentTime,
+				UpdatedAt: currentTime,
 			},
-			args: args{
-				ctx: nil,
-				r:   r,
+			wantErr: sampleError,
+		},
+		{
+			name: "Success",
+			setup: func(t *testing.T) *module.Service {
+				mockModule := &mocks.Module{}
+				mockModule.EXPECT().ID().Return("mock")
+				mockModule.EXPECT().Validate(mock.Anything).Return(nil).Once()
+
+				mockModuleRepo := &mocks.ModuleRepository{}
+				mockModuleRepo.EXPECT().Get("mock").Return(mockModule, nil).Once()
+
+				return module.NewService(mockModuleRepo)
 			},
-			wantErr: validateFailedErr,
+			r: resource.Resource{
+				URN:       "p-testdata-gl-testname-mock",
+				Name:      "testname",
+				Parent:    "p-testdata-gl",
+				Kind:      "mock",
+				Configs:   map[string]interface{}{},
+				Labels:    map[string]string{},
+				Status:    resource.StatusPending,
+				CreatedAt: currentTime,
+				UpdatedAt: currentTime,
+			},
+			wantErr: nil,
 		},
 	}
-	for _, tt := range tests {
+
+	for _, tt := range testsx {
 		t.Run(tt.name, func(t *testing.T) {
-			s := module.NewService(tt.fields.moduleRepository)
-			tt.setup(t)
-			if err := s.Validate(tt.args.ctx, *tt.args.r); !errors.Is(err, tt.wantErr) {
-				t.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)
+			moduleSvc := tt.setup(t)
+
+			err := moduleSvc.Validate(context.Background(), tt.r)
+			if tt.wantErr != nil {
+				assert.Error(t, err)
+				assert.True(t, errors.Is(err, tt.wantErr))
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
