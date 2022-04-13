@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/odpf/entropy/core/provider"
-	"github.com/odpf/entropy/internal/mocks"
+	"github.com/odpf/entropy/core/provider/mocks"
 )
 
 func TestService_CreateProvider(t *testing.T) {

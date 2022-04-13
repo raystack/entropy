@@ -17,10 +17,12 @@ import (
 
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/internal/mocks"
+	"github.com/odpf/entropy/internal/server/v1/mocks"
 )
 
 func TestAPIServer_CreateResource(t *testing.T) {
+	t.Parallel()
+	
 	t.Run("test create new resource", func(t *testing.T) {
 		createdAt := time.Now()
 		updatedAt := createdAt.Add(time.Minute)

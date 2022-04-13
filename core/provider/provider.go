@@ -1,6 +1,6 @@
 package provider
 
-//go:generate mockery --name=Repository -r --case underscore --with-expecter --structname ProviderRepository --filename=provider_repository.go --output=../../internal/mocks
+//go:generate mockery --name=Repository -r --case underscore --with-expecter --structname ProviderRepository --filename=provider_repository.go --output=./mocks
 
 import (
 	"errors"

@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/odpf/entropy/core/module"
+	"github.com/odpf/entropy/core/module/mocks"
 	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/internal/mocks"
 )
 
 func TestService_Sync(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/internal/mocks"
+	"github.com/odpf/entropy/core/resource/mocks"
 )
 
 func TestService_CreateResource(t *testing.T) {
