@@ -24,11 +24,11 @@ func (_m *ResourceService) EXPECT() *ResourceService_Expecter {
 }
 
 // CreateResource provides a mock function with given fields: ctx, res
-func (_m *ResourceService) CreateResource(ctx context.Context, res *resource.Resource) (*resource.Resource, error) {
+func (_m *ResourceService) CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error) {
 	ret := _m.Called(ctx, res)
 
 	var r0 *resource.Resource
-	if rf, ok := ret.Get(0).(func(context.Context, *resource.Resource) *resource.Resource); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Resource) *resource.Resource); ok {
 		r0 = rf(ctx, res)
 	} else {
 		if ret.Get(0) != nil {
@@ -37,7 +37,7 @@ func (_m *ResourceService) CreateResource(ctx context.Context, res *resource.Res
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *resource.Resource) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, resource.Resource) error); ok {
 		r1 = rf(ctx, res)
 	} else {
 		r1 = ret.Error(1)
@@ -53,14 +53,14 @@ type ResourceService_CreateResource_Call struct {
 
 // CreateResource is a helper method to define mock.On call
 //  - ctx context.Context
-//  - res *resource.Resource
+//  - res resource.Resource
 func (_e *ResourceService_Expecter) CreateResource(ctx interface{}, res interface{}) *ResourceService_CreateResource_Call {
 	return &ResourceService_CreateResource_Call{Call: _e.mock.On("CreateResource", ctx, res)}
 }
 
-func (_c *ResourceService_CreateResource_Call) Run(run func(ctx context.Context, res *resource.Resource)) *ResourceService_CreateResource_Call {
+func (_c *ResourceService_CreateResource_Call) Run(run func(ctx context.Context, res resource.Resource)) *ResourceService_CreateResource_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*resource.Resource))
+		run(args[0].(context.Context), args[1].(resource.Resource))
 	})
 	return _c
 }
@@ -204,11 +204,11 @@ func (_c *ResourceService_ListResources_Call) Return(_a0 []*resource.Resource, _
 }
 
 // UpdateResource provides a mock function with given fields: ctx, res
-func (_m *ResourceService) UpdateResource(ctx context.Context, res *resource.Resource) (*resource.Resource, error) {
+func (_m *ResourceService) UpdateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error) {
 	ret := _m.Called(ctx, res)
 
 	var r0 *resource.Resource
-	if rf, ok := ret.Get(0).(func(context.Context, *resource.Resource) *resource.Resource); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Resource) *resource.Resource); ok {
 		r0 = rf(ctx, res)
 	} else {
 		if ret.Get(0) != nil {
@@ -217,7 +217,7 @@ func (_m *ResourceService) UpdateResource(ctx context.Context, res *resource.Res
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *resource.Resource) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, resource.Resource) error); ok {
 		r1 = rf(ctx, res)
 	} else {
 		r1 = ret.Error(1)
@@ -233,14 +233,14 @@ type ResourceService_UpdateResource_Call struct {
 
 // UpdateResource is a helper method to define mock.On call
 //  - ctx context.Context
-//  - res *resource.Resource
+//  - res resource.Resource
 func (_e *ResourceService_Expecter) UpdateResource(ctx interface{}, res interface{}) *ResourceService_UpdateResource_Call {
 	return &ResourceService_UpdateResource_Call{Call: _e.mock.On("UpdateResource", ctx, res)}
 }
 
-func (_c *ResourceService_UpdateResource_Call) Run(run func(ctx context.Context, res *resource.Resource)) *ResourceService_UpdateResource_Call {
+func (_c *ResourceService_UpdateResource_Call) Run(run func(ctx context.Context, res resource.Resource)) *ResourceService_UpdateResource_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*resource.Resource))
+		run(args[0].(context.Context), args[1].(resource.Resource))
 	})
 	return _c
 }

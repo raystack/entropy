@@ -24,11 +24,11 @@ func (_m *ProviderService) EXPECT() *ProviderService_Expecter {
 }
 
 // CreateProvider provides a mock function with given fields: ctx, res
-func (_m *ProviderService) CreateProvider(ctx context.Context, res *provider.Provider) (*provider.Provider, error) {
+func (_m *ProviderService) CreateProvider(ctx context.Context, res provider.Provider) (*provider.Provider, error) {
 	ret := _m.Called(ctx, res)
 
 	var r0 *provider.Provider
-	if rf, ok := ret.Get(0).(func(context.Context, *provider.Provider) *provider.Provider); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, provider.Provider) *provider.Provider); ok {
 		r0 = rf(ctx, res)
 	} else {
 		if ret.Get(0) != nil {
@@ -37,7 +37,7 @@ func (_m *ProviderService) CreateProvider(ctx context.Context, res *provider.Pro
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *provider.Provider) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, provider.Provider) error); ok {
 		r1 = rf(ctx, res)
 	} else {
 		r1 = ret.Error(1)
@@ -53,14 +53,14 @@ type ProviderService_CreateProvider_Call struct {
 
 // CreateProvider is a helper method to define mock.On call
 //  - ctx context.Context
-//  - res *provider.Provider
+//  - res provider.Provider
 func (_e *ProviderService_Expecter) CreateProvider(ctx interface{}, res interface{}) *ProviderService_CreateProvider_Call {
 	return &ProviderService_CreateProvider_Call{Call: _e.mock.On("CreateProvider", ctx, res)}
 }
 
-func (_c *ProviderService_CreateProvider_Call) Run(run func(ctx context.Context, res *provider.Provider)) *ProviderService_CreateProvider_Call {
+func (_c *ProviderService_CreateProvider_Call) Run(run func(ctx context.Context, res provider.Provider)) *ProviderService_CreateProvider_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*provider.Provider))
+		run(args[0].(context.Context), args[1].(provider.Provider))
 	})
 	return _c
 }

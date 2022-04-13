@@ -27,8 +27,8 @@ type Repository interface {
 
 	GetByURN(urn string) (*Resource, error)
 	List(filter map[string]string) ([]*Resource, error)
-	Create(r *Resource) error
-	Update(r *Resource) error
+	Create(r Resource) error
+	Update(r Resource) error
 	Delete(urn string) error
 }
 

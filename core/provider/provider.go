@@ -18,7 +18,7 @@ type Repository interface {
 
 	GetByURN(urn string) (*Provider, error)
 	List(filter map[string]string) ([]*Provider, error)
-	Create(r *Provider) error
+	Create(r Provider) error
 }
 
 type Provider struct {

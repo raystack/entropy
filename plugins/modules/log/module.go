@@ -72,7 +72,7 @@ func New(logger *zap.Logger) *Module {
 	}
 }
 
-func (m *Module) Apply(r *resource.Resource) (resource.Status, error) {
+func (m *Module) Apply(r resource.Resource) (resource.Status, error) {
 	var cfg config
 	if err := mapstructure.Decode(r.Configs, &cfg); err != nil {
 		return resource.StatusError, errors.New("unable to parse configs")
@@ -93,7 +93,7 @@ func (m *Module) Apply(r *resource.Resource) (resource.Status, error) {
 	return resource.StatusCompleted, nil
 }
 
-func (m *Module) Validate(r *resource.Resource) error {
+func (m *Module) Validate(r resource.Resource) error {
 	resourceLoader := gjs.NewGoLoader(r.Configs)
 	result, err := m.schema.Validate(resourceLoader)
 	if err != nil {
@@ -110,7 +110,7 @@ func (m *Module) Validate(r *resource.Resource) error {
 	return nil
 }
 
-func (m *Module) Act(r *resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
+func (m *Module) Act(r resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
 	switch action {
 	case "escalate":
 		r.Configs[levelConfigString] = increaseLogLevel(r.Configs[levelConfigString].(Level))
@@ -118,7 +118,7 @@ func (m *Module) Act(r *resource.Resource, action string, params map[string]inte
 	return r.Configs, nil
 }
 
-func (m *Module) Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<-chan module.LogChunk, error) {
+func (m *Module) Log(ctx context.Context, r resource.Resource, filter map[string]string) (<-chan module.LogChunk, error) {
 	var cfg config
 	if err := mapstructure.Decode(r.Configs, &cfg); err != nil {
 		return nil, errors.New("unable to parse configs")

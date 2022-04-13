@@ -24,20 +24,20 @@ var ErrInternal = status.Error(codes.Internal, "internal server error")
 type ResourceService interface {
 	GetResource(ctx context.Context, urn string) (*resource.Resource, error)
 	ListResources(ctx context.Context, parent string, kind string) ([]*resource.Resource, error)
-	CreateResource(ctx context.Context, res *resource.Resource) (*resource.Resource, error)
-	UpdateResource(ctx context.Context, res *resource.Resource) (*resource.Resource, error)
+	CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error)
+	UpdateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error)
 	DeleteResource(ctx context.Context, urn string) error
 }
 
 type ModuleService interface {
-	Act(ctx context.Context, r *resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error)
-	Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<-chan module.LogChunk, error)
-	Sync(ctx context.Context, r *resource.Resource) (*resource.Resource, error)
-	Validate(ctx context.Context, r *resource.Resource) error
+	Act(ctx context.Context, r resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error)
+	Log(ctx context.Context, r resource.Resource, filter map[string]string) (<-chan module.LogChunk, error)
+	Sync(ctx context.Context, r resource.Resource) (*resource.Resource, error)
+	Validate(ctx context.Context, r resource.Resource) error
 }
 
 type ProviderService interface {
-	CreateProvider(ctx context.Context, res *provider.Provider) (*provider.Provider, error)
+	CreateProvider(ctx context.Context, res provider.Provider) (*provider.Provider, error)
 	ListProviders(ctx context.Context, parent string, kind string) ([]*provider.Provider, error)
 }
 
@@ -62,12 +62,12 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 	res := resourceFromProto(request.Resource)
 	res.URN = resource.GenerateURN(*res)
 
-	err := server.validateResource(ctx, res)
+	err := server.validateResource(ctx, *res)
 	if err != nil {
 		return nil, err
 	}
 
-	createdResource, err := server.resourceService.CreateResource(ctx, res)
+	createdResource, err := server.resourceService.CreateResource(ctx, *res)
 	if err != nil {
 		if errors.Is(err, resource.ErrResourceAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, "resource already exists")
@@ -75,7 +75,7 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 		return nil, ErrInternal
 	}
 
-	syncedResource, err := server.syncResource(ctx, createdResource)
+	syncedResource, err := server.syncResource(ctx, *createdResource)
 	if err != nil {
 		return nil, err
 	}
@@ -102,15 +102,15 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 	res.Configs = request.GetConfigs().GetStructValue().AsMap()
 	res.Status = resource.StatusPending
 
-	err = server.validateResource(ctx, res)
+	err = server.validateResource(ctx, *res)
 	if err != nil {
 		return nil, err
 	}
-	updatedResource, err := server.resourceService.UpdateResource(ctx, res)
+	updatedResource, err := server.resourceService.UpdateResource(ctx, *res)
 	if err != nil {
 		return nil, err
 	}
-	syncedResource, err := server.syncResource(ctx, updatedResource)
+	syncedResource, err := server.syncResource(ctx, *updatedResource)
 	if err != nil {
 		return nil, err
 	}
@@ -193,12 +193,12 @@ func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1
 	}
 	action := request.GetAction()
 	params := request.GetParams().GetStructValue().AsMap()
-	resultConfig, err := server.moduleService.Act(ctx, res, action, params)
+	resultConfig, err := server.moduleService.Act(ctx, *res, action, params)
 	if err != nil {
 		return nil, ErrInternal
 	}
 	res.Configs = resultConfig
-	syncedResource, err := server.syncResource(ctx, res)
+	syncedResource, err := server.syncResource(ctx, *res)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream ent
 		}
 		return ErrInternal
 	}
-	logChunks, err := server.moduleService.Log(ctx, res, request.GetFilter())
+	logChunks, err := server.moduleService.Log(ctx, *res, request.GetFilter())
 	if err != nil {
 		return ErrInternal
 	}
@@ -244,7 +244,7 @@ func (server APIServer) CreateProvider(ctx context.Context, request *entropyv1be
 	pro.URN = provider.GenerateURN(*pro)
 	// TODO: add provider validation
 
-	createdProvider, err := server.providerService.CreateProvider(ctx, pro)
+	createdProvider, err := server.providerService.CreateProvider(ctx, *pro)
 	if err != nil {
 		if errors.Is(err, provider.ErrProviderAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, "provider already exists")
@@ -283,19 +283,19 @@ func (server APIServer) ListProviders(ctx context.Context, request *entropyv1bet
 	return &response, nil
 }
 
-func (server APIServer) syncResource(ctx context.Context, updatedResource *resource.Resource) (*resource.Resource, error) {
+func (server APIServer) syncResource(ctx context.Context, updatedResource resource.Resource) (*resource.Resource, error) {
 	syncedResource, err := server.moduleService.Sync(ctx, updatedResource)
 	if err != nil {
 		return nil, ErrInternal
 	}
-	responseResource, err := server.resourceService.UpdateResource(ctx, syncedResource)
+	responseResource, err := server.resourceService.UpdateResource(ctx, *syncedResource)
 	if err != nil {
 		return nil, ErrInternal
 	}
 	return responseResource, nil
 }
 
-func (server APIServer) validateResource(ctx context.Context, res *resource.Resource) error {
+func (server APIServer) validateResource(ctx context.Context, res resource.Resource) error {
 	err := server.moduleService.Validate(ctx, res)
 	if err != nil {
 		if errors.Is(err, module.ErrModuleNotFound) {

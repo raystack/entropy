@@ -12,7 +12,7 @@ func NewService(repository Repository) *Service {
 	}
 }
 
-func (s *Service) CreateProvider(ctx context.Context, pro *Provider) (*Provider, error) {
+func (s *Service) CreateProvider(ctx context.Context, pro Provider) (*Provider, error) {
 	err := s.repo.Create(pro)
 	if err != nil {
 		return nil, err

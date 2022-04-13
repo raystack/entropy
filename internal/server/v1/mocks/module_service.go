@@ -26,11 +26,11 @@ func (_m *ModuleService) EXPECT() *ModuleService_Expecter {
 }
 
 // Act provides a mock function with given fields: ctx, r, action, params
-func (_m *ModuleService) Act(ctx context.Context, r *resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
+func (_m *ModuleService) Act(ctx context.Context, r resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
 	ret := _m.Called(ctx, r, action, params)
 
 	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, *resource.Resource, string, map[string]interface{}) map[string]interface{}); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Resource, string, map[string]interface{}) map[string]interface{}); ok {
 		r0 = rf(ctx, r, action, params)
 	} else {
 		if ret.Get(0) != nil {
@@ -39,7 +39,7 @@ func (_m *ModuleService) Act(ctx context.Context, r *resource.Resource, action s
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *resource.Resource, string, map[string]interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, resource.Resource, string, map[string]interface{}) error); ok {
 		r1 = rf(ctx, r, action, params)
 	} else {
 		r1 = ret.Error(1)
@@ -55,16 +55,16 @@ type ModuleService_Act_Call struct {
 
 // Act is a helper method to define mock.On call
 //  - ctx context.Context
-//  - r *resource.Resource
+//  - r resource.Resource
 //  - action string
 //  - params map[string]interface{}
 func (_e *ModuleService_Expecter) Act(ctx interface{}, r interface{}, action interface{}, params interface{}) *ModuleService_Act_Call {
 	return &ModuleService_Act_Call{Call: _e.mock.On("Act", ctx, r, action, params)}
 }
 
-func (_c *ModuleService_Act_Call) Run(run func(ctx context.Context, r *resource.Resource, action string, params map[string]interface{})) *ModuleService_Act_Call {
+func (_c *ModuleService_Act_Call) Run(run func(ctx context.Context, r resource.Resource, action string, params map[string]interface{})) *ModuleService_Act_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*resource.Resource), args[2].(string), args[3].(map[string]interface{}))
+		run(args[0].(context.Context), args[1].(resource.Resource), args[2].(string), args[3].(map[string]interface{}))
 	})
 	return _c
 }
@@ -75,11 +75,11 @@ func (_c *ModuleService_Act_Call) Return(_a0 map[string]interface{}, _a1 error) 
 }
 
 // Log provides a mock function with given fields: ctx, r, filter
-func (_m *ModuleService) Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<-chan module.LogChunk, error) {
+func (_m *ModuleService) Log(ctx context.Context, r resource.Resource, filter map[string]string) (<-chan module.LogChunk, error) {
 	ret := _m.Called(ctx, r, filter)
 
 	var r0 <-chan module.LogChunk
-	if rf, ok := ret.Get(0).(func(context.Context, *resource.Resource, map[string]string) <-chan module.LogChunk); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Resource, map[string]string) <-chan module.LogChunk); ok {
 		r0 = rf(ctx, r, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -88,7 +88,7 @@ func (_m *ModuleService) Log(ctx context.Context, r *resource.Resource, filter m
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *resource.Resource, map[string]string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, resource.Resource, map[string]string) error); ok {
 		r1 = rf(ctx, r, filter)
 	} else {
 		r1 = ret.Error(1)
@@ -104,15 +104,15 @@ type ModuleService_Log_Call struct {
 
 // Log is a helper method to define mock.On call
 //  - ctx context.Context
-//  - r *resource.Resource
+//  - r resource.Resource
 //  - filter map[string]string
 func (_e *ModuleService_Expecter) Log(ctx interface{}, r interface{}, filter interface{}) *ModuleService_Log_Call {
 	return &ModuleService_Log_Call{Call: _e.mock.On("Log", ctx, r, filter)}
 }
 
-func (_c *ModuleService_Log_Call) Run(run func(ctx context.Context, r *resource.Resource, filter map[string]string)) *ModuleService_Log_Call {
+func (_c *ModuleService_Log_Call) Run(run func(ctx context.Context, r resource.Resource, filter map[string]string)) *ModuleService_Log_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*resource.Resource), args[2].(map[string]string))
+		run(args[0].(context.Context), args[1].(resource.Resource), args[2].(map[string]string))
 	})
 	return _c
 }
@@ -123,11 +123,11 @@ func (_c *ModuleService_Log_Call) Return(_a0 <-chan module.LogChunk, _a1 error) 
 }
 
 // Sync provides a mock function with given fields: ctx, r
-func (_m *ModuleService) Sync(ctx context.Context, r *resource.Resource) (*resource.Resource, error) {
+func (_m *ModuleService) Sync(ctx context.Context, r resource.Resource) (*resource.Resource, error) {
 	ret := _m.Called(ctx, r)
 
 	var r0 *resource.Resource
-	if rf, ok := ret.Get(0).(func(context.Context, *resource.Resource) *resource.Resource); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Resource) *resource.Resource); ok {
 		r0 = rf(ctx, r)
 	} else {
 		if ret.Get(0) != nil {
@@ -136,7 +136,7 @@ func (_m *ModuleService) Sync(ctx context.Context, r *resource.Resource) (*resou
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *resource.Resource) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, resource.Resource) error); ok {
 		r1 = rf(ctx, r)
 	} else {
 		r1 = ret.Error(1)
@@ -152,14 +152,14 @@ type ModuleService_Sync_Call struct {
 
 // Sync is a helper method to define mock.On call
 //  - ctx context.Context
-//  - r *resource.Resource
+//  - r resource.Resource
 func (_e *ModuleService_Expecter) Sync(ctx interface{}, r interface{}) *ModuleService_Sync_Call {
 	return &ModuleService_Sync_Call{Call: _e.mock.On("Sync", ctx, r)}
 }
 
-func (_c *ModuleService_Sync_Call) Run(run func(ctx context.Context, r *resource.Resource)) *ModuleService_Sync_Call {
+func (_c *ModuleService_Sync_Call) Run(run func(ctx context.Context, r resource.Resource)) *ModuleService_Sync_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*resource.Resource))
+		run(args[0].(context.Context), args[1].(resource.Resource))
 	})
 	return _c
 }
@@ -170,11 +170,11 @@ func (_c *ModuleService_Sync_Call) Return(_a0 *resource.Resource, _a1 error) *Mo
 }
 
 // Validate provides a mock function with given fields: ctx, r
-func (_m *ModuleService) Validate(ctx context.Context, r *resource.Resource) error {
+func (_m *ModuleService) Validate(ctx context.Context, r resource.Resource) error {
 	ret := _m.Called(ctx, r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *resource.Resource) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Resource) error); ok {
 		r0 = rf(ctx, r)
 	} else {
 		r0 = ret.Error(0)
@@ -190,14 +190,14 @@ type ModuleService_Validate_Call struct {
 
 // Validate is a helper method to define mock.On call
 //  - ctx context.Context
-//  - r *resource.Resource
+//  - r resource.Resource
 func (_e *ModuleService_Expecter) Validate(ctx interface{}, r interface{}) *ModuleService_Validate_Call {
 	return &ModuleService_Validate_Call{Call: _e.mock.On("Validate", ctx, r)}
 }
 
-func (_c *ModuleService_Validate_Call) Run(run func(ctx context.Context, r *resource.Resource)) *ModuleService_Validate_Call {
+func (_c *ModuleService_Validate_Call) Run(run func(ctx context.Context, r resource.Resource)) *ModuleService_Validate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*resource.Resource))
+		run(args[0].(context.Context), args[1].(resource.Resource))
 	})
 	return _c
 }

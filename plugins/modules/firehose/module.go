@@ -316,7 +316,7 @@ func New(providerRepository provider.Repository) *Module {
 	}
 }
 
-func (m *Module) Apply(r *resource.Resource) (resource.Status, error) {
+func (m *Module) Apply(r resource.Resource) (resource.Status, error) {
 	for _, p := range r.Providers {
 		p, err := m.providerRepository.GetByURN(p.URN)
 		if err != nil {
@@ -348,7 +348,7 @@ func (m *Module) Apply(r *resource.Resource) (resource.Status, error) {
 	return resource.StatusCompleted, nil
 }
 
-func (m *Module) Validate(r *resource.Resource) error {
+func (m *Module) Validate(r resource.Resource) error {
 	resourceLoader := gjs.NewGoLoader(r.Configs)
 	result, err := m.schema.Validate(resourceLoader)
 	if err != nil {
@@ -365,7 +365,7 @@ func (m *Module) Validate(r *resource.Resource) error {
 	return nil
 }
 
-func (m *Module) Act(r *resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
+func (m *Module) Act(r resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
 	releaseConfig, err := getReleaseConfig(r)
 	if err != nil {
 		return nil, err
@@ -383,7 +383,7 @@ func (m *Module) Act(r *resource.Resource, action string, params map[string]inte
 	return r.Configs, nil
 }
 
-func getReleaseConfig(r *resource.Resource) (*helm.ReleaseConfig, error) {
+func getReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
 	releaseConfig := helm.DefaultReleaseConfig()
 	releaseConfig.Repository = defaultRepositoryString
 	releaseConfig.Chart = defaultChartString

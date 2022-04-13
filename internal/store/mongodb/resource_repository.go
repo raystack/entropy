@@ -37,7 +37,7 @@ func createUniqueIndex(collection *mongo.Collection, key string, order int) erro
 	return err
 }
 
-func (rc *ResourceRepository) Create(res *resource.Resource) error {
+func (rc *ResourceRepository) Create(res resource.Resource) error {
 	res.CreatedAt = time.Now()
 	res.UpdatedAt = time.Now()
 
@@ -51,7 +51,7 @@ func (rc *ResourceRepository) Create(res *resource.Resource) error {
 	return nil
 }
 
-func (rc *ResourceRepository) Update(r *resource.Resource) error {
+func (rc *ResourceRepository) Update(r resource.Resource) error {
 	r.UpdatedAt = time.Now()
 	singleResult := rc.collection.FindOneAndUpdate(context.TODO(),
 		map[string]interface{}{"urn": r.URN},

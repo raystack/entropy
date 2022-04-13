@@ -21,15 +21,15 @@ var (
 
 type Module interface {
 	ID() string
-	Act(r *resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error)
-	Apply(r *resource.Resource) (resource.Status, error)
-	Validate(r *resource.Resource) error
+	Act(r resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error)
+	Apply(r resource.Resource) (resource.Status, error)
+	Validate(r resource.Resource) error
 }
 
 type Loggable interface {
 	Module
 
-	Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<-chan LogChunk, error)
+	Log(ctx context.Context, r resource.Resource, filter map[string]string) (<-chan LogChunk, error)
 }
 
 type LogChunk struct {

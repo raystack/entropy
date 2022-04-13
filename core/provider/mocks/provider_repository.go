@@ -21,11 +21,11 @@ func (_m *ProviderRepository) EXPECT() *ProviderRepository_Expecter {
 }
 
 // Create provides a mock function with given fields: r
-func (_m *ProviderRepository) Create(r *provider.Provider) error {
+func (_m *ProviderRepository) Create(r provider.Provider) error {
 	ret := _m.Called(r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*provider.Provider) error); ok {
+	if rf, ok := ret.Get(0).(func(provider.Provider) error); ok {
 		r0 = rf(r)
 	} else {
 		r0 = ret.Error(0)
@@ -40,14 +40,14 @@ type ProviderRepository_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-//  - r *provider.Provider
+//  - r provider.Provider
 func (_e *ProviderRepository_Expecter) Create(r interface{}) *ProviderRepository_Create_Call {
 	return &ProviderRepository_Create_Call{Call: _e.mock.On("Create", r)}
 }
 
-func (_c *ProviderRepository_Create_Call) Run(run func(r *provider.Provider)) *ProviderRepository_Create_Call {
+func (_c *ProviderRepository_Create_Call) Run(run func(r provider.Provider)) *ProviderRepository_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*provider.Provider))
+		run(args[0].(provider.Provider))
 	})
 	return _c
 }

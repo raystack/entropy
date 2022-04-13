@@ -22,7 +22,7 @@ import (
 
 func TestAPIServer_CreateResource(t *testing.T) {
 	t.Parallel()
-	
+
 	t.Run("test create new resource", func(t *testing.T) {
 		createdAt := time.Now()
 		updatedAt := createdAt.Add(time.Minute)
@@ -56,7 +56,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 		}
 
 		resourceService := &mocks.ResourceService{}
-		resourceService.EXPECT().CreateResource(mock.Anything, mock.Anything).Run(func(ctx context.Context, res *resource.Resource) {
+		resourceService.EXPECT().CreateResource(mock.Anything, mock.Anything).Run(func(ctx context.Context, res resource.Resource) {
 			assert.Equal(t, "p-testdata-gl-testname-log", res.URN)
 		}).Return(&resource.Resource{
 			URN:    "p-testdata-gl-testname-log",
@@ -72,7 +72,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 			UpdatedAt: createdAt,
 		}, nil).Once()
 
-		resourceService.EXPECT().UpdateResource(mock.Anything, mock.Anything).Run(func(ctx context.Context, res *resource.Resource) {
+		resourceService.EXPECT().UpdateResource(mock.Anything, mock.Anything).Run(func(ctx context.Context, res resource.Resource) {
 			assert.Equal(t, "p-testdata-gl-testname-log", res.URN)
 			assert.Equal(t, resource.StatusCompleted, res.Status)
 		}).Return(&resource.Resource{
@@ -307,7 +307,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 
 		resourceService.EXPECT().
 			UpdateResource(mock.Anything, mock.Anything).
-			Run(func(ctx context.Context, res *resource.Resource) {
+			Run(func(ctx context.Context, res resource.Resource) {
 				assert.Equal(t, resource.StatusPending, res.Status)
 			}).
 			Return(&resource.Resource{
@@ -326,7 +326,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 
 		resourceService.EXPECT().
 			UpdateResource(mock.Anything, mock.Anything).
-			Run(func(ctx context.Context, res *resource.Resource) {
+			Run(func(ctx context.Context, res resource.Resource) {
 				assert.Equal(t, resource.StatusCompleted, res.Status)
 			}).
 			Return(&resource.Resource{
@@ -674,7 +674,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 	t.Run("test applying action successfully", func(t *testing.T) {
 		createdAt := time.Now()
 		updatedAt := createdAt.Add(time.Minute)
-		r := &resource.Resource{
+		r := resource.Resource{
 			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
@@ -687,7 +687,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
 		}
-		rDash := &resource.Resource{
+		rDash := resource.Resource{
 			URN:    "p-testdata-gl-testname-log",
 			Name:   "testname",
 			Parent: "p-testdata-gl",
@@ -700,7 +700,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
 		}
-		rProto, _ := resourceToProto(r)
+		rProto, _ := resourceToProto(&r)
 		want := &entropyv1beta1.ApplyActionResponse{
 			Resource: rProto,
 		}
@@ -713,17 +713,17 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 		resourceService := &mocks.ResourceService{}
 		resourceService.EXPECT().
 			GetResource(mock.Anything, "p-testdata-gl-testname-log").
-			Return(rDash, nil).Once()
+			Return(&rDash, nil).Once()
 
 		resourceService.EXPECT().
 			UpdateResource(mock.Anything, mock.Anything).
-			Return(r, error(nil)).Once()
+			Return(&r, error(nil)).Once()
 
 		moduleService := &mocks.ModuleService{}
 		moduleService.EXPECT().Act(mock.Anything, rDash, "escalate", map[string]interface{}{}).Return(map[string]interface{}{
 			"log_level": "WARN",
 		}, nil).Once()
-		moduleService.EXPECT().Sync(mock.Anything, mock.Anything).Run(func(_ context.Context, r *resource.Resource) {
+		moduleService.EXPECT().Sync(mock.Anything, mock.Anything).Run(func(_ context.Context, r resource.Resource) {
 			assert.Equal(t, "WARN", r.Configs["log_level"])
 		}).Return(&resource.Resource{
 			URN:    "p-testdata-gl-testname-log",
