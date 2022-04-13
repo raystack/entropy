@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"github.com/odpf/salt/cmdx"
@@ -12,7 +12,7 @@ and improve modern cloud applications and infrastructure using
 familiar languages, tools, and engineering practices.`,
 }
 
-func main() {
+func Execute() {
 	rootCmd.PersistentFlags().StringP(configFlag, "c", "", "Override config file")
 	rootCmd.AddCommand(
 		cmdServe(),

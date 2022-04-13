@@ -1,9 +1,10 @@
-package main
+package cli
 
 import (
 	"context"
+	"os/signal"
+	"syscall"
 
-	"github.com/odpf/salt/server"
 	"github.com/spf13/cobra"
 
 	"github.com/odpf/entropy/core/module"
@@ -36,10 +37,8 @@ func cmdServe() *cobra.Command {
 }
 
 func runServer(c Config) error {
-	ctx, cancelFunc := context.WithCancel(
-		server.HandleSignals(context.Background()),
-	)
-	defer cancelFunc()
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	nr, err := metric.New(&c.NewRelic)
 	if err != nil {
