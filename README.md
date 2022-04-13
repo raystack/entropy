@@ -5,7 +5,9 @@
 [![Version](https://img.shields.io/github/v/release/odpf/entropy?logo=semantic-release)](Version)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?logo=apache)](LICENSE)
 
-Entropy is an extensible infrastructure orchestration and application deployment tool. Entropy provides features required for deploying and managing complex applications like resource versioning, config schema versioning, rollbacks dry runs etc.
+Entropy is an extensible infrastructure orchestration and application deployment tool. Entropy provides features
+required for deploying and managing complex applications like resource versioning, config schema versioning, rollbacks
+dry runs etc.
 
 ## Key Features
 
@@ -25,9 +27,10 @@ Install Entropy on macOS, Windows, Linux, OpenBSD, FreeBSD, and on any machine.
 
 #### Binary (Cross-platform)
 
-Download the appropriate version for your platform from [releases](https://github.com/odpf/entropy/releases) page. Once downloaded, the binary can be run from anywhere.
-You don’t need to install it into a global location. This works well for shared hosts and other systems where you don’t have a privileged account.
-Ideally, you should install it somewhere in your PATH for easy use. `/usr/local/bin` is the most probable location.
+Download the appropriate version for your platform from [releases](https://github.com/odpf/entropy/releases) page. Once
+downloaded, the binary can be run from anywhere. You don’t need to install it into a global location. This works well
+for shared hosts and other systems where you don’t have a privileged account. Ideally, you should install it somewhere
+in your PATH for easy use. `/usr/local/bin` is the most probable location.
 
 #### Homebrew
 
@@ -72,11 +75,15 @@ $ make test
 
 ## Contribute
 
-Development of Entropy happens in the open on GitHub, and we are grateful to the community for contributing bugfixes and improvements. Read below to learn how you can take part in improving Entropy.
+Development of Entropy happens in the open on GitHub, and we are grateful to the community for contributing bugfixes and
+improvements. Read below to learn how you can take part in improving Entropy.
 
-Read our [contributing guide](https://odpf.github.io/entropy/docs/contribute/contributing) to learn about our development process, how to propose bugfixes and improvements, and how to build and test your changes to Entropy.
+Read our [contributing guide](https://odpf.github.io/entropy/docs/contribute/contributing) to learn about our
+development process, how to propose bugfixes and improvements, and how to build and test your changes to Entropy.
 
-To help you get your feet wet and get you familiar with our contribution process, we have a list of [good first issues](https://github.com/odpf/entropy/labels/good%20first%20issue) that contain bugs which have a relatively limited scope. This is a great place to get started.
+To help you get your feet wet and get you familiar with our contribution process, we have a list
+of [good first issues](https://github.com/odpf/entropy/labels/good%20first%20issue) that contain bugs which have a
+relatively limited scope. This is a great place to get started.
 
 This project exists thanks to all the [contributors](https://github.com/odpf/entropy/graphs/contributors).
 

@@ -1,9 +1,7 @@
 package main
 
-import (
-	"github.com/odpf/entropy/cmd"
-)
+import "github.com/odpf/entropy/cli"
 
 func main() {
-	cmd.Execute()
+	cli.Execute()
 }
