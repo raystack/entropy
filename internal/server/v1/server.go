@@ -37,7 +37,7 @@ type ModuleService interface {
 }
 
 type ProviderService interface {
-	CreateProvider(ctx context.Context, res *provider.Provider) (*provider.Provider, error)
+	CreateProvider(ctx context.Context, res provider.Provider) (*provider.Provider, error)
 	ListProviders(ctx context.Context, parent string, kind string) ([]*provider.Provider, error)
 }
 
@@ -244,7 +244,7 @@ func (server APIServer) CreateProvider(ctx context.Context, request *entropyv1be
 	pro.URN = provider.GenerateURN(*pro)
 	// TODO: add provider validation
 
-	createdProvider, err := server.providerService.CreateProvider(ctx, pro)
+	createdProvider, err := server.providerService.CreateProvider(ctx, *pro)
 	if err != nil {
 		if errors.Is(err, provider.ErrProviderAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, "provider already exists")

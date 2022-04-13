@@ -24,12 +24,12 @@ func (rc *ProviderRepository) Migrate() error {
 	return createUniqueIndex(rc.collection, "urn", 1)
 }
 
-func (rc *ProviderRepository) Create(Provider *provider.Provider) error {
-	Provider.URN = provider.GenerateURN(*Provider)
-	Provider.CreatedAt = time.Now()
-	Provider.UpdatedAt = time.Now()
+func (rc *ProviderRepository) Create(pro provider.Provider) error {
+	pro.URN = provider.GenerateURN(pro)
+	pro.CreatedAt = time.Now()
+	pro.UpdatedAt = time.Now()
 
-	_, err := rc.collection.InsertOne(context.TODO(), Provider)
+	_, err := rc.collection.InsertOne(context.TODO(), pro)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
 			return fmt.Errorf("%w: %s", provider.ErrProviderAlreadyExists, err)
