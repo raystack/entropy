@@ -30,10 +30,10 @@ type ResourceService interface {
 }
 
 type ModuleService interface {
-	Act(ctx context.Context, r *resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error)
-	Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<-chan module.LogChunk, error)
-	Sync(ctx context.Context, r *resource.Resource) (*resource.Resource, error)
-	Validate(ctx context.Context, r *resource.Resource) error
+	Act(ctx context.Context, r resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error)
+	Log(ctx context.Context, r resource.Resource, filter map[string]string) (<-chan module.LogChunk, error)
+	Sync(ctx context.Context, r resource.Resource) (*resource.Resource, error)
+	Validate(ctx context.Context, r resource.Resource) error
 }
 
 type ProviderService interface {
@@ -62,7 +62,7 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 	res := resourceFromProto(request.Resource)
 	res.URN = resource.GenerateURN(*res)
 
-	err := server.validateResource(ctx, res)
+	err := server.validateResource(ctx, *res)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 		return nil, ErrInternal
 	}
 
-	syncedResource, err := server.syncResource(ctx, createdResource)
+	syncedResource, err := server.syncResource(ctx, *createdResource)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 	res.Configs = request.GetConfigs().GetStructValue().AsMap()
 	res.Status = resource.StatusPending
 
-	err = server.validateResource(ctx, res)
+	err = server.validateResource(ctx, *res)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 	if err != nil {
 		return nil, err
 	}
-	syncedResource, err := server.syncResource(ctx, updatedResource)
+	syncedResource, err := server.syncResource(ctx, *updatedResource)
 	if err != nil {
 		return nil, err
 	}
@@ -193,12 +193,12 @@ func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1
 	}
 	action := request.GetAction()
 	params := request.GetParams().GetStructValue().AsMap()
-	resultConfig, err := server.moduleService.Act(ctx, res, action, params)
+	resultConfig, err := server.moduleService.Act(ctx, *res, action, params)
 	if err != nil {
 		return nil, ErrInternal
 	}
 	res.Configs = resultConfig
-	syncedResource, err := server.syncResource(ctx, res)
+	syncedResource, err := server.syncResource(ctx, *res)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream ent
 		}
 		return ErrInternal
 	}
-	logChunks, err := server.moduleService.Log(ctx, res, request.GetFilter())
+	logChunks, err := server.moduleService.Log(ctx, *res, request.GetFilter())
 	if err != nil {
 		return ErrInternal
 	}
@@ -283,7 +283,7 @@ func (server APIServer) ListProviders(ctx context.Context, request *entropyv1bet
 	return &response, nil
 }
 
-func (server APIServer) syncResource(ctx context.Context, updatedResource *resource.Resource) (*resource.Resource, error) {
+func (server APIServer) syncResource(ctx context.Context, updatedResource resource.Resource) (*resource.Resource, error) {
 	syncedResource, err := server.moduleService.Sync(ctx, updatedResource)
 	if err != nil {
 		return nil, ErrInternal
@@ -295,7 +295,7 @@ func (server APIServer) syncResource(ctx context.Context, updatedResource *resou
 	return responseResource, nil
 }
 
-func (server APIServer) validateResource(ctx context.Context, res *resource.Resource) error {
+func (server APIServer) validateResource(ctx context.Context, res resource.Resource) error {
 	err := server.moduleService.Validate(ctx, res)
 	if err != nil {
 		if errors.Is(err, module.ErrModuleNotFound) {

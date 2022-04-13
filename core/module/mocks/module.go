@@ -22,11 +22,11 @@ func (_m *Module) EXPECT() *Module_Expecter {
 }
 
 // Act provides a mock function with given fields: r, action, params
-func (_m *Module) Act(r *resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
+func (_m *Module) Act(r resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
 	ret := _m.Called(r, action, params)
 
 	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func(*resource.Resource, string, map[string]interface{}) map[string]interface{}); ok {
+	if rf, ok := ret.Get(0).(func(resource.Resource, string, map[string]interface{}) map[string]interface{}); ok {
 		r0 = rf(r, action, params)
 	} else {
 		if ret.Get(0) != nil {
@@ -35,7 +35,7 @@ func (_m *Module) Act(r *resource.Resource, action string, params map[string]int
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*resource.Resource, string, map[string]interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(resource.Resource, string, map[string]interface{}) error); ok {
 		r1 = rf(r, action, params)
 	} else {
 		r1 = ret.Error(1)
@@ -50,16 +50,16 @@ type Module_Act_Call struct {
 }
 
 // Act is a helper method to define mock.On call
-//  - r *resource.Resource
+//  - r resource.Resource
 //  - action string
 //  - params map[string]interface{}
 func (_e *Module_Expecter) Act(r interface{}, action interface{}, params interface{}) *Module_Act_Call {
 	return &Module_Act_Call{Call: _e.mock.On("Act", r, action, params)}
 }
 
-func (_c *Module_Act_Call) Run(run func(r *resource.Resource, action string, params map[string]interface{})) *Module_Act_Call {
+func (_c *Module_Act_Call) Run(run func(r resource.Resource, action string, params map[string]interface{})) *Module_Act_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*resource.Resource), args[1].(string), args[2].(map[string]interface{}))
+		run(args[0].(resource.Resource), args[1].(string), args[2].(map[string]interface{}))
 	})
 	return _c
 }
@@ -70,18 +70,18 @@ func (_c *Module_Act_Call) Return(_a0 map[string]interface{}, _a1 error) *Module
 }
 
 // Apply provides a mock function with given fields: r
-func (_m *Module) Apply(r *resource.Resource) (resource.Status, error) {
+func (_m *Module) Apply(r resource.Resource) (resource.Status, error) {
 	ret := _m.Called(r)
 
 	var r0 resource.Status
-	if rf, ok := ret.Get(0).(func(*resource.Resource) resource.Status); ok {
+	if rf, ok := ret.Get(0).(func(resource.Resource) resource.Status); ok {
 		r0 = rf(r)
 	} else {
 		r0 = ret.Get(0).(resource.Status)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*resource.Resource) error); ok {
+	if rf, ok := ret.Get(1).(func(resource.Resource) error); ok {
 		r1 = rf(r)
 	} else {
 		r1 = ret.Error(1)
@@ -96,14 +96,14 @@ type Module_Apply_Call struct {
 }
 
 // Apply is a helper method to define mock.On call
-//  - r *resource.Resource
+//  - r resource.Resource
 func (_e *Module_Expecter) Apply(r interface{}) *Module_Apply_Call {
 	return &Module_Apply_Call{Call: _e.mock.On("Apply", r)}
 }
 
-func (_c *Module_Apply_Call) Run(run func(r *resource.Resource)) *Module_Apply_Call {
+func (_c *Module_Apply_Call) Run(run func(r resource.Resource)) *Module_Apply_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*resource.Resource))
+		run(args[0].(resource.Resource))
 	})
 	return _c
 }
@@ -150,11 +150,11 @@ func (_c *Module_ID_Call) Return(_a0 string) *Module_ID_Call {
 }
 
 // Validate provides a mock function with given fields: r
-func (_m *Module) Validate(r *resource.Resource) error {
+func (_m *Module) Validate(r resource.Resource) error {
 	ret := _m.Called(r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*resource.Resource) error); ok {
+	if rf, ok := ret.Get(0).(func(resource.Resource) error); ok {
 		r0 = rf(r)
 	} else {
 		r0 = ret.Error(0)
@@ -169,14 +169,14 @@ type Module_Validate_Call struct {
 }
 
 // Validate is a helper method to define mock.On call
-//  - r *resource.Resource
+//  - r resource.Resource
 func (_e *Module_Expecter) Validate(r interface{}) *Module_Validate_Call {
 	return &Module_Validate_Call{Call: _e.mock.On("Validate", r)}
 }
 
-func (_c *Module_Validate_Call) Run(run func(r *resource.Resource)) *Module_Validate_Call {
+func (_c *Module_Validate_Call) Run(run func(r resource.Resource)) *Module_Validate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*resource.Resource))
+		run(args[0].(resource.Resource))
 	})
 	return _c
 }
