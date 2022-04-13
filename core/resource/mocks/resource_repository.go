@@ -21,11 +21,11 @@ func (_m *ResourceRepository) EXPECT() *ResourceRepository_Expecter {
 }
 
 // Create provides a mock function with given fields: r
-func (_m *ResourceRepository) Create(r *resource.Resource) error {
+func (_m *ResourceRepository) Create(r resource.Resource) error {
 	ret := _m.Called(r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*resource.Resource) error); ok {
+	if rf, ok := ret.Get(0).(func(resource.Resource) error); ok {
 		r0 = rf(r)
 	} else {
 		r0 = ret.Error(0)
@@ -40,14 +40,14 @@ type ResourceRepository_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-//  - r *resource.Resource
+//  - r resource.Resource
 func (_e *ResourceRepository_Expecter) Create(r interface{}) *ResourceRepository_Create_Call {
 	return &ResourceRepository_Create_Call{Call: _e.mock.On("Create", r)}
 }
 
-func (_c *ResourceRepository_Create_Call) Run(run func(r *resource.Resource)) *ResourceRepository_Create_Call {
+func (_c *ResourceRepository_Create_Call) Run(run func(r resource.Resource)) *ResourceRepository_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*resource.Resource))
+		run(args[0].(resource.Resource))
 	})
 	return _c
 }
@@ -223,11 +223,11 @@ func (_c *ResourceRepository_Migrate_Call) Return(_a0 error) *ResourceRepository
 }
 
 // Update provides a mock function with given fields: r
-func (_m *ResourceRepository) Update(r *resource.Resource) error {
+func (_m *ResourceRepository) Update(r resource.Resource) error {
 	ret := _m.Called(r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*resource.Resource) error); ok {
+	if rf, ok := ret.Get(0).(func(resource.Resource) error); ok {
 		r0 = rf(r)
 	} else {
 		r0 = ret.Error(0)
@@ -242,14 +242,14 @@ type ResourceRepository_Update_Call struct {
 }
 
 // Update is a helper method to define mock.On call
-//  - r *resource.Resource
+//  - r resource.Resource
 func (_e *ResourceRepository_Expecter) Update(r interface{}) *ResourceRepository_Update_Call {
 	return &ResourceRepository_Update_Call{Call: _e.mock.On("Update", r)}
 }
 
-func (_c *ResourceRepository_Update_Call) Run(run func(r *resource.Resource)) *ResourceRepository_Update_Call {
+func (_c *ResourceRepository_Update_Call) Run(run func(r resource.Resource)) *ResourceRepository_Update_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*resource.Resource))
+		run(args[0].(resource.Resource))
 	})
 	return _c
 }

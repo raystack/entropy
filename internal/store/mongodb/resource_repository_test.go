@@ -42,7 +42,7 @@ func TestResourceRepository_Create(t *testing.T) {
 		collection *mongo.Collection
 	}
 	type args struct {
-		resource *resource.Resource
+		resource resource.Resource
 	}
 	tests := []struct {
 		name    string
@@ -56,7 +56,7 @@ func TestResourceRepository_Create(t *testing.T) {
 			setup:  func(mt *mtest.T) { mt.AddMockResponses(mtest.CreateSuccessResponse()) },
 			fields: func(mt *mtest.T) fields { return fields{mt.Coll} },
 			args: func(mt *mtest.T) args {
-				return args{&resource.Resource{
+				return args{resource.Resource{
 					URN:       "p-testdata-gl-testname-log",
 					Name:      "testname",
 					Parent:    "p-testdata-gl",
@@ -83,7 +83,7 @@ func TestResourceRepository_Create(t *testing.T) {
 				return fields{mt.Coll}
 			},
 			args: func(mt *mtest.T) args {
-				return args{&resource.Resource{
+				return args{resource.Resource{
 					URN:       "p-testdata-gl-testname-log",
 					Name:      "testname",
 					Parent:    "p-testdata-gl",

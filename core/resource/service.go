@@ -27,7 +27,7 @@ func (s *Service) ListResources(ctx context.Context, parent string, kind string)
 	return s.resourceRepository.List(filter)
 }
 
-func (s *Service) CreateResource(ctx context.Context, res *Resource) (*Resource, error) {
+func (s *Service) CreateResource(ctx context.Context, res Resource) (*Resource, error) {
 	res.Status = StatusPending
 
 	err := s.resourceRepository.Create(res)
@@ -42,7 +42,7 @@ func (s *Service) CreateResource(ctx context.Context, res *Resource) (*Resource,
 	return createdResource, nil
 }
 
-func (s *Service) UpdateResource(ctx context.Context, res *Resource) (*Resource, error) {
+func (s *Service) UpdateResource(ctx context.Context, res Resource) (*Resource, error) {
 	err := s.resourceRepository.Update(res)
 	if err != nil {
 		return nil, err

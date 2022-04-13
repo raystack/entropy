@@ -16,7 +16,7 @@ import (
 
 func TestService_CreateResource(t *testing.T) {
 	t.Run("test create new resource", func(t *testing.T) {
-		argResource := &resource.Resource{
+		argResource := resource.Resource{
 			URN:     "p-testdata-gl-testname-log",
 			Name:    "testname",
 			Parent:  "p-testdata-gl",
@@ -39,7 +39,7 @@ func TestService_CreateResource(t *testing.T) {
 		wantErr := error(nil)
 
 		mockRepo := &mocks.ResourceRepository{}
-		mockRepo.EXPECT().Create(mock.Anything).Run(func(r *resource.Resource) {
+		mockRepo.EXPECT().Create(mock.Anything).Run(func(r resource.Resource) {
 			assert.Equal(t, resource.StatusPending, r.Status)
 		}).Return(nil).Once()
 
@@ -68,7 +68,7 @@ func TestService_CreateResource(t *testing.T) {
 
 	t.Run("test create duplicate resource", func(t *testing.T) {
 		mockRepo := &mocks.ResourceRepository{}
-		argResource := &resource.Resource{
+		argResource := resource.Resource{
 			URN:     "p-testdata-gl-testname-log",
 			Name:    "testname",
 			Parent:  "p-testdata-gl",
@@ -78,7 +78,7 @@ func TestService_CreateResource(t *testing.T) {
 		}
 		want := (*resource.Resource)(nil)
 		wantErr := resource.ErrResourceAlreadyExists
-		mockRepo.EXPECT().Create(mock.Anything).Run(func(r *resource.Resource) {
+		mockRepo.EXPECT().Create(mock.Anything).Run(func(r resource.Resource) {
 			assert.Equal(t, resource.StatusPending, r.Status)
 		}).Return(resource.ErrResourceAlreadyExists).Once()
 
@@ -114,7 +114,7 @@ func TestService_UpdateResource(t *testing.T) {
 		}
 		wantErr := error(nil)
 
-		mockRepo.EXPECT().Update(mock.Anything).Run(func(r *resource.Resource) {
+		mockRepo.EXPECT().Update(mock.Anything).Run(func(r resource.Resource) {
 			assert.Equal(t, "p-testdata-gl-testname-log", r.URN)
 			assert.Equal(t, resource.StatusPending, r.Status)
 			assert.Equal(t, currentTime, r.CreatedAt)
@@ -135,7 +135,7 @@ func TestService_UpdateResource(t *testing.T) {
 		}, nil).Once()
 
 		s := resource.NewService(mockRepo)
-		got, err := s.UpdateResource(context.Background(), &resource.Resource{
+		got, err := s.UpdateResource(context.Background(), resource.Resource{
 			URN:       "p-testdata-gl-testname-log",
 			Name:      "testname",
 			Parent:    "p-testdata-gl",
@@ -167,7 +167,7 @@ func TestService_UpdateResource(t *testing.T) {
 			Once()
 
 		s := resource.NewService(mockRepo)
-		got, err := s.UpdateResource(context.Background(), &resource.Resource{
+		got, err := s.UpdateResource(context.Background(), resource.Resource{
 			URN:       "p-testdata-gl-testname-log",
 			Name:      "testname",
 			Parent:    "p-testdata-gl",

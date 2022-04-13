@@ -24,8 +24,8 @@ var ErrInternal = status.Error(codes.Internal, "internal server error")
 type ResourceService interface {
 	GetResource(ctx context.Context, urn string) (*resource.Resource, error)
 	ListResources(ctx context.Context, parent string, kind string) ([]*resource.Resource, error)
-	CreateResource(ctx context.Context, res *resource.Resource) (*resource.Resource, error)
-	UpdateResource(ctx context.Context, res *resource.Resource) (*resource.Resource, error)
+	CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error)
+	UpdateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error)
 	DeleteResource(ctx context.Context, urn string) error
 }
 
@@ -67,7 +67,7 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 		return nil, err
 	}
 
-	createdResource, err := server.resourceService.CreateResource(ctx, res)
+	createdResource, err := server.resourceService.CreateResource(ctx, *res)
 	if err != nil {
 		if errors.Is(err, resource.ErrResourceAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, "resource already exists")
@@ -106,7 +106,7 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 	if err != nil {
 		return nil, err
 	}
-	updatedResource, err := server.resourceService.UpdateResource(ctx, res)
+	updatedResource, err := server.resourceService.UpdateResource(ctx, *res)
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +288,7 @@ func (server APIServer) syncResource(ctx context.Context, updatedResource resour
 	if err != nil {
 		return nil, ErrInternal
 	}
-	responseResource, err := server.resourceService.UpdateResource(ctx, syncedResource)
+	responseResource, err := server.resourceService.UpdateResource(ctx, *syncedResource)
 	if err != nil {
 		return nil, ErrInternal
 	}
