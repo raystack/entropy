@@ -8,7 +8,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	gjs "github.com/xeipuuv/gojsonschema"
 
-	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/provider"
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/plugins/providers/helm"
@@ -352,7 +351,7 @@ func (m *Module) Validate(r resource.Resource) error {
 	resourceLoader := gjs.NewGoLoader(r.Configs)
 	result, err := m.schema.Validate(resourceLoader)
 	if err != nil {
-		return fmt.Errorf("%w: %s", module.ErrModuleConfigParseFailed, err)
+		return fmt.Errorf("%w: %s", resource.ErrModuleConfigParseFailed, err)
 	}
 	if !result.Valid() {
 		var errorStrings []string

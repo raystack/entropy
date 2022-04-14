@@ -7,7 +7,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/provider"
 	"github.com/odpf/entropy/core/resource"
 	entropyserver "github.com/odpf/entropy/internal/server"
@@ -69,9 +68,8 @@ func runServer(c Config) error {
 		return err
 	}
 
-	resourceService := resource.NewService(resourceRepository)
-	moduleService := module.NewService(moduleRepository)
+	resourceService := resource.NewService(resourceRepository, moduleRepository)
 	providerService := provider.NewService(providerRepository)
 
-	return entropyserver.Serve(ctx, c.Service, loggerInstance, nr, resourceService, moduleService, providerService)
+	return entropyserver.Serve(ctx, c.Service, loggerInstance, nr, resourceService, providerService)
 }

@@ -23,6 +23,54 @@ func (_m *ResourceService) EXPECT() *ResourceService_Expecter {
 	return &ResourceService_Expecter{mock: &_m.Mock}
 }
 
+// ApplyAction provides a mock function with given fields: ctx, urn, action
+func (_m *ResourceService) ApplyAction(ctx context.Context, urn string, action resource.Action) (*resource.Resource, error) {
+	ret := _m.Called(ctx, urn, action)
+
+	var r0 *resource.Resource
+	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Action) *resource.Resource); ok {
+		r0 = rf(ctx, urn, action)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*resource.Resource)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, resource.Action) error); ok {
+		r1 = rf(ctx, urn, action)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ResourceService_ApplyAction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ApplyAction'
+type ResourceService_ApplyAction_Call struct {
+	*mock.Call
+}
+
+// ApplyAction is a helper method to define mock.On call
+//  - ctx context.Context
+//  - urn string
+//  - action resource.Action
+func (_e *ResourceService_Expecter) ApplyAction(ctx interface{}, urn interface{}, action interface{}) *ResourceService_ApplyAction_Call {
+	return &ResourceService_ApplyAction_Call{Call: _e.mock.On("ApplyAction", ctx, urn, action)}
+}
+
+func (_c *ResourceService_ApplyAction_Call) Run(run func(ctx context.Context, urn string, action resource.Action)) *ResourceService_ApplyAction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(resource.Action))
+	})
+	return _c
+}
+
+func (_c *ResourceService_ApplyAction_Call) Return(_a0 *resource.Resource, _a1 error) *ResourceService_ApplyAction_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // CreateResource provides a mock function with given fields: ctx, res
 func (_m *ResourceService) CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error) {
 	ret := _m.Called(ctx, res)
@@ -108,6 +156,54 @@ func (_c *ResourceService_DeleteResource_Call) Return(_a0 error) *ResourceServic
 	return _c
 }
 
+// GetLog provides a mock function with given fields: ctx, urn, filter
+func (_m *ResourceService) GetLog(ctx context.Context, urn string, filter map[string]string) (<-chan resource.LogChunk, error) {
+	ret := _m.Called(ctx, urn, filter)
+
+	var r0 <-chan resource.LogChunk
+	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]string) <-chan resource.LogChunk); ok {
+		r0 = rf(ctx, urn, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(<-chan resource.LogChunk)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, map[string]string) error); ok {
+		r1 = rf(ctx, urn, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ResourceService_GetLog_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLog'
+type ResourceService_GetLog_Call struct {
+	*mock.Call
+}
+
+// GetLog is a helper method to define mock.On call
+//  - ctx context.Context
+//  - urn string
+//  - filter map[string]string
+func (_e *ResourceService_Expecter) GetLog(ctx interface{}, urn interface{}, filter interface{}) *ResourceService_GetLog_Call {
+	return &ResourceService_GetLog_Call{Call: _e.mock.On("GetLog", ctx, urn, filter)}
+}
+
+func (_c *ResourceService_GetLog_Call) Run(run func(ctx context.Context, urn string, filter map[string]string)) *ResourceService_GetLog_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(map[string]string))
+	})
+	return _c
+}
+
+func (_c *ResourceService_GetLog_Call) Return(_a0 <-chan resource.LogChunk, _a1 error) *ResourceService_GetLog_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // GetResource provides a mock function with given fields: ctx, urn
 func (_m *ResourceService) GetResource(ctx context.Context, urn string) (*resource.Resource, error) {
 	ret := _m.Called(ctx, urn)
@@ -156,15 +252,15 @@ func (_c *ResourceService_GetResource_Call) Return(_a0 *resource.Resource, _a1 e
 }
 
 // ListResources provides a mock function with given fields: ctx, parent, kind
-func (_m *ResourceService) ListResources(ctx context.Context, parent string, kind string) ([]*resource.Resource, error) {
+func (_m *ResourceService) ListResources(ctx context.Context, parent string, kind string) ([]resource.Resource, error) {
 	ret := _m.Called(ctx, parent, kind)
 
-	var r0 []*resource.Resource
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*resource.Resource); ok {
+	var r0 []resource.Resource
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []resource.Resource); ok {
 		r0 = rf(ctx, parent, kind)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*resource.Resource)
+			r0 = ret.Get(0).([]resource.Resource)
 		}
 	}
 
@@ -198,18 +294,18 @@ func (_c *ResourceService_ListResources_Call) Run(run func(ctx context.Context, 
 	return _c
 }
 
-func (_c *ResourceService_ListResources_Call) Return(_a0 []*resource.Resource, _a1 error) *ResourceService_ListResources_Call {
+func (_c *ResourceService_ListResources_Call) Return(_a0 []resource.Resource, _a1 error) *ResourceService_ListResources_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-// UpdateResource provides a mock function with given fields: ctx, res
-func (_m *ResourceService) UpdateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error) {
-	ret := _m.Called(ctx, res)
+// UpdateResource provides a mock function with given fields: ctx, urn, updates
+func (_m *ResourceService) UpdateResource(ctx context.Context, urn string, updates resource.Updates) (*resource.Resource, error) {
+	ret := _m.Called(ctx, urn, updates)
 
 	var r0 *resource.Resource
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Resource) *resource.Resource); ok {
-		r0 = rf(ctx, res)
+	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Updates) *resource.Resource); ok {
+		r0 = rf(ctx, urn, updates)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*resource.Resource)
@@ -217,8 +313,8 @@ func (_m *ResourceService) UpdateResource(ctx context.Context, res resource.Reso
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, resource.Resource) error); ok {
-		r1 = rf(ctx, res)
+	if rf, ok := ret.Get(1).(func(context.Context, string, resource.Updates) error); ok {
+		r1 = rf(ctx, urn, updates)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -233,14 +329,15 @@ type ResourceService_UpdateResource_Call struct {
 
 // UpdateResource is a helper method to define mock.On call
 //  - ctx context.Context
-//  - res resource.Resource
-func (_e *ResourceService_Expecter) UpdateResource(ctx interface{}, res interface{}) *ResourceService_UpdateResource_Call {
-	return &ResourceService_UpdateResource_Call{Call: _e.mock.On("UpdateResource", ctx, res)}
+//  - urn string
+//  - updates resource.Updates
+func (_e *ResourceService_Expecter) UpdateResource(ctx interface{}, urn interface{}, updates interface{}) *ResourceService_UpdateResource_Call {
+	return &ResourceService_UpdateResource_Call{Call: _e.mock.On("UpdateResource", ctx, urn, updates)}
 }
 
-func (_c *ResourceService_UpdateResource_Call) Run(run func(ctx context.Context, res resource.Resource)) *ResourceService_UpdateResource_Call {
+func (_c *ResourceService_UpdateResource_Call) Run(run func(ctx context.Context, urn string, updates resource.Updates)) *ResourceService_UpdateResource_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(resource.Resource))
+		run(args[0].(context.Context), args[1].(string), args[2].(resource.Updates))
 	})
 	return _c
 }
