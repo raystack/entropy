@@ -45,7 +45,16 @@ type Resource struct {
 	UpdatedAt time.Time              `bson:"updated_at"`
 }
 
+type Action struct {
+	Name   string
+	Params map[string]interface{}
+}
+
 type Status string
+
+type Updates struct {
+	Configs map[string]interface{}
+}
 
 type ProviderSelector struct {
 	URN    string `bson:"urn"`

@@ -5,13 +5,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/odpf/entropy/core/module"
+	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/plugins/modules/log"
 )
 
 func TestModuleRepository_Get(t *testing.T) {
 	type fields struct {
-		collection map[string]module.Module
+		collection map[string]resource.Module
 	}
 	type args struct {
 		id string
@@ -21,13 +21,13 @@ func TestModuleRepository_Get(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    module.Module
+		want    resource.Module
 		wantErr error
 	}{
 		{
 			name: "test get module from repository",
 			fields: fields{
-				collection: map[string]module.Module{
+				collection: map[string]resource.Module{
 					mod.ID(): mod,
 				},
 			},
@@ -40,7 +40,7 @@ func TestModuleRepository_Get(t *testing.T) {
 		{
 			name: "test get non-existent module from repository",
 			fields: fields{
-				collection: map[string]module.Module{
+				collection: map[string]resource.Module{
 					mod.ID(): mod,
 				},
 			},
@@ -48,7 +48,7 @@ func TestModuleRepository_Get(t *testing.T) {
 				id: "notlog",
 			},
 			want:    nil,
-			wantErr: module.ErrModuleNotFound,
+			wantErr: resource.ErrModuleNotFound,
 		},
 	}
 	for _, tt := range tests {
@@ -70,10 +70,10 @@ func TestModuleRepository_Get(t *testing.T) {
 
 func TestModuleRepository_Register(t *testing.T) {
 	type fields struct {
-		collection map[string]module.Module
+		collection map[string]resource.Module
 	}
 	type args struct {
-		module module.Module
+		module resource.Module
 	}
 	mod := &log.Module{}
 	tests := []struct {
@@ -85,7 +85,7 @@ func TestModuleRepository_Register(t *testing.T) {
 		{
 			name: "test register module",
 			fields: fields{
-				collection: map[string]module.Module{},
+				collection: map[string]resource.Module{},
 			},
 			args: args{
 				module: mod,
@@ -95,14 +95,14 @@ func TestModuleRepository_Register(t *testing.T) {
 		{
 			name: "test register already added module",
 			fields: fields{
-				collection: map[string]module.Module{
+				collection: map[string]resource.Module{
 					mod.ID(): mod,
 				},
 			},
 			args: args{
 				module: mod,
 			},
-			wantErr: module.ErrModuleAlreadyExists,
+			wantErr: resource.ErrModuleAlreadyExists,
 		},
 	}
 	for _, tt := range tests {

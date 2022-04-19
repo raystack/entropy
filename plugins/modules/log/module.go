@@ -11,7 +11,6 @@ import (
 	gjs "github.com/xeipuuv/gojsonschema"
 	"go.uber.org/zap"
 
-	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
 )
 
@@ -97,7 +96,7 @@ func (m *Module) Validate(r resource.Resource) error {
 	resourceLoader := gjs.NewGoLoader(r.Configs)
 	result, err := m.schema.Validate(resourceLoader)
 	if err != nil {
-		return fmt.Errorf("%w: %s", module.ErrModuleConfigParseFailed, err)
+		return fmt.Errorf("%w: %s", resource.ErrModuleConfigParseFailed, err)
 	}
 	if !result.Valid() {
 		var errorStrings []string
@@ -118,17 +117,17 @@ func (m *Module) Act(r resource.Resource, action string, params map[string]inter
 	return r.Configs, nil
 }
 
-func (m *Module) Log(ctx context.Context, r resource.Resource, filter map[string]string) (<-chan module.LogChunk, error) {
+func (m *Module) Log(ctx context.Context, r resource.Resource, filter map[string]string) (<-chan resource.LogChunk, error) {
 	var cfg config
 	if err := mapstructure.Decode(r.Configs, &cfg); err != nil {
 		return nil, errors.New("unable to parse configs")
 	}
-	logs := make(chan module.LogChunk)
+	logs := make(chan resource.LogChunk)
 	go func() {
 		defer close(logs)
 		for {
 			select {
-			case logs <- module.LogChunk{
+			case logs <- resource.LogChunk{
 				Data:   []byte(fmt.Sprintf("%v", r)),
 				Labels: map[string]string{"resource": r.URN},
 			}:

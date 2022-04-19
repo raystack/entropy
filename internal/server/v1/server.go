@@ -1,6 +1,5 @@
 package handlersv1
 
-//go:generate mockery --name=ModuleService -r --case underscore --with-expecter --structname ModuleService  --filename=module_service.go --output=./mocks
 //go:generate mockery --name=ResourceService -r --case underscore --with-expecter --structname ResourceService  --filename=resource_service.go --output=./mocks
 //go:generate mockery --name=ProviderService -r --case underscore --with-expecter --structname ProviderService  --filename=provider_service.go --output=./mocks
 
@@ -14,7 +13,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/provider"
 	"github.com/odpf/entropy/core/resource"
 )
@@ -23,17 +21,13 @@ var ErrInternal = status.Error(codes.Internal, "internal server error")
 
 type ResourceService interface {
 	GetResource(ctx context.Context, urn string) (*resource.Resource, error)
-	ListResources(ctx context.Context, parent string, kind string) ([]*resource.Resource, error)
+	ListResources(ctx context.Context, parent string, kind string) ([]resource.Resource, error)
 	CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error)
-	UpdateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error)
+	UpdateResource(ctx context.Context, urn string, updates resource.Updates) (*resource.Resource, error)
 	DeleteResource(ctx context.Context, urn string) error
-}
 
-type ModuleService interface {
-	Act(ctx context.Context, r resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error)
-	Log(ctx context.Context, r resource.Resource, filter map[string]string) (<-chan module.LogChunk, error)
-	Sync(ctx context.Context, r resource.Resource) (*resource.Resource, error)
-	Validate(ctx context.Context, r resource.Resource) error
+	ApplyAction(ctx context.Context, urn string, action resource.Action) (*resource.Resource, error)
+	GetLog(ctx context.Context, urn string, filter map[string]string) (<-chan resource.LogChunk, error)
 }
 
 type ProviderService interface {
@@ -46,82 +40,64 @@ type APIServer struct {
 	entropyv1beta1.UnimplementedProviderServiceServer
 
 	resourceService ResourceService
-	moduleService   ModuleService
 	providerService ProviderService
 }
 
-func NewApiServer(resourceService ResourceService, moduleService ModuleService, providerService ProviderService) *APIServer {
+func NewApiServer(resourceService ResourceService, providerService ProviderService) *APIServer {
 	return &APIServer{
 		resourceService: resourceService,
-		moduleService:   moduleService,
 		providerService: providerService,
 	}
 }
 
 func (server APIServer) CreateResource(ctx context.Context, request *entropyv1beta1.CreateResourceRequest) (*entropyv1beta1.CreateResourceResponse, error) {
 	res := resourceFromProto(request.Resource)
-	res.URN = resource.GenerateURN(*res)
 
-	err := server.validateResource(ctx, *res)
-	if err != nil {
-		return nil, err
-	}
-
-	createdResource, err := server.resourceService.CreateResource(ctx, *res)
+	result, err := server.resourceService.CreateResource(ctx, *res)
 	if err != nil {
 		if errors.Is(err, resource.ErrResourceAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, "resource already exists")
+		} else if errors.Is(err, resource.ErrModuleNotFound) {
+			return nil, status.Errorf(codes.InvalidArgument, "failed to find module to deploy this kind")
+		} else if errors.Is(err, resource.ErrModuleConfigParseFailed) {
+			return nil, status.Errorf(codes.InvalidArgument, "failed to parse configs")
 		}
 		return nil, ErrInternal
 	}
 
-	syncedResource, err := server.syncResource(ctx, *createdResource)
-	if err != nil {
-		return nil, err
-	}
-
-	responseResource, err := resourceToProto(syncedResource)
+	responseResource, err := resourceToProto(result)
 	if err != nil {
 		return nil, ErrInternal
 	}
 
-	response := entropyv1beta1.CreateResourceResponse{
+	return &entropyv1beta1.CreateResourceResponse{
 		Resource: responseResource,
-	}
-	return &response, nil
+	}, nil
 }
 
 func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1beta1.UpdateResourceRequest) (*entropyv1beta1.UpdateResourceResponse, error) {
-	res, err := server.resourceService.GetResource(ctx, request.GetUrn())
+	updates := resource.Updates{
+		Configs: request.GetConfigs().GetStructValue().AsMap(),
+	}
+
+	res, err := server.resourceService.UpdateResource(ctx, request.GetUrn(), updates)
 	if err != nil {
 		if errors.Is(err, resource.ErrResourceNotFound) {
 			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
+		} else if errors.Is(err, resource.ErrModuleConfigParseFailed) {
+			return nil, status.Errorf(codes.InvalidArgument, "failed to parse configs")
 		}
 		return nil, ErrInternal
 	}
-	res.Configs = request.GetConfigs().GetStructValue().AsMap()
-	res.Status = resource.StatusPending
 
-	err = server.validateResource(ctx, *res)
-	if err != nil {
-		return nil, err
-	}
-	updatedResource, err := server.resourceService.UpdateResource(ctx, *res)
-	if err != nil {
-		return nil, err
-	}
-	syncedResource, err := server.syncResource(ctx, *updatedResource)
-	if err != nil {
-		return nil, err
-	}
-	responseResource, err := resourceToProto(syncedResource)
+	responseResource, err := resourceToProto(res)
 	if err != nil {
 		return nil, ErrInternal
 	}
-	response := entropyv1beta1.UpdateResourceResponse{
+
+	return &entropyv1beta1.UpdateResourceResponse{
 		Resource: responseResource,
-	}
-	return &response, nil
+	}, nil
 }
 
 func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1.GetResourceRequest) (*entropyv1beta1.GetResourceResponse, error) {
@@ -132,41 +108,39 @@ func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1
 		}
 		return nil, ErrInternal
 	}
+
 	responseResource, err := resourceToProto(res)
 	if err != nil {
 		return nil, ErrInternal
 	}
-	response := entropyv1beta1.GetResourceResponse{
+
+	return &entropyv1beta1.GetResourceResponse{
 		Resource: responseResource,
-	}
-	return &response, nil
+	}, nil
 }
 
 func (server APIServer) ListResources(ctx context.Context, request *entropyv1beta1.ListResourcesRequest) (*entropyv1beta1.ListResourcesResponse, error) {
-	var responseResources []*entropyv1beta1.Resource
 	resources, err := server.resourceService.ListResources(ctx, request.GetParent(), request.GetKind())
 	if err != nil {
 		return nil, ErrInternal
 	}
+
+	var responseResources []*entropyv1beta1.Resource
 	for _, res := range resources {
-		responseResource, err := resourceToProto(res)
+		responseResource, err := resourceToProto(&res)
 		if err != nil {
 			return nil, ErrInternal
 		}
 		responseResources = append(responseResources, responseResource)
 	}
-	if err != nil {
-		return nil, ErrInternal
-	}
-	response := entropyv1beta1.ListResourcesResponse{
+
+	return &entropyv1beta1.ListResourcesResponse{
 		Resources: responseResources,
-	}
-	return &response, nil
+	}, nil
 }
 
 func (server APIServer) DeleteResource(ctx context.Context, request *entropyv1beta1.DeleteResourceRequest) (*entropyv1beta1.DeleteResourceResponse, error) {
-	urn := request.GetUrn()
-	_, err := server.resourceService.GetResource(ctx, urn)
+	err := server.resourceService.DeleteResource(ctx, request.GetUrn())
 	if err != nil {
 		if errors.Is(err, resource.ErrResourceNotFound) {
 			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
@@ -174,69 +148,62 @@ func (server APIServer) DeleteResource(ctx context.Context, request *entropyv1be
 		return nil, ErrInternal
 	}
 
-	err = server.resourceService.DeleteResource(ctx, urn)
-	if err != nil {
-		return nil, err
-	}
-
-	response := entropyv1beta1.DeleteResourceResponse{}
-	return &response, nil
+	return &entropyv1beta1.DeleteResourceResponse{}, nil
 }
 
 func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1.ApplyActionRequest) (*entropyv1beta1.ApplyActionResponse, error) {
-	res, err := server.resourceService.GetResource(ctx, request.GetUrn())
+	action := resource.Action{
+		Name:   request.GetAction(),
+		Params: request.GetParams().GetStructValue().AsMap(),
+	}
+
+	updatedRes, err := server.resourceService.ApplyAction(ctx, request.GetUrn(), action)
 	if err != nil {
 		if errors.Is(err, resource.ErrResourceNotFound) {
 			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
 		}
 		return nil, ErrInternal
 	}
-	action := request.GetAction()
-	params := request.GetParams().GetStructValue().AsMap()
-	resultConfig, err := server.moduleService.Act(ctx, *res, action, params)
+
+	responseResource, err := resourceToProto(updatedRes)
 	if err != nil {
 		return nil, ErrInternal
 	}
-	res.Configs = resultConfig
-	syncedResource, err := server.syncResource(ctx, *res)
-	if err != nil {
-		return nil, err
-	}
-	responseResource, err := resourceToProto(syncedResource)
-	if err != nil {
-		return nil, ErrInternal
-	}
-	response := &entropyv1beta1.ApplyActionResponse{
+
+	return &entropyv1beta1.ApplyActionResponse{
 		Resource: responseResource,
-	}
-	return response, nil
+	}, nil
 }
 
 func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream entropyv1beta1.ResourceService_GetLogServer) error {
 	ctx := stream.Context()
-	res, err := server.resourceService.GetResource(ctx, request.GetUrn())
+
+	logStream, err := server.resourceService.GetLog(ctx, request.GetUrn(), request.GetFilter())
 	if err != nil {
 		if errors.Is(err, resource.ErrResourceNotFound) {
 			return status.Error(codes.NotFound, "could not find resource with given urn")
 		}
 		return ErrInternal
 	}
-	logChunks, err := server.moduleService.Log(ctx, *res, request.GetFilter())
-	if err != nil {
-		return ErrInternal
-	}
-	for logChunk := range logChunks {
-		err := stream.Send(&entropyv1beta1.GetLogResponse{
-			Chunk: &entropyv1beta1.LogChunk{
-				Data:   logChunk.Data,
-				Labels: logChunk.Labels,
-			},
-		})
-		if err != nil {
-			return ErrInternal
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+
+		case chunk := <-logStream:
+			resp := &entropyv1beta1.GetLogResponse{
+				Chunk: &entropyv1beta1.LogChunk{
+					Data:   chunk.Data,
+					Labels: chunk.Labels,
+				},
+			}
+
+			if err := stream.Send(resp); err != nil {
+				return ErrInternal
+			}
 		}
 	}
-	return nil
 }
 
 func (server APIServer) CreateProvider(ctx context.Context, request *entropyv1beta1.CreateProviderRequest) (*entropyv1beta1.CreateProviderResponse, error) {
@@ -281,32 +248,6 @@ func (server APIServer) ListProviders(ctx context.Context, request *entropyv1bet
 		Providers: responseProviders,
 	}
 	return &response, nil
-}
-
-func (server APIServer) syncResource(ctx context.Context, updatedResource resource.Resource) (*resource.Resource, error) {
-	syncedResource, err := server.moduleService.Sync(ctx, updatedResource)
-	if err != nil {
-		return nil, ErrInternal
-	}
-	responseResource, err := server.resourceService.UpdateResource(ctx, *syncedResource)
-	if err != nil {
-		return nil, ErrInternal
-	}
-	return responseResource, nil
-}
-
-func (server APIServer) validateResource(ctx context.Context, res resource.Resource) error {
-	err := server.moduleService.Validate(ctx, res)
-	if err != nil {
-		if errors.Is(err, module.ErrModuleNotFound) {
-			return status.Errorf(codes.InvalidArgument, "failed to find module to deploy this kind")
-		}
-		if errors.Is(err, module.ErrModuleConfigParseFailed) {
-			return status.Errorf(codes.InvalidArgument, "failed to parse configs")
-		}
-		return status.Errorf(codes.InvalidArgument, err.Error())
-	}
-	return nil
 }
 
 func resourceToProto(res *resource.Resource) (*entropyv1beta1.Resource, error) {
