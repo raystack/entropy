@@ -10,13 +10,15 @@ import (
 	"github.com/odpf/entropy/core/provider"
 )
 
+const providerRepoName = "providers"
+
 type ProviderRepository struct {
 	collection *mongo.Collection
 }
 
-func NewProviderRepository(collection *mongo.Collection) *ProviderRepository {
+func NewProviderRepository(db *mongo.Database) *ProviderRepository {
 	return &ProviderRepository{
-		collection: collection,
+		collection: db.Collection(providerRepoName),
 	}
 }
 

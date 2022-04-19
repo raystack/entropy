@@ -12,13 +12,15 @@ import (
 	"github.com/odpf/entropy/core/resource"
 )
 
+const resourceRepoName = "resources"
+
 type ResourceRepository struct {
 	collection *mongo.Collection
 }
 
-func NewResourceRepository(collection *mongo.Collection) *ResourceRepository {
+func NewResourceRepository(db *mongo.Database) *ResourceRepository {
 	return &ResourceRepository{
-		collection: collection,
+		collection: db.Collection(resourceRepoName),
 	}
 }
 

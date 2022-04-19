@@ -54,8 +54,8 @@ func runServer(c Config) error {
 		return err
 	}
 
-	resourceRepository := mongodb.NewResourceRepository(mongoStore.Collection(resourceRepoName))
-	providerRepository := mongodb.NewProviderRepository(mongoStore.Collection(providerRepoName))
+	resourceRepository := mongodb.NewResourceRepository(mongoStore)
+	providerRepository := mongodb.NewProviderRepository(mongoStore)
 
 	moduleRepository := inmemory.NewModuleRepository()
 	err = moduleRepository.Register(log.New(loggerInstance))

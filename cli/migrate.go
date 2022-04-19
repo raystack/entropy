@@ -6,11 +6,6 @@ import (
 	"github.com/odpf/entropy/internal/store/mongodb"
 )
 
-const (
-	resourceRepoName = "resources"
-	providerRepoName = "providers"
-)
-
 func cmdMigrate() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "migrate",
@@ -35,12 +30,12 @@ func runMigrations(cfg mongodb.DBConfig) error {
 		return err
 	}
 
-	resourceRepository := mongodb.NewResourceRepository(mongoStore.Collection(resourceRepoName))
+	resourceRepository := mongodb.NewResourceRepository(mongoStore)
 	if err = resourceRepository.Migrate(); err != nil {
 		return err
 	}
 
-	providerRepository := mongodb.NewProviderRepository(mongoStore.Collection(providerRepoName))
+	providerRepository := mongodb.NewProviderRepository(mongoStore)
 	if err = providerRepository.Migrate(); err != nil {
 		return err
 	}

@@ -13,31 +13,10 @@ import (
 	"github.com/odpf/entropy/core/resource"
 )
 
-func TestNewResourceRepository(t *testing.T) {
-	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	defer mt.Close()
-	type args struct {
-		collection *mongo.Collection
-	}
-	test := struct {
-		name string
-		args func(mt *mtest.T) args
-		want func(mt *mtest.T) *ResourceRepository
-	}{
-		name: "test creating new resource repository",
-		args: func(mt *mtest.T) args { return args{mt.Coll} },
-		want: func(mt *mtest.T) *ResourceRepository { return &ResourceRepository{mt.Coll} },
-	}
-	mt.Run(test.name, func(mt *mtest.T) {
-		if got, want := NewResourceRepository(test.args(mt).collection), test.want(mt); !reflect.DeepEqual(got, want) {
-			t.Errorf("NewResourceRepository() = %v, want %v", got, want)
-		}
-	})
-}
-
 func TestResourceRepository_Create(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
+
 	type fields struct {
 		collection *mongo.Collection
 	}
@@ -101,7 +80,7 @@ func TestResourceRepository_Create(t *testing.T) {
 	for _, tt := range tests {
 		mt.Run(tt.name, func(mt *mtest.T) {
 			tt.setup(mt)
-			rc := NewResourceRepository(tt.fields(mt).collection)
+			rc := NewResourceRepository(mt.DB)
 			if err := rc.Create(tt.args(mt).resource); !errors.Is(err, tt.wantErr) {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -159,7 +138,7 @@ func TestResourceRepository_GetByURN(t *testing.T) {
 	for _, tt := range tests {
 		mt.Run(tt.name, func(mt *mtest.T) {
 			tt.setup(mt)
-			rc := NewResourceRepository(tt.fields(mt).collection)
+			rc := NewResourceRepository(mt.DB)
 			got, err := rc.GetByURN(tt.args(mt).urn)
 			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("GetByURN() error = %v, wantErr %v", err, tt.wantErr)
