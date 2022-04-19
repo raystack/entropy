@@ -34,7 +34,7 @@ func TestService_GetResource(t *testing.T) {
 			setup: func(t *testing.T) *resource.Service {
 				repo := &mocks.ResourceRepository{}
 				repo.EXPECT().
-					GetByURN(mock.Anything).
+					GetByURN(mock.Anything, mock.Anything).
 					Return(nil, resource.ErrResourceNotFound).
 					Once()
 				return resource.NewService(repo, &mocks.ModuleRegistry{})
@@ -47,7 +47,7 @@ func TestService_GetResource(t *testing.T) {
 			setup: func(t *testing.T) *resource.Service {
 				repo := &mocks.ResourceRepository{}
 				repo.EXPECT().
-					GetByURN(mock.Anything).
+					GetByURN(mock.Anything, mock.Anything).
 					Return(&sampleResource, nil).
 					Once()
 				return resource.NewService(repo, &mocks.ModuleRegistry{})
@@ -90,7 +90,7 @@ func TestService_ListResources(t *testing.T) {
 			setup: func(t *testing.T) *resource.Service {
 				repo := &mocks.ResourceRepository{}
 				repo.EXPECT().
-					List(mock.Anything).
+					List(mock.Anything, mock.Anything).
 					Return(nil, nil).
 					Once()
 				return resource.NewService(repo, &mocks.ModuleRegistry{})
@@ -103,7 +103,7 @@ func TestService_ListResources(t *testing.T) {
 			setup: func(t *testing.T) *resource.Service {
 				repo := &mocks.ResourceRepository{}
 				repo.EXPECT().
-					List(mock.Anything).
+					List(mock.Anything, mock.Anything).
 					Return(nil, errRepoFailure).
 					Once()
 				return resource.NewService(repo, &mocks.ModuleRegistry{})
@@ -116,7 +116,7 @@ func TestService_ListResources(t *testing.T) {
 			setup: func(t *testing.T) *resource.Service {
 				repo := &mocks.ResourceRepository{}
 				repo.EXPECT().
-					List(mock.Anything).
+					List(mock.Anything, mock.Anything).
 					Return([]*resource.Resource{&sampleResource}, nil).
 					Once()
 				return resource.NewService(repo, &mocks.ModuleRegistry{})
@@ -183,7 +183,7 @@ func TestService_CreateResource(t *testing.T) {
 				modReg.EXPECT().Get("mock").Return(mod, nil).Once()
 
 				resourceRepo := &mocks.ResourceRepository{}
-				resourceRepo.EXPECT().Create(mock.Anything).Return(errSample).Once()
+				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(errSample).Once()
 
 				return resource.NewService(resourceRepo, modReg)
 			},
@@ -207,7 +207,7 @@ func TestService_CreateResource(t *testing.T) {
 				modReg.EXPECT().Get("mock").Return(mod, nil).Twice()
 
 				resourceRepo := &mocks.ResourceRepository{}
-				resourceRepo.EXPECT().Create(mock.Anything).Return(nil).Once()
+				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(nil).Once()
 
 				return resource.NewService(resourceRepo, modReg)
 			},
@@ -231,8 +231,8 @@ func TestService_CreateResource(t *testing.T) {
 				modReg.EXPECT().Get("mock").Return(mod, nil).Twice()
 
 				resourceRepo := &mocks.ResourceRepository{}
-				resourceRepo.EXPECT().Create(mock.Anything).Return(nil).Once()
-				resourceRepo.EXPECT().Update(mock.Anything).Return(errSample).Once()
+				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(nil).Once()
+				resourceRepo.EXPECT().Update(mock.Anything, mock.Anything).Return(errSample).Once()
 
 				return resource.NewService(resourceRepo, modReg)
 			},
@@ -256,8 +256,8 @@ func TestService_CreateResource(t *testing.T) {
 				modReg.EXPECT().Get("mock").Return(mod, nil).Twice()
 
 				resourceRepo := &mocks.ResourceRepository{}
-				resourceRepo.EXPECT().Create(mock.Anything).Return(nil).Once()
-				resourceRepo.EXPECT().Update(mock.Anything).Return(nil)
+				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(nil).Once()
+				resourceRepo.EXPECT().Update(mock.Anything, mock.Anything).Return(nil)
 
 				return resource.NewService(resourceRepo, modReg)
 			},
@@ -315,7 +315,7 @@ func TestService_UpdateResource(t *testing.T) {
 			setup: func(t *testing.T) *resource.Service {
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
-					GetByURN("parent-child-mock").
+					GetByURN(mock.Anything, "parent-child-mock").
 					Return(nil, resource.ErrResourceNotFound).
 					Once()
 
@@ -338,7 +338,7 @@ func TestService_UpdateResource(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
-					GetByURN("parent-child-mock").
+					GetByURN(mock.Anything, "parent-child-mock").
 					Return(&testResource, nil).
 					Once()
 
@@ -361,11 +361,11 @@ func TestService_UpdateResource(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
-					GetByURN("parent-child-mock").
+					GetByURN(mock.Anything, "parent-child-mock").
 					Return(&testResource, nil).
 					Once()
 
-				resourceRepo.EXPECT().Update(mock.Anything).Return(testErr)
+				resourceRepo.EXPECT().Update(mock.Anything, mock.Anything).Return(testErr)
 
 				return resource.NewService(resourceRepo, modReg)
 			},
@@ -386,8 +386,8 @@ func TestService_UpdateResource(t *testing.T) {
 				modReg.EXPECT().Get("mock").Return(mod, nil).Twice()
 
 				resourceRepo := &mocks.ResourceRepository{}
-				resourceRepo.EXPECT().GetByURN("parent-child-mock").Return(&testResource, nil).Once()
-				resourceRepo.EXPECT().Update(mock.Anything).Return(nil).Twice()
+				resourceRepo.EXPECT().GetByURN(mock.Anything, "parent-child-mock").Return(&testResource, nil).Once()
+				resourceRepo.EXPECT().Update(mock.Anything, mock.Anything).Return(nil).Twice()
 
 				return resource.NewService(resourceRepo, modReg)
 			},

@@ -1,6 +1,7 @@
 package firehose
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -317,7 +318,7 @@ func New(providerRepository provider.Repository) *Module {
 
 func (m *Module) Apply(r resource.Resource) (resource.Status, error) {
 	for _, p := range r.Providers {
-		p, err := m.providerRepository.GetByURN(p.URN)
+		p, err := m.providerRepository.GetByURN(context.TODO(), p.URN)
 		if err != nil {
 			return resource.StatusError, err
 		}
@@ -373,8 +374,10 @@ func (m *Module) Act(r resource.Resource, action string, params map[string]inter
 	switch action {
 	case "start":
 		releaseConfig.State = releaseStateRunning
+
 	case "stop":
 		releaseConfig.State = releaseStateStopped
+
 	case "scale":
 		releaseConfig.Values[replicaCountString] = params[replicaCountString]
 	}

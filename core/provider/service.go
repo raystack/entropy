@@ -13,11 +13,11 @@ func NewService(repository Repository) *Service {
 }
 
 func (s *Service) CreateProvider(ctx context.Context, pro Provider) (*Provider, error) {
-	err := s.repo.Create(pro)
+	err := s.repo.Create(ctx, pro)
 	if err != nil {
 		return nil, err
 	}
-	createdProvider, err := s.repo.GetByURN(pro.URN)
+	createdProvider, err := s.repo.GetByURN(ctx, pro.URN)
 	if err != nil {
 		return nil, err
 	}
@@ -32,5 +32,5 @@ func (s *Service) ListProviders(ctx context.Context, parent string, kind string)
 	if parent != "" {
 		filter["parent"] = parent
 	}
-	return s.repo.List(filter)
+	return s.repo.List(ctx, filter)
 }

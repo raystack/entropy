@@ -17,7 +17,7 @@ type Service struct {
 }
 
 func (s *Service) GetResource(ctx context.Context, urn string) (*Resource, error) {
-	return s.resourceRepository.GetByURN(urn)
+	return s.resourceRepository.GetByURN(ctx, urn)
 }
 
 func (s *Service) ListResources(ctx context.Context, parent string, kind string) ([]Resource, error) {
@@ -29,7 +29,7 @@ func (s *Service) ListResources(ctx context.Context, parent string, kind string)
 		filter["parent"] = parent
 	}
 
-	resources, err := s.resourceRepository.List(filter)
+	resources, err := s.resourceRepository.List(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (s *Service) CreateResource(ctx context.Context, res Resource) (*Resource, 
 		return nil, err
 	}
 
-	err := s.resourceRepository.Create(res)
+	err := s.resourceRepository.Create(ctx, res)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (s *Service) CreateResource(ctx context.Context, res Resource) (*Resource, 
 		return nil, err
 	}
 
-	if err := s.resourceRepository.Update(*syncedRes); err != nil {
+	if err := s.resourceRepository.Update(ctx, *syncedRes); err != nil {
 		return nil, err
 	}
 
@@ -78,7 +78,7 @@ func (s *Service) UpdateResource(ctx context.Context, urn string, updates Update
 		return nil, err
 	}
 
-	if err := s.resourceRepository.Update(*res); err != nil {
+	if err := s.resourceRepository.Update(ctx, *res); err != nil {
 		return nil, err
 	}
 
@@ -87,7 +87,7 @@ func (s *Service) UpdateResource(ctx context.Context, urn string, updates Update
 		return nil, err
 	}
 
-	if err := s.resourceRepository.Update(*syncedRes); err != nil {
+	if err := s.resourceRepository.Update(ctx, *syncedRes); err != nil {
 		return nil, err
 	}
 	return syncedRes, nil
@@ -95,7 +95,7 @@ func (s *Service) UpdateResource(ctx context.Context, urn string, updates Update
 
 func (s *Service) DeleteResource(ctx context.Context, urn string) error {
 	// TODO: notify the module about deletion.
-	return s.resourceRepository.Delete(urn)
+	return s.resourceRepository.Delete(ctx, urn)
 }
 
 func (s *Service) ApplyAction(ctx context.Context, urn string, action Action) (*Resource, error) {
@@ -120,7 +120,7 @@ func (s *Service) ApplyAction(ctx context.Context, urn string, action Action) (*
 		return nil, err
 	}
 
-	if err := s.resourceRepository.Update(*syncedRes); err != nil {
+	if err := s.resourceRepository.Update(ctx, *syncedRes); err != nil {
 		return nil, err
 	}
 

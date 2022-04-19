@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	context "context"
+
 	resource "github.com/odpf/entropy/core/resource"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -20,13 +22,13 @@ func (_m *ResourceRepository) EXPECT() *ResourceRepository_Expecter {
 	return &ResourceRepository_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with given fields: r
-func (_m *ResourceRepository) Create(r resource.Resource) error {
-	ret := _m.Called(r)
+// Create provides a mock function with given fields: ctx, r
+func (_m *ResourceRepository) Create(ctx context.Context, r resource.Resource) error {
+	ret := _m.Called(ctx, r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(resource.Resource) error); ok {
-		r0 = rf(r)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Resource) error); ok {
+		r0 = rf(ctx, r)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -40,14 +42,15 @@ type ResourceRepository_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
+//  - ctx context.Context
 //  - r resource.Resource
-func (_e *ResourceRepository_Expecter) Create(r interface{}) *ResourceRepository_Create_Call {
-	return &ResourceRepository_Create_Call{Call: _e.mock.On("Create", r)}
+func (_e *ResourceRepository_Expecter) Create(ctx interface{}, r interface{}) *ResourceRepository_Create_Call {
+	return &ResourceRepository_Create_Call{Call: _e.mock.On("Create", ctx, r)}
 }
 
-func (_c *ResourceRepository_Create_Call) Run(run func(r resource.Resource)) *ResourceRepository_Create_Call {
+func (_c *ResourceRepository_Create_Call) Run(run func(ctx context.Context, r resource.Resource)) *ResourceRepository_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(resource.Resource))
+		run(args[0].(context.Context), args[1].(resource.Resource))
 	})
 	return _c
 }
@@ -57,13 +60,13 @@ func (_c *ResourceRepository_Create_Call) Return(_a0 error) *ResourceRepository_
 	return _c
 }
 
-// Delete provides a mock function with given fields: urn
-func (_m *ResourceRepository) Delete(urn string) error {
-	ret := _m.Called(urn)
+// Delete provides a mock function with given fields: ctx, urn
+func (_m *ResourceRepository) Delete(ctx context.Context, urn string) error {
+	ret := _m.Called(ctx, urn)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(urn)
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, urn)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -77,14 +80,15 @@ type ResourceRepository_Delete_Call struct {
 }
 
 // Delete is a helper method to define mock.On call
+//  - ctx context.Context
 //  - urn string
-func (_e *ResourceRepository_Expecter) Delete(urn interface{}) *ResourceRepository_Delete_Call {
-	return &ResourceRepository_Delete_Call{Call: _e.mock.On("Delete", urn)}
+func (_e *ResourceRepository_Expecter) Delete(ctx interface{}, urn interface{}) *ResourceRepository_Delete_Call {
+	return &ResourceRepository_Delete_Call{Call: _e.mock.On("Delete", ctx, urn)}
 }
 
-func (_c *ResourceRepository_Delete_Call) Run(run func(urn string)) *ResourceRepository_Delete_Call {
+func (_c *ResourceRepository_Delete_Call) Run(run func(ctx context.Context, urn string)) *ResourceRepository_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -94,13 +98,13 @@ func (_c *ResourceRepository_Delete_Call) Return(_a0 error) *ResourceRepository_
 	return _c
 }
 
-// GetByURN provides a mock function with given fields: urn
-func (_m *ResourceRepository) GetByURN(urn string) (*resource.Resource, error) {
-	ret := _m.Called(urn)
+// GetByURN provides a mock function with given fields: ctx, urn
+func (_m *ResourceRepository) GetByURN(ctx context.Context, urn string) (*resource.Resource, error) {
+	ret := _m.Called(ctx, urn)
 
 	var r0 *resource.Resource
-	if rf, ok := ret.Get(0).(func(string) *resource.Resource); ok {
-		r0 = rf(urn)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *resource.Resource); ok {
+		r0 = rf(ctx, urn)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*resource.Resource)
@@ -108,8 +112,8 @@ func (_m *ResourceRepository) GetByURN(urn string) (*resource.Resource, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(urn)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, urn)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -123,14 +127,15 @@ type ResourceRepository_GetByURN_Call struct {
 }
 
 // GetByURN is a helper method to define mock.On call
+//  - ctx context.Context
 //  - urn string
-func (_e *ResourceRepository_Expecter) GetByURN(urn interface{}) *ResourceRepository_GetByURN_Call {
-	return &ResourceRepository_GetByURN_Call{Call: _e.mock.On("GetByURN", urn)}
+func (_e *ResourceRepository_Expecter) GetByURN(ctx interface{}, urn interface{}) *ResourceRepository_GetByURN_Call {
+	return &ResourceRepository_GetByURN_Call{Call: _e.mock.On("GetByURN", ctx, urn)}
 }
 
-func (_c *ResourceRepository_GetByURN_Call) Run(run func(urn string)) *ResourceRepository_GetByURN_Call {
+func (_c *ResourceRepository_GetByURN_Call) Run(run func(ctx context.Context, urn string)) *ResourceRepository_GetByURN_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -140,13 +145,13 @@ func (_c *ResourceRepository_GetByURN_Call) Return(_a0 *resource.Resource, _a1 e
 	return _c
 }
 
-// List provides a mock function with given fields: filter
-func (_m *ResourceRepository) List(filter map[string]string) ([]*resource.Resource, error) {
-	ret := _m.Called(filter)
+// List provides a mock function with given fields: ctx, filter
+func (_m *ResourceRepository) List(ctx context.Context, filter map[string]string) ([]*resource.Resource, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*resource.Resource
-	if rf, ok := ret.Get(0).(func(map[string]string) []*resource.Resource); ok {
-		r0 = rf(filter)
+	if rf, ok := ret.Get(0).(func(context.Context, map[string]string) []*resource.Resource); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*resource.Resource)
@@ -154,8 +159,8 @@ func (_m *ResourceRepository) List(filter map[string]string) ([]*resource.Resour
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(map[string]string) error); ok {
-		r1 = rf(filter)
+	if rf, ok := ret.Get(1).(func(context.Context, map[string]string) error); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -169,14 +174,15 @@ type ResourceRepository_List_Call struct {
 }
 
 // List is a helper method to define mock.On call
+//  - ctx context.Context
 //  - filter map[string]string
-func (_e *ResourceRepository_Expecter) List(filter interface{}) *ResourceRepository_List_Call {
-	return &ResourceRepository_List_Call{Call: _e.mock.On("List", filter)}
+func (_e *ResourceRepository_Expecter) List(ctx interface{}, filter interface{}) *ResourceRepository_List_Call {
+	return &ResourceRepository_List_Call{Call: _e.mock.On("List", ctx, filter)}
 }
 
-func (_c *ResourceRepository_List_Call) Run(run func(filter map[string]string)) *ResourceRepository_List_Call {
+func (_c *ResourceRepository_List_Call) Run(run func(ctx context.Context, filter map[string]string)) *ResourceRepository_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]string))
+		run(args[0].(context.Context), args[1].(map[string]string))
 	})
 	return _c
 }
@@ -186,13 +192,13 @@ func (_c *ResourceRepository_List_Call) Return(_a0 []*resource.Resource, _a1 err
 	return _c
 }
 
-// Migrate provides a mock function with given fields:
-func (_m *ResourceRepository) Migrate() error {
-	ret := _m.Called()
+// Migrate provides a mock function with given fields: ctx
+func (_m *ResourceRepository) Migrate(ctx context.Context) error {
+	ret := _m.Called(ctx)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -206,13 +212,14 @@ type ResourceRepository_Migrate_Call struct {
 }
 
 // Migrate is a helper method to define mock.On call
-func (_e *ResourceRepository_Expecter) Migrate() *ResourceRepository_Migrate_Call {
-	return &ResourceRepository_Migrate_Call{Call: _e.mock.On("Migrate")}
+//  - ctx context.Context
+func (_e *ResourceRepository_Expecter) Migrate(ctx interface{}) *ResourceRepository_Migrate_Call {
+	return &ResourceRepository_Migrate_Call{Call: _e.mock.On("Migrate", ctx)}
 }
 
-func (_c *ResourceRepository_Migrate_Call) Run(run func()) *ResourceRepository_Migrate_Call {
+func (_c *ResourceRepository_Migrate_Call) Run(run func(ctx context.Context)) *ResourceRepository_Migrate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -222,13 +229,13 @@ func (_c *ResourceRepository_Migrate_Call) Return(_a0 error) *ResourceRepository
 	return _c
 }
 
-// Update provides a mock function with given fields: r
-func (_m *ResourceRepository) Update(r resource.Resource) error {
-	ret := _m.Called(r)
+// Update provides a mock function with given fields: ctx, r
+func (_m *ResourceRepository) Update(ctx context.Context, r resource.Resource) error {
+	ret := _m.Called(ctx, r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(resource.Resource) error); ok {
-		r0 = rf(r)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Resource) error); ok {
+		r0 = rf(ctx, r)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -242,14 +249,15 @@ type ResourceRepository_Update_Call struct {
 }
 
 // Update is a helper method to define mock.On call
+//  - ctx context.Context
 //  - r resource.Resource
-func (_e *ResourceRepository_Expecter) Update(r interface{}) *ResourceRepository_Update_Call {
-	return &ResourceRepository_Update_Call{Call: _e.mock.On("Update", r)}
+func (_e *ResourceRepository_Expecter) Update(ctx interface{}, r interface{}) *ResourceRepository_Update_Call {
+	return &ResourceRepository_Update_Call{Call: _e.mock.On("Update", ctx, r)}
 }
 
-func (_c *ResourceRepository_Update_Call) Run(run func(r resource.Resource)) *ResourceRepository_Update_Call {
+func (_c *ResourceRepository_Update_Call) Run(run func(ctx context.Context, r resource.Resource)) *ResourceRepository_Update_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(resource.Resource))
+		run(args[0].(context.Context), args[1].(resource.Resource))
 	})
 	return _c
 }

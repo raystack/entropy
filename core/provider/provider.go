@@ -3,6 +3,7 @@ package provider
 //go:generate mockery --name=Repository -r --case underscore --with-expecter --structname ProviderRepository --filename=provider_repository.go --output=./mocks
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"time"
@@ -14,11 +15,11 @@ var (
 )
 
 type Repository interface {
-	Migrate() error
+	Migrate(ctx context.Context) error
 
-	GetByURN(urn string) (*Provider, error)
-	List(filter map[string]string) ([]*Provider, error)
-	Create(r Provider) error
+	GetByURN(ctx context.Context, urn string) (*Provider, error)
+	List(ctx context.Context, filter map[string]string) ([]*Provider, error)
+	Create(ctx context.Context, r Provider) error
 }
 
 type Provider struct {

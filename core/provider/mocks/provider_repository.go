@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	context "context"
+
 	provider "github.com/odpf/entropy/core/provider"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -20,13 +22,13 @@ func (_m *ProviderRepository) EXPECT() *ProviderRepository_Expecter {
 	return &ProviderRepository_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with given fields: r
-func (_m *ProviderRepository) Create(r provider.Provider) error {
-	ret := _m.Called(r)
+// Create provides a mock function with given fields: ctx, r
+func (_m *ProviderRepository) Create(ctx context.Context, r provider.Provider) error {
+	ret := _m.Called(ctx, r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(provider.Provider) error); ok {
-		r0 = rf(r)
+	if rf, ok := ret.Get(0).(func(context.Context, provider.Provider) error); ok {
+		r0 = rf(ctx, r)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -40,14 +42,15 @@ type ProviderRepository_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
+//  - ctx context.Context
 //  - r provider.Provider
-func (_e *ProviderRepository_Expecter) Create(r interface{}) *ProviderRepository_Create_Call {
-	return &ProviderRepository_Create_Call{Call: _e.mock.On("Create", r)}
+func (_e *ProviderRepository_Expecter) Create(ctx interface{}, r interface{}) *ProviderRepository_Create_Call {
+	return &ProviderRepository_Create_Call{Call: _e.mock.On("Create", ctx, r)}
 }
 
-func (_c *ProviderRepository_Create_Call) Run(run func(r provider.Provider)) *ProviderRepository_Create_Call {
+func (_c *ProviderRepository_Create_Call) Run(run func(ctx context.Context, r provider.Provider)) *ProviderRepository_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(provider.Provider))
+		run(args[0].(context.Context), args[1].(provider.Provider))
 	})
 	return _c
 }
@@ -57,13 +60,13 @@ func (_c *ProviderRepository_Create_Call) Return(_a0 error) *ProviderRepository_
 	return _c
 }
 
-// GetByURN provides a mock function with given fields: urn
-func (_m *ProviderRepository) GetByURN(urn string) (*provider.Provider, error) {
-	ret := _m.Called(urn)
+// GetByURN provides a mock function with given fields: ctx, urn
+func (_m *ProviderRepository) GetByURN(ctx context.Context, urn string) (*provider.Provider, error) {
+	ret := _m.Called(ctx, urn)
 
 	var r0 *provider.Provider
-	if rf, ok := ret.Get(0).(func(string) *provider.Provider); ok {
-		r0 = rf(urn)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *provider.Provider); ok {
+		r0 = rf(ctx, urn)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*provider.Provider)
@@ -71,8 +74,8 @@ func (_m *ProviderRepository) GetByURN(urn string) (*provider.Provider, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(urn)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, urn)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -86,14 +89,15 @@ type ProviderRepository_GetByURN_Call struct {
 }
 
 // GetByURN is a helper method to define mock.On call
+//  - ctx context.Context
 //  - urn string
-func (_e *ProviderRepository_Expecter) GetByURN(urn interface{}) *ProviderRepository_GetByURN_Call {
-	return &ProviderRepository_GetByURN_Call{Call: _e.mock.On("GetByURN", urn)}
+func (_e *ProviderRepository_Expecter) GetByURN(ctx interface{}, urn interface{}) *ProviderRepository_GetByURN_Call {
+	return &ProviderRepository_GetByURN_Call{Call: _e.mock.On("GetByURN", ctx, urn)}
 }
 
-func (_c *ProviderRepository_GetByURN_Call) Run(run func(urn string)) *ProviderRepository_GetByURN_Call {
+func (_c *ProviderRepository_GetByURN_Call) Run(run func(ctx context.Context, urn string)) *ProviderRepository_GetByURN_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -103,13 +107,13 @@ func (_c *ProviderRepository_GetByURN_Call) Return(_a0 *provider.Provider, _a1 e
 	return _c
 }
 
-// List provides a mock function with given fields: filter
-func (_m *ProviderRepository) List(filter map[string]string) ([]*provider.Provider, error) {
-	ret := _m.Called(filter)
+// List provides a mock function with given fields: ctx, filter
+func (_m *ProviderRepository) List(ctx context.Context, filter map[string]string) ([]*provider.Provider, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*provider.Provider
-	if rf, ok := ret.Get(0).(func(map[string]string) []*provider.Provider); ok {
-		r0 = rf(filter)
+	if rf, ok := ret.Get(0).(func(context.Context, map[string]string) []*provider.Provider); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*provider.Provider)
@@ -117,8 +121,8 @@ func (_m *ProviderRepository) List(filter map[string]string) ([]*provider.Provid
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(map[string]string) error); ok {
-		r1 = rf(filter)
+	if rf, ok := ret.Get(1).(func(context.Context, map[string]string) error); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -132,14 +136,15 @@ type ProviderRepository_List_Call struct {
 }
 
 // List is a helper method to define mock.On call
+//  - ctx context.Context
 //  - filter map[string]string
-func (_e *ProviderRepository_Expecter) List(filter interface{}) *ProviderRepository_List_Call {
-	return &ProviderRepository_List_Call{Call: _e.mock.On("List", filter)}
+func (_e *ProviderRepository_Expecter) List(ctx interface{}, filter interface{}) *ProviderRepository_List_Call {
+	return &ProviderRepository_List_Call{Call: _e.mock.On("List", ctx, filter)}
 }
 
-func (_c *ProviderRepository_List_Call) Run(run func(filter map[string]string)) *ProviderRepository_List_Call {
+func (_c *ProviderRepository_List_Call) Run(run func(ctx context.Context, filter map[string]string)) *ProviderRepository_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]string))
+		run(args[0].(context.Context), args[1].(map[string]string))
 	})
 	return _c
 }
@@ -149,13 +154,13 @@ func (_c *ProviderRepository_List_Call) Return(_a0 []*provider.Provider, _a1 err
 	return _c
 }
 
-// Migrate provides a mock function with given fields:
-func (_m *ProviderRepository) Migrate() error {
-	ret := _m.Called()
+// Migrate provides a mock function with given fields: ctx
+func (_m *ProviderRepository) Migrate(ctx context.Context) error {
+	ret := _m.Called(ctx)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -169,13 +174,14 @@ type ProviderRepository_Migrate_Call struct {
 }
 
 // Migrate is a helper method to define mock.On call
-func (_e *ProviderRepository_Expecter) Migrate() *ProviderRepository_Migrate_Call {
-	return &ProviderRepository_Migrate_Call{Call: _e.mock.On("Migrate")}
+//  - ctx context.Context
+func (_e *ProviderRepository_Expecter) Migrate(ctx interface{}) *ProviderRepository_Migrate_Call {
+	return &ProviderRepository_Migrate_Call{Call: _e.mock.On("Migrate", ctx)}
 }
 
-func (_c *ProviderRepository_Migrate_Call) Run(run func()) *ProviderRepository_Migrate_Call {
+func (_c *ProviderRepository_Migrate_Call) Run(run func(ctx context.Context)) *ProviderRepository_Migrate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(context.Context))
 	})
 	return _c
 }

@@ -27,8 +27,8 @@ func TestService_CreateProvider(t *testing.T) {
 			setupRepo: func(t *testing.T) provider.Repository {
 				repo := &mocks.ProviderRepository{}
 				repo.EXPECT().
-					Create(mock.Anything).
-					Run(func(p provider.Provider) {
+					Create(mock.Anything, mock.Anything).
+					Run(func(ctx context.Context, p provider.Provider) {
 						assert.Equal(t, p.URN, "foo")
 					}).
 					Return(errors.New("failed")).
@@ -44,16 +44,16 @@ func TestService_CreateProvider(t *testing.T) {
 			setupRepo: func(t *testing.T) provider.Repository {
 				repo := &mocks.ProviderRepository{}
 				repo.EXPECT().
-					Create(mock.Anything).
-					Run(func(p provider.Provider) {
+					Create(mock.Anything, mock.Anything).
+					Run(func(ctx context.Context, p provider.Provider) {
 						assert.Equal(t, p.URN, "foo")
 					}).
 					Return(nil).
 					Once()
 
 				repo.EXPECT().
-					GetByURN("foo").
-					Run(func(urn string) {
+					GetByURN(mock.Anything, "foo").
+					Run(func(ctx context.Context, urn string) {
 						assert.Equal(t, urn, "foo")
 					}).
 					Return(nil, errors.New("failed")).
@@ -71,8 +71,8 @@ func TestService_CreateProvider(t *testing.T) {
 
 				repo := &mocks.ProviderRepository{}
 				repo.EXPECT().
-					Create(mock.Anything).
-					Run(func(p provider.Provider) {
+					Create(mock.Anything, mock.Anything).
+					Run(func(ctx context.Context, p provider.Provider) {
 						assert.Equal(t, p.URN, "foo")
 						storedProvider = p
 					}).
@@ -80,8 +80,8 @@ func TestService_CreateProvider(t *testing.T) {
 					Once()
 
 				repo.EXPECT().
-					GetByURN("foo").
-					Run(func(urn string) {
+					GetByURN(mock.Anything, "foo").
+					Run(func(ctx context.Context, urn string) {
 						assert.Equal(t, urn, "foo")
 					}).
 					Return(&storedProvider, nil).

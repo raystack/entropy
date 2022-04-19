@@ -1,6 +1,7 @@
 package mongodb
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"testing"
@@ -81,7 +82,7 @@ func TestResourceRepository_Create(t *testing.T) {
 		mt.Run(tt.name, func(mt *mtest.T) {
 			tt.setup(mt)
 			rc := NewResourceRepository(mt.DB)
-			if err := rc.Create(tt.args(mt).resource); !errors.Is(err, tt.wantErr) {
+			if err := rc.Create(context.Background(), tt.args(mt).resource); !errors.Is(err, tt.wantErr) {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -139,7 +140,7 @@ func TestResourceRepository_GetByURN(t *testing.T) {
 		mt.Run(tt.name, func(mt *mtest.T) {
 			tt.setup(mt)
 			rc := NewResourceRepository(mt.DB)
-			got, err := rc.GetByURN(tt.args(mt).urn)
+			got, err := rc.GetByURN(context.Background(), tt.args(mt).urn)
 			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("GetByURN() error = %v, wantErr %v", err, tt.wantErr)
 				return

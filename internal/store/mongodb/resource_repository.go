@@ -24,26 +24,15 @@ func NewResourceRepository(db *mongo.Database) *ResourceRepository {
 	}
 }
 
-func (rc *ResourceRepository) Migrate() error {
-	return createUniqueIndex(rc.collection, "urn", 1)
+func (rc *ResourceRepository) Migrate(ctx context.Context) error {
+	return createUniqueIndex(ctx, rc.collection, "urn", 1)
 }
 
-func createUniqueIndex(collection *mongo.Collection, key string, order int) error {
-	_, err := collection.Indexes().CreateOne(
-		context.TODO(),
-		mongo.IndexModel{
-			Keys:    bson.D{{Key: key, Value: order}},
-			Options: options.Index().SetUnique(true),
-		},
-	)
-	return err
-}
-
-func (rc *ResourceRepository) Create(res resource.Resource) error {
+func (rc *ResourceRepository) Create(ctx context.Context, res resource.Resource) error {
 	res.CreatedAt = time.Now()
 	res.UpdatedAt = time.Now()
 
-	_, err := rc.collection.InsertOne(context.TODO(), res)
+	_, err := rc.collection.InsertOne(ctx, res)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
 			return fmt.Errorf("%w: %s", resource.ErrResourceAlreadyExists, err)
@@ -53,9 +42,9 @@ func (rc *ResourceRepository) Create(res resource.Resource) error {
 	return nil
 }
 
-func (rc *ResourceRepository) Update(r resource.Resource) error {
+func (rc *ResourceRepository) Update(ctx context.Context, r resource.Resource) error {
 	r.UpdatedAt = time.Now()
-	singleResult := rc.collection.FindOneAndUpdate(context.TODO(),
+	singleResult := rc.collection.FindOneAndUpdate(ctx,
 		map[string]interface{}{"urn": r.URN},
 		map[string]interface{}{"$set": r},
 	)
@@ -69,9 +58,9 @@ func (rc *ResourceRepository) Update(r resource.Resource) error {
 	return nil
 }
 
-func (rc *ResourceRepository) GetByURN(urn string) (*resource.Resource, error) {
+func (rc *ResourceRepository) GetByURN(ctx context.Context, urn string) (*resource.Resource, error) {
 	res := &resource.Resource{}
-	err := rc.collection.FindOne(context.TODO(), map[string]interface{}{"urn": urn}).Decode(res)
+	err := rc.collection.FindOne(ctx, map[string]interface{}{"urn": urn}).Decode(res)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, fmt.Errorf("%w: %s", resource.ErrResourceNotFound, err)
@@ -81,9 +70,9 @@ func (rc *ResourceRepository) GetByURN(urn string) (*resource.Resource, error) {
 	return res, nil
 }
 
-func (rc *ResourceRepository) List(filter map[string]string) ([]*resource.Resource, error) {
+func (rc *ResourceRepository) List(ctx context.Context, filter map[string]string) ([]*resource.Resource, error) {
 	var res []*resource.Resource
-	cur, err := rc.collection.Find(context.TODO(), filter)
+	cur, err := rc.collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +86,8 @@ func (rc *ResourceRepository) List(filter map[string]string) ([]*resource.Resour
 	return res, nil
 }
 
-func (rc *ResourceRepository) Delete(urn string) error {
-	_, err := rc.collection.DeleteOne(context.TODO(), map[string]interface{}{"urn": urn})
+func (rc *ResourceRepository) Delete(ctx context.Context, urn string) error {
+	_, err := rc.collection.DeleteOne(ctx, map[string]interface{}{"urn": urn})
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return fmt.Errorf("%w: %s", resource.ErrResourceNotFound, err)
@@ -106,4 +95,15 @@ func (rc *ResourceRepository) Delete(urn string) error {
 		return err
 	}
 	return nil
+}
+
+func createUniqueIndex(ctx context.Context, collection *mongo.Collection, key string, order int) error {
+	_, err := collection.Indexes().CreateOne(
+		ctx,
+		mongo.IndexModel{
+			Keys:    bson.D{{Key: key, Value: order}},
+			Options: options.Index().SetUnique(true),
+		},
+	)
+	return err
 }

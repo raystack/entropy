@@ -1,6 +1,10 @@
 package cli
 
 import (
+	"context"
+	"os/signal"
+	"syscall"
+
 	"github.com/spf13/cobra"
 
 	"github.com/odpf/entropy/internal/store/mongodb"
@@ -13,30 +17,33 @@ func cmdMigrate() *cobra.Command {
 	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+		defer cancel()
+
 		cfg, err := loadConfig(cmd)
 		if err != nil {
 			return err
 		}
 
-		return runMigrations(cfg.DB)
+		return runMigrations(ctx, cfg.DB)
 	}
 
 	return cmd
 }
 
-func runMigrations(cfg mongodb.DBConfig) error {
+func runMigrations(ctx context.Context, cfg mongodb.DBConfig) error {
 	mongoStore, err := mongodb.New(&cfg)
 	if err != nil {
 		return err
 	}
 
 	resourceRepository := mongodb.NewResourceRepository(mongoStore)
-	if err = resourceRepository.Migrate(); err != nil {
+	if err = resourceRepository.Migrate(ctx); err != nil {
 		return err
 	}
 
 	providerRepository := mongodb.NewProviderRepository(mongoStore)
-	if err = providerRepository.Migrate(); err != nil {
+	if err = providerRepository.Migrate(ctx); err != nil {
 		return err
 	}
 
