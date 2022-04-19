@@ -1,9 +1,12 @@
 package firehose
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
+	"time"
 
 	"github.com/mitchellh/mapstructure"
 	gjs "github.com/xeipuuv/gojsonschema"
@@ -12,6 +15,7 @@ import (
 	"github.com/odpf/entropy/core/provider"
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/plugins/providers/helm"
+	"github.com/odpf/entropy/plugins/providers/kubelogger"
 )
 
 const (
@@ -295,6 +299,9 @@ const configSchemaString = `
   }
 `
 
+type config struct {
+	DelayMs int `mapstructure:"delay_ms"`
+}
 type Module struct {
 	schema             *gjs.Schema
 	providerRepository provider.Repository
@@ -381,6 +388,53 @@ func (m *Module) Act(r *resource.Resource, action string, params map[string]inte
 	}
 	r.Configs[releaseConfigString] = releaseConfig
 	return r.Configs, nil
+}
+
+func Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<-chan module.LogChunk, error) {
+	var cfg config
+	if err := mapstructure.Decode(r.Configs, &cfg); err != nil {
+		return nil, errors.New("unable to parse configs")
+	}
+
+	var releaseConfig *helm.ReleaseConfig
+	if err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig); err != nil {
+		return nil, errors.New("unable to parse configs")
+	}
+
+	podLogs, err := kubelogger.GetStreamingLogs(ctx, releaseConfig.Namespace, releaseConfig.Name)
+	if err != nil {
+		return nil, err
+	}
+	logs := make(chan module.LogChunk)
+	defer close(logs)
+	go func() {
+		for {
+			buf := make([]byte, 10000)
+			numBytes, err := podLogs.Read(buf)
+			if numBytes == 0 {
+				break
+			}
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				break
+			}
+
+			select {
+			case logs <- module.LogChunk{
+				Data:   []byte(string(buf[:numBytes])),
+				Labels: map[string]string{"resource": r.URN},
+			}:
+				{
+					time.Sleep(time.Second * 1)
+				}
+			}
+		}
+	}()
+
+	return logs, nil
 }
 
 func getReleaseConfig(r *resource.Resource) (*helm.ReleaseConfig, error) {
