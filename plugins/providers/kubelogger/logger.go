@@ -5,7 +5,10 @@ import (
 	"flag"
 	"io"
 	"path/filepath"
+	"sync"
+	"time"
 
+	"github.com/odpf/entropy/core/module"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -13,7 +16,12 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-func GetStreamingLogs(ctx context.Context, namespace string, podName string) (io.ReadCloser, error) {
+type LogChannel struct {
+	LogChan  chan module.LogChunk
+	StopChan chan struct{}
+}
+
+func GetStreamingLogs(ctx context.Context, namespace string, podName string) (chan module.LogChunk, error) {
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
@@ -36,6 +44,8 @@ func GetStreamingLogs(ctx context.Context, namespace string, podName string) (io
 		return nil, err
 	}
 
+	var logChannels []LogChannel
+
 	for _, container := range append(pod.Spec.InitContainers, pod.Spec.Containers...) {
 		podLogOpts := v1.PodLogOptions{}
 		podLogOpts.Follow = true
@@ -45,7 +55,89 @@ func GetStreamingLogs(ctx context.Context, namespace string, podName string) (io
 		if err != nil {
 			return nil, err
 		}
-		return podLogs, nil
+
+		lc, sc := generate(podLogs, 100*time.Millisecond)
+		l := new(LogChannel)
+		l.LogChan = lc
+		l.StopChan = sc
+
+		logChannels = append(logChannels, *l)
 	}
-	return nil, nil
+
+	logs, _ := multiplex(logChannels)
+	//wg.Wait()
+
+	return logs, nil
+}
+
+func generate(podLogs io.ReadCloser, interval time.Duration) (chan module.LogChunk, chan struct{}) {
+	logs := make(chan module.LogChunk)
+	sc := make(chan struct{})
+
+	go func() {
+		defer func() {
+			close(sc)
+		}()
+
+		for {
+			select {
+			case <-sc:
+				return
+			default:
+				time.Sleep(interval)
+
+				buf := make([]byte, 10000)
+				numBytes, err := podLogs.Read(buf)
+				if numBytes == 0 {
+					break
+				}
+				if err == io.EOF {
+					break
+				}
+
+				if err != nil {
+					break
+				}
+				logs <- module.LogChunk{
+					Data:   []byte(string(buf[:numBytes])),
+					Labels: map[string]string{"resource": "SOME LABEL"},
+				}
+			}
+		}
+	}()
+
+	return logs, sc
+}
+
+func stopGenerating(mc chan module.LogChunk, sc chan struct{}) {
+	sc <- struct{}{}
+	<-sc
+
+	close(mc)
+}
+
+func multiplex(mcs []LogChannel) (chan module.LogChunk, *sync.WaitGroup) {
+	mmc := make(chan module.LogChunk, 1000)
+	wg := &sync.WaitGroup{}
+
+	for _, mc := range mcs {
+		//wg.Add(1)
+
+		go func(mc chan module.LogChunk, wg *sync.WaitGroup) {
+			//defer wg.Done()
+
+			for m := range mc {
+				mmc <- m
+			}
+		}(mc.LogChan, wg)
+	}
+
+	//defer stopAll(mcs)
+	return mmc, wg
+}
+
+func stopAll(mcs []LogChannel) {
+	for _, mc := range mcs {
+		stopGenerating(mc.LogChan, mc.StopChan)
+	}
 }
