@@ -2,9 +2,7 @@ package firehose
 
 import (
 	"context"
-	"io"
 	"strings"
-	"time"
 
 	"github.com/mitchellh/mapstructure"
 	gjs "github.com/xeipuuv/gojsonschema"
@@ -391,8 +389,8 @@ func (m *Module) Act(r resource.Resource, action string, params map[string]inter
 	return r.Configs, nil
 }
 
-func Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<-chan resource.LogChunk, error) {
-	var cfg config
+func (m *Module) Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<-chan resource.LogChunk, error) {
+	/*var cfg config
 	if err := mapstructure.Decode(r.Configs, &cfg); err != nil {
 		return nil, errors.New("unable to parse configs")
 	}
@@ -400,41 +398,12 @@ func Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<
 	var releaseConfig *helm.ReleaseConfig
 	if err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig); err != nil {
 		return nil, errors.New("unable to parse configs")
-	}
+	}*/
 
-	podLogs, err := kubelogger.GetStreamingLogs(ctx, releaseConfig.Namespace, releaseConfig.Name)
+	logs, err := kubelogger.GetStreamingLogs(ctx, "optimus", "g-pilotdata-gl-optimus-airflow-scheduler-649dd8796d-bsv66")
 	if err != nil {
 		return nil, err
 	}
-	logs := make(chan resource.LogChunk)
-	defer close(logs)
-	go func() {
-		for {
-			buf := make([]byte, 10000)
-			numBytes, err := podLogs.Read(buf)
-			if numBytes == 0 {
-				break
-			}
-			if err == io.EOF {
-				break
-			}
-
-			if err != nil {
-				break
-			}
-
-			select {
-			case logs <- resource.LogChunk{
-				Data:   []byte(string(buf[:numBytes])),
-				Labels: map[string]string{"resource": r.URN},
-			}:
-				{
-					time.Sleep(time.Second * 1)
-				}
-			}
-		}
-	}()
-
 	return logs, nil
 }
 
