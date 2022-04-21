@@ -2,12 +2,12 @@ package mongodb
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/odpf/entropy/core/provider"
+	"github.com/odpf/entropy/pkg/errors"
 )
 
 const providerRepoName = "providers"
@@ -34,7 +34,7 @@ func (rc *ProviderRepository) Create(ctx context.Context, pro provider.Provider)
 	_, err := rc.collection.InsertOne(ctx, pro)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return fmt.Errorf("%w: %s", provider.ErrProviderAlreadyExists, err)
+			return errors.ErrConflict
 		}
 		return err
 	}
@@ -46,7 +46,7 @@ func (rc *ProviderRepository) GetByURN(ctx context.Context, urn string) (*provid
 	err := rc.collection.FindOne(ctx, map[string]interface{}{"urn": urn}).Decode(pro)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, fmt.Errorf("%w: %s", provider.ErrProviderNotFound, err)
+			return nil, errors.ErrNotFound
 		}
 		return nil, err
 	}

@@ -6,15 +6,6 @@ package resource
 
 import (
 	"context"
-	"errors"
-)
-
-var (
-	ErrModuleNotFound      = errors.New("no module(s) found")
-	ErrModuleAlreadyExists = errors.New("module already exists")
-
-	ErrModuleConfigParseFailed = errors.New("unable to load and validate config")
-	ErrLogStreamingUnsupported = errors.New("log streaming is not supported for this module")
 )
 
 type Module interface {

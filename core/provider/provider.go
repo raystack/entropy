@@ -4,14 +4,8 @@ package provider
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"time"
-)
-
-var (
-	ErrProviderNotFound      = errors.New("no provider(s) found")
-	ErrProviderAlreadyExists = errors.New("provider already exists")
 )
 
 type Repository interface {
@@ -31,6 +25,16 @@ type Provider struct {
 	Configs   map[string]interface{} `bson:"configs"`
 	CreatedAt time.Time              `bson:"created_at"`
 	UpdatedAt time.Time              `bson:"updated_at"`
+}
+
+func (p *Provider) Validate() error {
+	p.URN = strings.TrimSpace(p.URN)
+	if p.URN == "" {
+		p.URN = GenerateURN(*p)
+	}
+
+	// TODO: add basic sanitization and validations here.
+	return nil
 }
 
 func GenerateURN(pro Provider) string {

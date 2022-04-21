@@ -5,7 +5,6 @@ package handlersv1
 
 import (
 	"context"
-	"errors"
 
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
@@ -15,9 +14,8 @@ import (
 
 	"github.com/odpf/entropy/core/provider"
 	"github.com/odpf/entropy/core/resource"
+	"github.com/odpf/entropy/pkg/errors"
 )
-
-var ErrInternal = status.Error(codes.Internal, "internal server error")
 
 type ResourceService interface {
 	GetResource(ctx context.Context, urn string) (*resource.Resource, error)
@@ -55,19 +53,12 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 
 	result, err := server.resourceService.CreateResource(ctx, *res)
 	if err != nil {
-		if errors.Is(err, resource.ErrResourceAlreadyExists) {
-			return nil, status.Error(codes.AlreadyExists, "resource already exists")
-		} else if errors.Is(err, resource.ErrModuleNotFound) {
-			return nil, status.Errorf(codes.InvalidArgument, "failed to find module to deploy this kind")
-		} else if errors.Is(err, resource.ErrModuleConfigParseFailed) {
-			return nil, status.Errorf(codes.InvalidArgument, "failed to parse configs")
-		}
-		return nil, ErrInternal
+		return nil, generateRPCErr(err)
 	}
 
 	responseResource, err := resourceToProto(result)
 	if err != nil {
-		return nil, ErrInternal
+		return nil, generateRPCErr(err)
 	}
 
 	return &entropyv1beta1.CreateResourceResponse{
@@ -82,17 +73,12 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 
 	res, err := server.resourceService.UpdateResource(ctx, request.GetUrn(), updates)
 	if err != nil {
-		if errors.Is(err, resource.ErrResourceNotFound) {
-			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
-		} else if errors.Is(err, resource.ErrModuleConfigParseFailed) {
-			return nil, status.Errorf(codes.InvalidArgument, "failed to parse configs")
-		}
-		return nil, ErrInternal
+		return nil, generateRPCErr(err)
 	}
 
 	responseResource, err := resourceToProto(res)
 	if err != nil {
-		return nil, ErrInternal
+		return nil, generateRPCErr(err)
 	}
 
 	return &entropyv1beta1.UpdateResourceResponse{
@@ -103,15 +89,12 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1.GetResourceRequest) (*entropyv1beta1.GetResourceResponse, error) {
 	res, err := server.resourceService.GetResource(ctx, request.GetUrn())
 	if err != nil {
-		if errors.Is(err, resource.ErrResourceNotFound) {
-			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
-		}
-		return nil, ErrInternal
+		return nil, generateRPCErr(err)
 	}
 
 	responseResource, err := resourceToProto(res)
 	if err != nil {
-		return nil, ErrInternal
+		return nil, generateRPCErr(err)
 	}
 
 	return &entropyv1beta1.GetResourceResponse{
@@ -122,14 +105,14 @@ func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1
 func (server APIServer) ListResources(ctx context.Context, request *entropyv1beta1.ListResourcesRequest) (*entropyv1beta1.ListResourcesResponse, error) {
 	resources, err := server.resourceService.ListResources(ctx, request.GetParent(), request.GetKind())
 	if err != nil {
-		return nil, ErrInternal
+		return nil, generateRPCErr(err)
 	}
 
 	var responseResources []*entropyv1beta1.Resource
 	for _, res := range resources {
 		responseResource, err := resourceToProto(&res)
 		if err != nil {
-			return nil, ErrInternal
+			return nil, generateRPCErr(err)
 		}
 		responseResources = append(responseResources, responseResource)
 	}
@@ -142,10 +125,7 @@ func (server APIServer) ListResources(ctx context.Context, request *entropyv1bet
 func (server APIServer) DeleteResource(ctx context.Context, request *entropyv1beta1.DeleteResourceRequest) (*entropyv1beta1.DeleteResourceResponse, error) {
 	err := server.resourceService.DeleteResource(ctx, request.GetUrn())
 	if err != nil {
-		if errors.Is(err, resource.ErrResourceNotFound) {
-			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
-		}
-		return nil, ErrInternal
+		return nil, generateRPCErr(err)
 	}
 
 	return &entropyv1beta1.DeleteResourceResponse{}, nil
@@ -159,15 +139,12 @@ func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1
 
 	updatedRes, err := server.resourceService.ApplyAction(ctx, request.GetUrn(), action)
 	if err != nil {
-		if errors.Is(err, resource.ErrResourceNotFound) {
-			return nil, status.Error(codes.NotFound, "could not find resource with given urn")
-		}
-		return nil, ErrInternal
+		return nil, generateRPCErr(err)
 	}
 
 	responseResource, err := resourceToProto(updatedRes)
 	if err != nil {
-		return nil, ErrInternal
+		return nil, generateRPCErr(err)
 	}
 
 	return &entropyv1beta1.ApplyActionResponse{
@@ -180,10 +157,7 @@ func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream ent
 
 	logStream, err := server.resourceService.GetLog(ctx, request.GetUrn(), request.GetFilter())
 	if err != nil {
-		if errors.Is(err, resource.ErrResourceNotFound) {
-			return status.Error(codes.NotFound, "could not find resource with given urn")
-		}
-		return ErrInternal
+		return generateRPCErr(err)
 	}
 
 	for {
@@ -200,7 +174,7 @@ func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream ent
 			}
 
 			if err := stream.Send(resp); err != nil {
-				return ErrInternal
+				return generateRPCErr(err)
 			}
 		}
 	}
@@ -213,15 +187,12 @@ func (server APIServer) CreateProvider(ctx context.Context, request *entropyv1be
 
 	createdProvider, err := server.providerService.CreateProvider(ctx, *pro)
 	if err != nil {
-		if errors.Is(err, provider.ErrProviderAlreadyExists) {
-			return nil, status.Error(codes.AlreadyExists, "provider already exists")
-		}
-		return nil, ErrInternal
+		return nil, generateRPCErr(err)
 	}
 
 	responseProvider, err := providerToProto(createdProvider)
 	if err != nil {
-		return nil, ErrInternal
+		return nil, generateRPCErr(err)
 	}
 	response := entropyv1beta1.CreateProviderResponse{
 		Provider: responseProvider,
@@ -233,13 +204,13 @@ func (server APIServer) ListProviders(ctx context.Context, request *entropyv1bet
 	var responseProviders []*entropyv1beta1.Provider
 	providers, err := server.providerService.ListProviders(ctx, request.GetParent(), request.GetKind())
 	if err != nil {
-		return nil, ErrInternal
+		return nil, generateRPCErr(err)
 	}
 
 	for _, pro := range providers {
 		responseProvider, err := providerToProto(pro)
 		if err != nil {
-			return nil, ErrInternal
+			return nil, generateRPCErr(err)
 		}
 		responseProviders = append(responseProviders, responseProvider)
 	}
@@ -340,4 +311,24 @@ func providerFromProto(pro *entropyv1beta1.Provider) *provider.Provider {
 		Configs: pro.GetConfigs().GetStructValue().AsMap(),
 		Labels:  pro.GetLabels(),
 	}
+}
+
+func generateRPCErr(e error) error {
+	err := errors.E(e)
+	
+	var code codes.Code
+	switch {
+	case errors.Is(err, errors.ErrNotFound):
+		code = codes.NotFound
+
+	case errors.Is(err, errors.ErrConflict):
+		code = codes.AlreadyExists
+
+	case errors.Is(err, errors.ErrInvalid):
+		code = codes.InvalidArgument
+
+	default:
+		code = codes.Internal
+	}
+	return status.Error(code, err.Error())
 }

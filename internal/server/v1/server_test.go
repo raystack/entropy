@@ -2,7 +2,6 @@ package handlersv1
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/internal/server/v1/mocks"
+	"github.com/odpf/entropy/pkg/errors"
 )
 
 func TestAPIServer_CreateResource(t *testing.T) {
@@ -39,7 +39,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				resourceService := &mocks.ResourceService{}
 				resourceService.EXPECT().
 					CreateResource(mock.Anything, mock.Anything).
-					Return(nil, resource.ErrResourceAlreadyExists).Once()
+					Return(nil, errors.ErrConflict).Once()
 				return NewApiServer(resourceService, nil)
 			},
 			request: &entropyv1beta1.CreateResourceRequest{
@@ -52,15 +52,15 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: status.Error(codes.AlreadyExists, "resource already exists"),
+			wantErr: status.Error(codes.AlreadyExists, "an entity with conflicting identifier exists"),
 		},
 		{
-			name: "ModuleNotFound",
+			name: "InvalidRequest",
 			setup: func(t *testing.T) *APIServer {
 				resourceService := &mocks.ResourceService{}
 				resourceService.EXPECT().
 					CreateResource(mock.Anything, mock.Anything).
-					Return(nil, resource.ErrModuleNotFound).Once()
+					Return(nil, errors.ErrInvalid).Once()
 
 				return NewApiServer(resourceService, nil)
 			},
@@ -74,7 +74,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: status.Errorf(codes.InvalidArgument, "failed to find module to deploy this kind"),
+			wantErr: status.Errorf(codes.InvalidArgument, "request is not valid"),
 		},
 		{
 			name: "Success",
@@ -130,7 +130,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 			got, err := srv.CreateResource(context.Background(), tt.request)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
-				assert.True(t, errors.Is(err, tt.wantErr))
+				assert.Truef(t, errors.Is(err, tt.wantErr), "'%s' != '%s'", tt.wantErr, err)
 			}
 			assert.EqualValues(t, tt.want, got)
 		})
@@ -159,7 +159,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				resourceService := &mocks.ResourceService{}
 				resourceService.EXPECT().
 					UpdateResource(mock.Anything, "p-testdata-gl-testname-log", mock.Anything).
-					Return(nil, resource.ErrResourceNotFound).Once()
+					Return(nil, errors.ErrNotFound).Once()
 				return NewApiServer(resourceService, nil)
 			},
 			request: &entropyv1beta1.UpdateResourceRequest{
@@ -167,15 +167,15 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				Configs: configsStructValue,
 			},
 			want:    nil,
-			wantErr: status.Error(codes.NotFound, "could not find resource with given urn"),
+			wantErr: status.Error(codes.NotFound, "requested entity not found"),
 		},
 		{
-			name: "ConfigParseFailed",
+			name: "InvalidRequest",
 			setup: func(t *testing.T) *APIServer {
 				resourceService := &mocks.ResourceService{}
 				resourceService.EXPECT().
 					UpdateResource(mock.Anything, "p-testdata-gl-testname-log", mock.Anything).
-					Return(nil, resource.ErrModuleConfigParseFailed).Once()
+					Return(nil, errors.ErrInvalid).Once()
 				return NewApiServer(resourceService, nil)
 			},
 			request: &entropyv1beta1.UpdateResourceRequest{
@@ -183,7 +183,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				Configs: configsStructValue,
 			},
 			want:    nil,
-			wantErr: status.Errorf(codes.InvalidArgument, "failed to parse configs"),
+			wantErr: status.Errorf(codes.InvalidArgument, "request is not valid"),
 		},
 		{
 			name: "Success",
@@ -263,14 +263,14 @@ func TestAPIServer_GetResource(t *testing.T) {
 				resourceService := &mocks.ResourceService{}
 				resourceService.EXPECT().
 					GetResource(mock.Anything, "p-testdata-gl-testname-log").
-					Return(nil, resource.ErrResourceNotFound).Once()
+					Return(nil, errors.ErrNotFound).Once()
 				return NewApiServer(resourceService, nil)
 			},
 			request: &entropyv1beta1.GetResourceRequest{
 				Urn: "p-testdata-gl-testname-log",
 			},
 			want:    nil,
-			wantErr: status.Error(codes.NotFound, "could not find resource with given urn"),
+			wantErr: status.Error(codes.NotFound, "requested entity not found"),
 		},
 		{
 			name: "Success",
@@ -358,7 +358,7 @@ func TestAPIServer_ListResources(t *testing.T) {
 				Kind:   "log",
 			},
 			want:    nil,
-			wantErr: ErrInternal,
+			wantErr: status.Error(codes.Internal, "some unexpected error occurred"),
 		},
 		{
 			name: "Success",
@@ -413,7 +413,7 @@ func TestAPIServer_ListResources(t *testing.T) {
 			got, err := srv.ListResources(context.Background(), tt.request)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
-				assert.True(t, errors.Is(err, tt.wantErr))
+				assert.Truef(t, errors.Is(err, tt.wantErr), "'%s' != '%s'", tt.wantErr, err)
 			}
 			assert.EqualValues(t, tt.want, got)
 		})
@@ -436,14 +436,14 @@ func TestAPIServer_DeleteResource(t *testing.T) {
 				resourceService := &mocks.ResourceService{}
 				resourceService.EXPECT().
 					DeleteResource(mock.Anything, "p-testdata-gl-testname-log").
-					Return(resource.ErrResourceNotFound).Once()
+					Return(errors.ErrNotFound).Once()
 				return NewApiServer(resourceService, nil)
 			},
 			request: &entropyv1beta1.DeleteResourceRequest{
 				Urn: "p-testdata-gl-testname-log",
 			},
 			want:    nil,
-			wantErr: status.Error(codes.NotFound, "could not find resource with given urn"),
+			wantErr: status.Error(codes.NotFound, "requested entity not found"),
 		},
 		{
 			name: "Success",
@@ -469,7 +469,7 @@ func TestAPIServer_DeleteResource(t *testing.T) {
 			got, err := srv.DeleteResource(context.Background(), tt.request)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
-				assert.True(t, errors.Is(err, tt.wantErr))
+				assert.Truef(t, errors.Is(err, tt.wantErr), "'%s' != '%s'", tt.wantErr, err)
 			}
 			assert.EqualValues(t, tt.want, got)
 		})
@@ -498,7 +498,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 				resourceService := &mocks.ResourceService{}
 				resourceService.EXPECT().
 					ApplyAction(mock.Anything, "p-testdata-gl-testname-log", mock.Anything).
-					Return(nil, resource.ErrResourceNotFound).Once()
+					Return(nil, errors.ErrNotFound).Once()
 				return NewApiServer(resourceService, nil)
 			},
 			request: &entropyv1beta1.ApplyActionRequest{
@@ -506,7 +506,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 				Action: "scale",
 			},
 			want:    nil,
-			wantErr: status.Error(codes.NotFound, "could not find resource with given urn"),
+			wantErr: status.Error(codes.NotFound, "requested entity not found"),
 		},
 		{
 			name: "Success",

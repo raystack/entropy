@@ -2,7 +2,6 @@ package mongodb
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/odpf/entropy/core/resource"
+	"github.com/odpf/entropy/pkg/errors"
 )
 
 const resourceRepoName = "resources"
@@ -35,7 +35,7 @@ func (rc *ResourceRepository) Create(ctx context.Context, res resource.Resource)
 	_, err := rc.collection.InsertOne(ctx, res)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return fmt.Errorf("%w: %s", resource.ErrResourceAlreadyExists, err)
+			return errors.ErrConflict
 		}
 		return err
 	}
@@ -51,7 +51,7 @@ func (rc *ResourceRepository) Update(ctx context.Context, r resource.Resource) e
 	err := singleResult.Err()
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return fmt.Errorf("%w: urn = %s", resource.ErrResourceNotFound, r.URN)
+			return errors.ErrNotFound
 		}
 		return err
 	}
@@ -63,7 +63,7 @@ func (rc *ResourceRepository) GetByURN(ctx context.Context, urn string) (*resour
 	err := rc.collection.FindOne(ctx, map[string]interface{}{"urn": urn}).Decode(res)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, fmt.Errorf("%w: %s", resource.ErrResourceNotFound, err)
+			return nil, errors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (rc *ResourceRepository) Delete(ctx context.Context, urn string) error {
 	_, err := rc.collection.DeleteOne(ctx, map[string]interface{}{"urn": urn})
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return fmt.Errorf("%w: %s", resource.ErrResourceNotFound, err)
+			return errors.ErrNotFound
 		}
 		return err
 	}
