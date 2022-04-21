@@ -91,8 +91,7 @@ func (s *Service) UpdateResource(ctx context.Context, urn string, updates Update
 func (s *Service) DeleteResource(ctx context.Context, urn string) error {
 	// TODO: notify the module about deletion.
 
-	err := s.resourceRepository.Delete(ctx, urn)
-	if err != nil {
+	if err := s.resourceRepository.Delete(ctx, urn); err != nil {
 		if errors.Is(err, errors.ErrNotFound) {
 			return nil
 		}
