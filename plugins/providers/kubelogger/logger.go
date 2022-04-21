@@ -16,7 +16,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-func GetStreamingLogs(ctx context.Context, namespace string, podName string) (<-chan resource.LogChunk, error) {
+func GetStreamingLogs(ctx context.Context, namespace string, selector string) (<-chan resource.LogChunk, error) {
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
@@ -34,22 +34,25 @@ func GetStreamingLogs(ctx context.Context, namespace string, podName string) (<-
 		panic(err)
 	}
 
-	pod, err := clientSet.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
+	pods, err := clientSet.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: selector})
 	if err != nil {
 		return nil, err
 	}
 
 	logCh := make(chan resource.LogChunk)
 	wg := &sync.WaitGroup{}
-	for _, container := range append(pod.Spec.InitContainers, pod.Spec.Containers...) {
-		wg.Add(1)
 
-		go func(c v1.Container) {
-			defer wg.Done()
-			if err := streamContainerLogs(ctx, namespace, podName, logCh, clientSet, c); err != nil {
-				log.Printf("[WARN] failed to stream from container '%s'", c.Name)
-			}
-		}(container)
+	for _, pod := range pods.Items {
+		for _, container := range append(pod.Spec.InitContainers, pod.Spec.Containers...) {
+			wg.Add(1)
+
+			go func(podName string, c v1.Container) {
+				defer wg.Done()
+				if err := streamContainerLogs(ctx, namespace, podName, logCh, clientSet, c); err != nil {
+					log.Printf("[WARN] failed to stream from container '%s':%s", c.Name, err)
+				}
+			}(pod.Name, container)
+		}
 	}
 
 	go func() {
@@ -82,8 +85,11 @@ func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- r
 		}
 
 		logChunk := resource.LogChunk{
-			Data:   []byte(string(buf[:numBytes])),
-			Labels: map[string]string{"podName": podName},
+			Data: []byte(string(buf[:numBytes])),
+			Labels: map[string]string{
+				"pod":       podName,
+				"container": container.Name,
+			},
 		}
 
 		select {
@@ -94,42 +100,3 @@ func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- r
 		}
 	}
 }
-
-type LogChannel struct {
-	LogChan  chan resource.LogChunk
-	StopChan chan struct{}
-}
-
-//
-// func stopGenerating(mc chan resource.LogChunk, sc chan struct{}) {
-// 	sc <- struct{}{}
-// 	<-sc
-//
-// 	close(mc)
-// }
-//
-// func multiplex(mcs []LogChannel) (chan resource.LogChunk, *sync.WaitGroup) {
-// 	mmc := make(chan resource.LogChunk, 1000)
-// 	wg := &sync.WaitGroup{}
-//
-// 	for _, mc := range mcs {
-// 		// wg.Add(1)
-//
-// 		go func(mc chan resource.LogChunk, wg *sync.WaitGroup) {
-// 			// defer wg.Done()
-//
-// 			for m := range mc {
-// 				mmc <- m
-// 			}
-// 		}(mc.LogChan, wg)
-// 	}
-//
-// 	// defer stopAll(mcs)
-// 	return mmc, wg
-// }
-//
-// func stopAll(mcs []LogChannel) {
-// 	for _, mc := range mcs {
-// 		stopGenerating(mc.LogChan, mc.StopChan)
-// 	}
-// }
