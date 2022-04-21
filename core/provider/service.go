@@ -20,13 +20,14 @@ func (s *Service) CreateProvider(ctx context.Context, pro Provider) (*Provider, 
 	if err := pro.Validate(); err != nil {
 		return nil, err
 	}
-	err := s.repo.Create(ctx, pro)
-	if err != nil {
+
+	if err := s.repo.Create(ctx, pro); err != nil {
 		if errors.Is(err, errors.ErrConflict) {
 			return nil, errors.ErrConflict.WithMsgf("provider with urn '%s' already exists", pro.URN)
 		}
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
+
 	return &pro, nil
 }
 

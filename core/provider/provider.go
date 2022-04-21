@@ -28,7 +28,10 @@ type Provider struct {
 }
 
 func (p *Provider) Validate() error {
-	p.URN = GenerateURN(*p)
+	p.URN = strings.TrimSpace(p.URN)
+	if p.URN == "" {
+		p.URN = GenerateURN(*p)
+	}
 
 	// TODO: add basic sanitization and validations here.
 	return nil

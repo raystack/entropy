@@ -58,8 +58,7 @@ func (s *Service) CreateResource(ctx context.Context, res Resource) (*Resource, 
 		return nil, err
 	}
 
-	err := s.resourceRepository.Create(ctx, res)
-	if err != nil {
+	if err := s.resourceRepository.Create(ctx, res); err != nil {
 		if errors.Is(err, errors.ErrConflict) {
 			return nil, errors.ErrConflict.WithMsgf("resource with urn '%s' already exists", res.URN)
 		}
