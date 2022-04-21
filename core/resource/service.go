@@ -2,18 +2,24 @@ package resource
 
 import (
 	"context"
+	"time"
 
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-func NewService(repository Repository, moduleReg ModuleRegistry) *Service {
+func NewService(repository Repository, moduleReg ModuleRegistry, now func() time.Time) *Service {
+	if now == nil {
+		now = time.Now
+	}
 	return &Service{
+		clock:              now,
 		moduleRegistry:     moduleReg,
 		resourceRepository: repository,
 	}
 }
 
 type Service struct {
+	clock              func() time.Time
 	moduleRegistry     ModuleRegistry
 	resourceRepository Repository
 }
@@ -51,10 +57,14 @@ func (s *Service) ListResources(ctx context.Context, parent string, kind string)
 }
 
 func (s *Service) CreateResource(ctx context.Context, res Resource) (*Resource, error) {
+	if err := res.Validate(); err != nil {
+		return nil, err
+	}
 	res.Status = StatusPending
-	res.URN = generateURN(res)
+	res.CreatedAt = s.clock()
+	res.UpdatedAt = res.CreatedAt
 
-	if err := s.validate(ctx, res); err != nil {
+	if err := s.validateByModule(ctx, res); err != nil {
 		return nil, err
 	}
 
@@ -76,7 +86,8 @@ func (s *Service) UpdateResource(ctx context.Context, urn string, updates Update
 
 	res.Status = StatusPending
 	res.Configs = updates.Configs
-	if err := s.validate(ctx, *res); err != nil {
+	res.UpdatedAt = s.clock()
+	if err := s.validateByModule(ctx, *res); err != nil {
 		return nil, err
 	}
 
@@ -153,6 +164,7 @@ func (s *Service) sync(ctx context.Context, r Resource) (*Resource, error) {
 		r.Status, _ = m.Apply(r)
 	}
 
+	r.UpdatedAt = s.clock()
 	if err := s.resourceRepository.Update(ctx, r); err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
@@ -160,7 +172,7 @@ func (s *Service) sync(ctx context.Context, r Resource) (*Resource, error) {
 	return &r, nil
 }
 
-func (s *Service) validate(ctx context.Context, r Resource) error {
+func (s *Service) validateByModule(ctx context.Context, r Resource) error {
 	m, err := s.moduleRegistry.Get(r.Kind)
 	if err != nil {
 		if errors.Is(err, errors.ErrNotFound) {

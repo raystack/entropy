@@ -3,6 +3,7 @@ package provider_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -11,6 +12,8 @@ import (
 	"github.com/odpf/entropy/core/provider/mocks"
 	"github.com/odpf/entropy/pkg/errors"
 )
+
+var frozenTime = time.Unix(1650536955, 0)
 
 func TestService_CreateProvider(t *testing.T) {
 	t.Parallel()
@@ -65,14 +68,23 @@ func TestService_CreateProvider(t *testing.T) {
 				return repo
 			},
 			provider: provider.Provider{Parent: "parent", Name: "child", Kind: "bar"},
-			want:     &provider.Provider{URN: "parent-child", Parent: "parent", Name: "child", Kind: "bar"},
-			wantErr:  nil,
+			want: &provider.Provider{
+				URN:       "parent-child",
+				Kind:      "bar",
+				Name:      "child",
+				Parent:    "parent",
+				CreatedAt: frozenTime,
+				UpdatedAt: frozenTime,
+			},
+			wantErr: nil,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := provider.NewService(tt.setupRepo(t))
+			s := provider.NewService(tt.setupRepo(t), func() time.Time {
+				return frozenTime
+			})
 
 			got, err := s.CreateProvider(context.Background(), tt.provider)
 			if tt.wantErr != nil {

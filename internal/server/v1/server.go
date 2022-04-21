@@ -182,8 +182,6 @@ func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream ent
 
 func (server APIServer) CreateProvider(ctx context.Context, request *entropyv1beta1.CreateProviderRequest) (*entropyv1beta1.CreateProviderResponse, error) {
 	pro := providerFromProto(request.Provider)
-	pro.URN = provider.GenerateURN(*pro)
-	// TODO: add provider validation
 
 	createdProvider, err := server.providerService.CreateProvider(ctx, *pro)
 	if err != nil {
@@ -315,7 +313,7 @@ func providerFromProto(pro *entropyv1beta1.Provider) *provider.Provider {
 
 func generateRPCErr(e error) error {
 	err := errors.E(e)
-	
+
 	var code codes.Code
 	switch {
 	case errors.Is(err, errors.ErrNotFound):

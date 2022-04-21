@@ -6,6 +6,8 @@ import (
 	"context"
 	"strings"
 	"time"
+
+	"github.com/odpf/entropy/pkg/errors"
 )
 
 const (
@@ -54,6 +56,30 @@ type Updates struct {
 type ProviderSelector struct {
 	URN    string `bson:"urn"`
 	Target string `bson:"target"`
+}
+
+func (res *Resource) Validate() error {
+	res.Kind = strings.TrimSpace(res.Kind)
+	res.Name = strings.TrimSpace(res.Name)
+	res.Parent = strings.TrimSpace(res.Parent)
+	res.Status = Status(strings.TrimSpace(string(res.Status)))
+
+	if res.Kind == "" {
+		return errors.ErrInvalid.WithMsgf("resource must have a kind")
+	}
+	if res.Name == "" {
+		return errors.ErrInvalid.WithMsgf("resource must have a name")
+	}
+	if res.Parent == "" {
+		return errors.ErrInvalid.WithMsgf("resource must have a parent")
+	}
+
+	if res.Status == "" {
+		res.Status = StatusUnspecified
+	}
+
+	res.URN = generateURN(*res)
+	return nil
 }
 
 func generateURN(res Resource) string {

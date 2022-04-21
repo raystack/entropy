@@ -29,18 +29,21 @@ type Provider struct {
 
 func (p *Provider) Validate() error {
 	p.URN = strings.TrimSpace(p.URN)
+	p.Name = strings.TrimSpace(p.Name)
+	p.Parent = strings.TrimSpace(p.Parent)
+
 	if p.URN == "" {
-		p.URN = GenerateURN(*p)
+		p.URN = generateURN(*p)
 	}
 
 	// TODO: add basic sanitization and validations here.
 	return nil
 }
 
-func GenerateURN(pro Provider) string {
+func generateURN(p Provider) string {
 	return strings.Join([]string{
-		sanitizeString(pro.Parent),
-		sanitizeString(pro.Name),
+		sanitizeString(p.Parent),
+		sanitizeString(p.Name),
 	}, "-")
 }
 

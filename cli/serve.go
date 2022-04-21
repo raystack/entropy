@@ -4,6 +4,7 @@ import (
 	"context"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -68,8 +69,8 @@ func runServer(c Config) error {
 		return err
 	}
 
-	resourceService := resource.NewService(resourceRepository, moduleRepository)
-	providerService := provider.NewService(providerRepository)
+	resourceService := resource.NewService(resourceRepository, moduleRepository, time.Now)
+	providerService := provider.NewService(providerRepository, time.Now)
 
 	return entropyserver.Serve(ctx, c.Service, loggerInstance, nr, resourceService, providerService)
 }
