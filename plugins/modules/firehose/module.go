@@ -387,7 +387,7 @@ func (m *Module) Act(r resource.Resource, action string, params map[string]inter
 	return r.Configs, nil
 }
 
-func (m *Module) Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<-chan module.LogChunk, error) {
+func (m *Module) Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<-chan resource.LogChunk, error) {
 	var releaseConfig *helm.ReleaseConfig
 	if err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig); err != nil {
 		return nil, errors.New("unable to parse configs")
