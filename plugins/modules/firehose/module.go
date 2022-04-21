@@ -389,17 +389,19 @@ func (m *Module) Act(r *resource.Resource, action string, params map[string]inte
 }
 
 func (m *Module) Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<-chan module.LogChunk, error) {
-	/*var cfg config
-	if err := mapstructure.Decode(r.Configs, &cfg); err != nil {
-		return nil, errors.New("unable to parse configs")
-	}
-
 	var releaseConfig *helm.ReleaseConfig
 	if err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig); err != nil {
 		return nil, errors.New("unable to parse configs")
-	}*/
+	}
 
-	logs, err := kubelogger.GetStreamingLogs(ctx, "optimus", "g-pilotdata-gl-optimus-airflow-scheduler-649dd8796d-bsv66")
+	var selectors []string
+	for k, v := range filter {
+		s := fmt.Sprintf("%s=%s", k, v)
+		selectors = append(selectors, s)
+	}
+	selector := strings.Join(selectors, ",")
+
+	logs, err := kubelogger.GetStreamingLogs(ctx, releaseConfig.Namespace, selector)
 	if err != nil {
 		return nil, err
 	}
