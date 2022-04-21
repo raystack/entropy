@@ -165,7 +165,7 @@ func (s *Service) validate(ctx context.Context, r Resource) error {
 	m, err := s.moduleRegistry.Get(r.Kind)
 	if err != nil {
 		if errors.Is(err, errors.ErrNotFound) {
-			return errors.ErrInvalid.WithMsgf("invalid kind '%s'", r.Kind)
+			return errors.ErrInvalid.WithMsgf("invalid resource kind '%s'", r.Kind)
 		}
 		return errors.ErrInternal.WithCausef(err.Error())
 	}

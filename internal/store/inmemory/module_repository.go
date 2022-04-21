@@ -25,7 +25,7 @@ func (mr *ModuleRepository) Get(id string) (resource.Module, error) {
 func (mr *ModuleRepository) Register(m resource.Module) error {
 	id := m.ID()
 	if _, exists := mr.collection[id]; exists {
-		return errors.ErrConflict.WithCausef("module with id '%s' already exists", id)
+		return errors.ErrConflict.WithMsgf("module with id '%s' already exists", id)
 	}
 	mr.collection[m.ID()] = m
 	return nil
