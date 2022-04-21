@@ -297,9 +297,6 @@ const configSchemaString = `
   }
 `
 
-type config struct {
-	DelayMs int `mapstructure:"delay_ms"`
-}
 type Module struct {
 	schema             *gjs.Schema
 	providerRepository provider.Repository
