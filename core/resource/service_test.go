@@ -2,7 +2,6 @@ package resource_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/core/resource/mocks"
+	"github.com/odpf/entropy/pkg/errors"
 )
 
 var sampleResource = resource.Resource{
@@ -35,12 +35,12 @@ func TestService_GetResource(t *testing.T) {
 				repo := &mocks.ResourceRepository{}
 				repo.EXPECT().
 					GetByURN(mock.Anything, mock.Anything).
-					Return(nil, resource.ErrResourceNotFound).
+					Return(nil, errors.ErrNotFound).
 					Once()
 				return resource.NewService(repo, &mocks.ModuleRegistry{})
 			},
 			urn:     "foo:bar:baz",
-			wantErr: resource.ErrResourceNotFound,
+			wantErr: errors.ErrNotFound,
 		},
 		{
 			name: "Success",
@@ -66,6 +66,8 @@ func TestService_GetResource(t *testing.T) {
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))
+			} else {
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -109,7 +111,7 @@ func TestService_ListResources(t *testing.T) {
 				return resource.NewService(repo, &mocks.ModuleRegistry{})
 			},
 			want:    nil,
-			wantErr: nil,
+			wantErr: errors.ErrInternal,
 		},
 		{
 			name: "Success",
@@ -134,6 +136,8 @@ func TestService_ListResources(t *testing.T) {
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))
+			} else {
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -196,6 +200,29 @@ func TestService_CreateResource(t *testing.T) {
 			wantErr: errSample,
 		},
 		{
+			name: "AlreadyExists",
+			setup: func(t *testing.T) *resource.Service {
+				mod := &mocks.Module{}
+				mod.EXPECT().ID().Return("mock").Once()
+				mod.EXPECT().Validate(mock.Anything).Return(nil).Once()
+
+				modReg := &mocks.ModuleRegistry{}
+				modReg.EXPECT().Get("mock").Return(mod, nil).Once()
+
+				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(errors.ErrConflict).Once()
+
+				return resource.NewService(resourceRepo, modReg)
+			},
+			res: resource.Resource{
+				Kind:   "mock",
+				Name:   "child",
+				Parent: "parent",
+			},
+			want:    nil,
+			wantErr: errors.ErrConflict,
+		},
+		{
 			name: "SyncFailure",
 			setup: func(t *testing.T) *resource.Service {
 				mod := &mocks.Module{}
@@ -208,6 +235,7 @@ func TestService_CreateResource(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(nil).Once()
+				resourceRepo.EXPECT().Update(mock.Anything, mock.Anything).Return(nil).Once()
 
 				return resource.NewService(resourceRepo, modReg)
 			},
@@ -216,8 +244,14 @@ func TestService_CreateResource(t *testing.T) {
 				Name:   "child",
 				Parent: "parent",
 			},
-			want:    nil,
-			wantErr: errSample,
+			want: &resource.Resource{
+				URN:    "parent-child-mock",
+				Kind:   "mock",
+				Name:   "child",
+				Parent: "parent",
+				Status: resource.StatusError,
+			},
+			wantErr: nil,
 		},
 		{
 			name: "UpdateFailure",
@@ -285,6 +319,8 @@ func TestService_CreateResource(t *testing.T) {
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))
+			} else {
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -316,7 +352,7 @@ func TestService_UpdateResource(t *testing.T) {
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "parent-child-mock").
-					Return(nil, resource.ErrResourceNotFound).
+					Return(nil, errors.ErrNotFound).
 					Once()
 
 				return resource.NewService(resourceRepo, nil)
@@ -324,14 +360,14 @@ func TestService_UpdateResource(t *testing.T) {
 			urn:     "parent-child-mock",
 			updates: resource.Updates{Configs: map[string]interface{}{"foo": "bar"}},
 			want:    nil,
-			wantErr: resource.ErrResourceNotFound,
+			wantErr: errors.ErrNotFound,
 		},
 		{
 			name: "ModuleValidationError",
 			setup: func(t *testing.T) *resource.Service {
 				mod := &mocks.Module{}
 				mod.EXPECT().ID().Return("mock").Once()
-				mod.EXPECT().Validate(mock.Anything).Return(resource.ErrModuleConfigParseFailed).Once()
+				mod.EXPECT().Validate(mock.Anything).Return(errors.ErrInvalid).Once()
 
 				modReg := &mocks.ModuleRegistry{}
 				modReg.EXPECT().Get("mock").Return(mod, nil).Twice()
@@ -347,7 +383,7 @@ func TestService_UpdateResource(t *testing.T) {
 			urn:     "parent-child-mock",
 			updates: resource.Updates{Configs: map[string]interface{}{"foo": "bar"}},
 			want:    nil,
-			wantErr: resource.ErrModuleConfigParseFailed,
+			wantErr: errors.ErrInvalid,
 		},
 		{
 			name: "UpdateFailure",
@@ -413,6 +449,203 @@ func TestService_UpdateResource(t *testing.T) {
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestService_DeleteResource(t *testing.T) {
+	t.Parallel()
+	testErr := errors.New("failed")
+
+	tests := []struct {
+		name    string
+		setup   func(t *testing.T) *resource.Service
+		urn     string
+		updates resource.Updates
+		wantErr error
+	}{
+		{
+			name: "InternalError",
+			setup: func(t *testing.T) *resource.Service {
+				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo.EXPECT().Delete(mock.Anything, mock.Anything).Return(testErr).Once()
+
+				return resource.NewService(resourceRepo, nil)
+			},
+			wantErr: errors.ErrInternal,
+		},
+		{
+			name: "NotFound",
+			setup: func(t *testing.T) *resource.Service {
+				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo.EXPECT().Delete(mock.Anything, mock.Anything).Return(errors.ErrNotFound).Once()
+
+				return resource.NewService(resourceRepo, nil)
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Success",
+			setup: func(t *testing.T) *resource.Service {
+				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo.EXPECT().Delete(mock.Anything, mock.Anything).Return(nil).Once()
+
+				return resource.NewService(resourceRepo, nil)
+			},
+			wantErr: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := tt.setup(t)
+
+			err := svc.DeleteResource(context.Background(), tt.urn)
+			if tt.wantErr != nil {
+				assert.Error(t, err)
+				assert.True(t, errors.Is(err, tt.wantErr))
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestService_ApplyAction(t *testing.T) {
+	t.Parallel()
+
+	sampleAction := resource.Action{
+		Name:   "scale",
+		Params: map[string]interface{}{"replicas": 8},
+	}
+
+	tests := []struct {
+		name    string
+		setup   func(t *testing.T) *resource.Service
+		urn     string
+		action  resource.Action
+		want    *resource.Resource
+		wantErr error
+	}{
+		{
+			name: "NotFound",
+			setup: func(t *testing.T) *resource.Service {
+				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo.EXPECT().GetByURN(mock.Anything, "urn::foo").Return(nil, errors.ErrNotFound).Once()
+
+				return resource.NewService(resourceRepo, nil)
+			},
+			urn:     "urn::foo",
+			action:  sampleAction,
+			want:    nil,
+			wantErr: errors.ErrNotFound,
+		},
+		{
+			name: "ModuleResolutionFailure",
+			setup: func(t *testing.T) *resource.Service {
+				moduleReg := &mocks.ModuleRegistry{}
+				moduleReg.EXPECT().Get("mock").Return(nil, errors.ErrNotFound).Once()
+
+				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo.EXPECT().
+					GetByURN(mock.Anything, "urn::foo").
+					Return(&resource.Resource{
+						URN:  "urn::foo",
+						Kind: "mock",
+					}, nil).
+					Once()
+
+				return resource.NewService(resourceRepo, moduleReg)
+			},
+			urn:     "urn::foo",
+			action:  sampleAction,
+			want:    nil,
+			wantErr: errors.ErrInternal,
+		},
+		{
+			name: "ActFailure",
+			setup: func(t *testing.T) *resource.Service {
+				mockModule := &mocks.Module{}
+				mockModule.EXPECT().
+					Act(mock.Anything, "scale", mock.Anything).
+					Return(nil, errors.New("failed")).
+					Once()
+
+				moduleReg := &mocks.ModuleRegistry{}
+				moduleReg.EXPECT().Get("mock").Return(mockModule, nil).Once()
+
+				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo.EXPECT().
+					GetByURN(mock.Anything, "urn::foo").
+					Return(&resource.Resource{
+						URN:  "urn::foo",
+						Kind: "mock",
+					}, nil).
+					Once()
+
+				return resource.NewService(resourceRepo, moduleReg)
+			},
+			urn:     "urn::foo",
+			action:  sampleAction,
+			want:    nil,
+			wantErr: errors.ErrInternal,
+		},
+		{
+			name: "Success",
+			setup: func(t *testing.T) *resource.Service {
+				mockModule := &mocks.Module{}
+				mockModule.EXPECT().
+					Act(mock.Anything, "scale", mock.Anything).
+					Return(nil, nil).
+					Once()
+				mockModule.EXPECT().
+					Apply(mock.Anything).
+					Return(resource.StatusCompleted, nil).
+					Once()
+
+				moduleReg := &mocks.ModuleRegistry{}
+				moduleReg.EXPECT().Get("mock").Return(mockModule, nil).Twice()
+
+				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo.EXPECT().
+					GetByURN(mock.Anything, "urn::foo").
+					Return(&resource.Resource{
+						URN:  "urn::foo",
+						Kind: "mock",
+					}, nil).
+					Once()
+				resourceRepo.EXPECT().
+					Update(mock.Anything, mock.Anything).
+					Return(nil).
+					Once()
+
+				return resource.NewService(resourceRepo, moduleReg)
+			},
+			urn:    "urn::foo",
+			action: sampleAction,
+			want: &resource.Resource{
+				URN:    "urn::foo",
+				Kind:   "mock",
+				Status: resource.StatusCompleted,
+			},
+			wantErr: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := tt.setup(t)
+
+			got, err := svc.ApplyAction(context.Background(), tt.urn, tt.action)
+			if tt.wantErr != nil {
+				assert.Error(t, err)
+				assert.True(t, errors.Is(err, tt.wantErr))
+			} else {
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})

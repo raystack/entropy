@@ -2,7 +2,6 @@ package log
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/odpf/entropy/core/resource"
+	"github.com/odpf/entropy/pkg/errors"
 )
 
 type Level string
@@ -96,8 +96,9 @@ func (m *Module) Validate(r resource.Resource) error {
 	resourceLoader := gjs.NewGoLoader(r.Configs)
 	result, err := m.schema.Validate(resourceLoader)
 	if err != nil {
-		return fmt.Errorf("%w: %s", resource.ErrModuleConfigParseFailed, err)
+		return errors.ErrInvalid.WithCausef(err.Error())
 	}
+
 	if !result.Valid() {
 		var errorStrings []string
 		for _, resultErr := range result.Errors() {

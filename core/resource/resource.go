@@ -4,7 +4,6 @@ package resource
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"time"
 )
@@ -16,11 +15,6 @@ const (
 	StatusRunning     Status = "STATUS_RUNNING"
 	StatusStopped     Status = "STATUS_STOPPED"
 	StatusCompleted   Status = "STATUS_COMPLETED"
-)
-
-var (
-	ErrResourceNotFound      = errors.New("no resource(s) found")
-	ErrResourceAlreadyExists = errors.New("resource already exists")
 )
 
 type Repository interface {
@@ -62,7 +56,7 @@ type ProviderSelector struct {
 	Target string `bson:"target"`
 }
 
-func GenerateURN(res Resource) string {
+func generateURN(res Resource) string {
 	return strings.Join([]string{
 		sanitizeString(res.Parent),
 		sanitizeString(res.Name),

@@ -2,7 +2,6 @@ package provider_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/odpf/entropy/core/provider"
 	"github.com/odpf/entropy/core/provider/mocks"
+	"github.com/odpf/entropy/pkg/errors"
 )
 
 func TestService_CreateProvider(t *testing.T) {
@@ -20,49 +20,24 @@ func TestService_CreateProvider(t *testing.T) {
 		setupRepo func(t *testing.T) provider.Repository
 		provider  provider.Provider
 		want      *provider.Provider
-		wantErr   bool
+		wantErr   error
 	}{
 		{
-			name: "CreateError_Repository",
+			name: "RepositoryConflict",
 			setupRepo: func(t *testing.T) provider.Repository {
 				repo := &mocks.ProviderRepository{}
 				repo.EXPECT().
 					Create(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, p provider.Provider) {
-						assert.Equal(t, p.URN, "foo")
+						assert.Equal(t, "parent-child", p.URN)
 					}).
-					Return(errors.New("failed")).
+					Return(errors.ErrConflict).
 					Once()
 
 				return repo
 			},
-			provider: provider.Provider{URN: "foo"},
-			wantErr:  true,
-		},
-		{
-			name: "GetError_Repository",
-			setupRepo: func(t *testing.T) provider.Repository {
-				repo := &mocks.ProviderRepository{}
-				repo.EXPECT().
-					Create(mock.Anything, mock.Anything).
-					Run(func(ctx context.Context, p provider.Provider) {
-						assert.Equal(t, p.URN, "foo")
-					}).
-					Return(nil).
-					Once()
-
-				repo.EXPECT().
-					GetByURN(mock.Anything, "foo").
-					Run(func(ctx context.Context, urn string) {
-						assert.Equal(t, urn, "foo")
-					}).
-					Return(nil, errors.New("failed")).
-					Once()
-
-				return repo
-			},
-			provider: provider.Provider{URN: "foo"},
-			wantErr:  true,
+			provider: provider.Provider{Parent: "parent", Name: "child", Kind: "bar"},
+			wantErr:  errors.ErrConflict,
 		},
 		{
 			name: "Successful",
@@ -73,7 +48,7 @@ func TestService_CreateProvider(t *testing.T) {
 				repo.EXPECT().
 					Create(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, p provider.Provider) {
-						assert.Equal(t, p.URN, "foo")
+						assert.Equal(t, "parent-child", p.URN)
 						storedProvider = p
 					}).
 					Return(nil).
@@ -89,9 +64,9 @@ func TestService_CreateProvider(t *testing.T) {
 
 				return repo
 			},
-			provider: provider.Provider{URN: "foo"},
-			want:     &provider.Provider{URN: "foo"},
-			wantErr:  false,
+			provider: provider.Provider{Parent: "parent", Name: "child", Kind: "bar"},
+			want:     &provider.Provider{URN: "parent-child", Parent: "parent", Name: "child", Kind: "bar"},
+			wantErr:  nil,
 		},
 	}
 
@@ -100,8 +75,9 @@ func TestService_CreateProvider(t *testing.T) {
 			s := provider.NewService(tt.setupRepo(t))
 
 			got, err := s.CreateProvider(context.Background(), tt.provider)
-			if tt.wantErr {
+			if tt.wantErr != nil {
 				assert.Error(t, err)
+				assert.Truef(t, errors.Is(err, tt.wantErr), "'%s' != '%s'", tt.wantErr, err)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.want, got)

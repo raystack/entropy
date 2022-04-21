@@ -20,11 +20,11 @@ func TestError_Error(t *testing.T) {
 		{
 			title: "WithoutCause",
 			err:   errors.ErrInvalid,
-			want:  "bad_request: request is not valid",
+			want:  "request is not valid",
 		},
 		{
 			title: "WithCause",
-			err:   errors.ErrInvalid.WithCausef("foo"),
+			err:   errors.ErrInvalid.WithMsgf("").WithCausef("foo"),
 			want:  "bad_request: foo",
 		},
 	}
@@ -47,19 +47,19 @@ func TestError_Is(t *testing.T) {
 		want  bool
 	}{
 		{
-			title: "NonTimerErr",
-			err:   errors.ErrInternal,
-			other: goerrors.New("foo"),
-			want:  false,
-		},
-		{
-			title: "TimerErrWithDifferentCode",
+			title: "WithDifferentCode",
 			err:   errors.ErrInternal,
 			other: errors.ErrInvalid,
 			want:  false,
 		},
 		{
-			title: "TimerErrWithSameCodeDiffCause",
+			title: "NonEntropyErr",
+			err:   errors.ErrInternal,
+			other: goerrors.New("foo"),
+			want:  true,
+		},
+		{
+			title: "WithSameCode",
 			err:   errors.ErrInvalid.WithCausef("cause 1"),
 			other: errors.ErrInvalid.WithCausef("cause 2"),
 			want:  true,
@@ -96,7 +96,7 @@ func TestError_WithCausef(t *testing.T) {
 			err:   errors.ErrConflict.WithCausef("hello %s", "world"),
 			want: errors.Error{
 				Code:    "conflict",
-				Message: "A resource with conflicting identifier exists",
+				Message: "An entity with conflicting identifier exists",
 				Cause:   "hello world",
 			},
 		},
@@ -145,5 +145,5 @@ func TestError_WithMsgf(t *testing.T) {
 func Test_Errorf(t *testing.T) {
 	e := errors.Errorf("failed: %d", 100)
 	assert.Error(t, e)
-	assert.EqualError(t, e, "internal_error: failed: 100")
+	assert.EqualError(t, e, "failed: 100")
 }

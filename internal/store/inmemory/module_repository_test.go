@@ -1,11 +1,11 @@
 package inmemory
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 
 	"github.com/odpf/entropy/core/resource"
+	"github.com/odpf/entropy/pkg/errors"
 	"github.com/odpf/entropy/plugins/modules/log"
 )
 
@@ -25,7 +25,7 @@ func TestModuleRepository_Get(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "test get module from repository",
+			name: "Successful",
 			fields: fields{
 				collection: map[string]resource.Module{
 					mod.ID(): mod,
@@ -38,7 +38,7 @@ func TestModuleRepository_Get(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "test get non-existent module from repository",
+			name: "NotFound",
 			fields: fields{
 				collection: map[string]resource.Module{
 					mod.ID(): mod,
@@ -48,7 +48,7 @@ func TestModuleRepository_Get(t *testing.T) {
 				id: "notlog",
 			},
 			want:    nil,
-			wantErr: resource.ErrModuleNotFound,
+			wantErr: errors.ErrNotFound,
 		},
 	}
 	for _, tt := range tests {
@@ -83,7 +83,7 @@ func TestModuleRepository_Register(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "test register module",
+			name: "Success",
 			fields: fields{
 				collection: map[string]resource.Module{},
 			},
@@ -93,7 +93,7 @@ func TestModuleRepository_Register(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "test register already added module",
+			name: "AlreadyRegistered",
 			fields: fields{
 				collection: map[string]resource.Module{
 					mod.ID(): mod,
@@ -102,7 +102,7 @@ func TestModuleRepository_Register(t *testing.T) {
 			args: args{
 				module: mod,
 			},
-			wantErr: resource.ErrModuleAlreadyExists,
+			wantErr: errors.ErrConflict,
 		},
 	}
 	for _, tt := range tests {

@@ -2,7 +2,6 @@ package mongodb
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"testing"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 
 	"github.com/odpf/entropy/core/resource"
+	"github.com/odpf/entropy/pkg/errors"
 )
 
 func TestResourceRepository_Create(t *testing.T) {
@@ -75,7 +75,7 @@ func TestResourceRepository_Create(t *testing.T) {
 					UpdatedAt: time.Now(),
 				}}
 			},
-			wantErr: resource.ErrResourceAlreadyExists,
+			wantErr: errors.ErrConflict,
 		},
 	}
 	for _, tt := range tests {
@@ -107,7 +107,7 @@ func TestResourceRepository_GetByURN(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "test resource get success",
+			name: "Success",
 			setup: func(mt *mtest.T) {
 				mt.AddMockResponses(mtest.CreateCursorResponse(1, "test.ns", mtest.FirstBatch, bson.D{
 					{Key: "urn", Value: "p-testdata-gl-testname-log"},
@@ -119,7 +119,7 @@ func TestResourceRepository_GetByURN(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "test resource not found",
+			name: "NotFound",
 			setup: func(mt *mtest.T) {
 				mt.AddMockResponses(bson.D{
 					{Key: "ok", Value: 1},
@@ -133,7 +133,7 @@ func TestResourceRepository_GetByURN(t *testing.T) {
 			fields:  func(mt *mtest.T) fields { return fields{mt.Coll} },
 			args:    func(mt *mtest.T) args { return args{"p-testdata-gl-unknown-log"} },
 			want:    func(mt *mtest.T) *resource.Resource { return nil },
-			wantErr: resource.ErrResourceNotFound,
+			wantErr: errors.ErrNotFound,
 		},
 	}
 	for _, tt := range tests {
