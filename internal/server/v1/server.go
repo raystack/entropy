@@ -165,7 +165,11 @@ func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream ent
 		case <-ctx.Done():
 			return nil
 
-		case chunk := <-logStream:
+		case chunk, open := <-logStream:
+			if !open {
+				return nil
+			}
+
 			resp := &entropyv1beta1.GetLogResponse{
 				Chunk: &entropyv1beta1.LogChunk{
 					Data:   chunk.Data,

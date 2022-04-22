@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/odpf/entropy/pkg/errors"
@@ -161,7 +162,10 @@ func (s *Service) sync(ctx context.Context, r Resource) (*Resource, error) {
 	if err != nil {
 		r.Status = StatusError
 	} else {
-		r.Status, _ = m.Apply(r)
+		r.Status, err = m.Apply(r)
+		if err != nil {
+			log.Printf("apply failed: %v", err)
+		}
 	}
 
 	r.UpdatedAt = s.clock()

@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"sync"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,6 +13,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/odpf/entropy/core/resource"
+	"github.com/odpf/entropy/pkg/errors"
 )
 
 func GetStreamingLogs(ctx context.Context, namespace string, selector string, cfg rest.Config) (<-chan resource.LogChunk, error) {
@@ -26,12 +28,11 @@ func GetStreamingLogs(ctx context.Context, namespace string, selector string, cf
 	}
 
 	logCh := make(chan resource.LogChunk)
-	wg := &sync.WaitGroup{}
 
+	wg := &sync.WaitGroup{}
 	for _, pod := range pods.Items {
 		for _, container := range append(pod.Spec.InitContainers, pod.Spec.Containers...) {
 			wg.Add(1)
-
 			go func(podName string, c v1.Container) {
 				defer wg.Done()
 				if err := streamContainerLogs(ctx, namespace, podName, logCh, clientSet, c); err != nil {
@@ -64,10 +65,13 @@ func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- r
 	for {
 		numBytes, err := podLogs.Read(buf)
 		if err != nil {
-			if err == io.EOF {
+			if err == io.EOF || errors.Is(err, context.Canceled) {
 				return nil
 			}
 			return err
+		} else if numBytes == 0 {
+			time.Sleep(500 * time.Millisecond)
+			continue
 		}
 
 		logChunk := resource.LogChunk{

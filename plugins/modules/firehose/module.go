@@ -26,7 +26,7 @@ const (
 	defaultRepositoryString = "https://odpf.github.io/charts/"
 	defaultChartString      = "firehose"
 	defaultVersionString    = "0.1.1"
-	defaultNamespaceString  = "firehose"
+	defaultNamespace        = "firehose"
 )
 
 //go:embed config_schema.json
@@ -79,7 +79,7 @@ func (m *Module) Apply(r resource.Resource) (resource.Status, error) {
 			helmProvider := helm.NewProvider(helmConfig)
 			_, err = helmProvider.Release(releaseConfig)
 			if err != nil {
-				return resource.StatusError, nil
+				return resource.StatusError, err
 			}
 		}
 	}
@@ -141,9 +141,10 @@ func (m *Module) Log(ctx context.Context, r resource.Resource, filter map[string
 		s := fmt.Sprintf("%s=%s", k, v)
 		selectors = append(selectors, s)
 	}
-	selector := strings.Join(selectors, ",")
+	selectors = append(selectors, fmt.Sprintf("app=%s", r.URN))
 
-	return kubelogger.GetStreamingLogs(ctx, releaseConfig.Namespace, selector, *cfg)
+	selector := strings.Join(selectors, ",")
+	return kubelogger.GetStreamingLogs(ctx, defaultNamespace, selector, *cfg)
 }
 
 func (m *Module) loadKubeConfig(ctx context.Context, providers []resource.ProviderSelector) (*rest.Config, error) {
@@ -170,7 +171,7 @@ func getReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
 	releaseConfig.Repository = defaultRepositoryString
 	releaseConfig.Chart = defaultChartString
 	releaseConfig.Version = defaultVersionString
-	releaseConfig.Namespace = defaultNamespaceString
+	releaseConfig.Namespace = defaultNamespace
 	releaseConfig.Name = r.URN
 	err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig)
 	if err != nil {
@@ -184,7 +185,7 @@ type kubeConfig struct {
 	Host          string `mapstructure:"host"`
 	ClientKey     string `mapstructure:"clientKey"`
 	ClientCert    string `mapstructure:"clientCertificate"`
-	ClusterCACert string `mapstructure:"clientCACertificate"`
+	ClusterCACert string `mapstructure:"clusterCACertificate"`
 }
 
 func (kc kubeConfig) ToRESTConfig() *rest.Config {
