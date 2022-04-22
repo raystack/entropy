@@ -1,8 +1,12 @@
 package cli
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/odpf/salt/config"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 
 	"github.com/odpf/entropy/internal/server"
 	"github.com/odpf/entropy/internal/store/mongodb"
@@ -12,9 +16,24 @@ import (
 
 const configFlag = "config"
 
+func cmdShowConfigs() *cobra.Command {
+	return &cobra.Command{
+		Use:   "configs",
+		Short: "Display configurations currently loaded",
+		Run: func(cmd *cobra.Command, args []string) {
+			cfg, err := loadConfig(cmd)
+			if err != nil {
+				fmt.Printf("failed to read configs: %v\n", err)
+				os.Exit(1)
+			}
+			_ = yaml.NewEncoder(os.Stdout).Encode(cfg)
+		},
+	}
+}
+
 // Config contains the application configuration
 type Config struct {
-	DB       mongodb.DBConfig      `mapstructure:"db"`
+	DB       mongodb.Config        `mapstructure:"db"`
 	Log      logger.LogConfig      `mapstructure:"log"`
 	Service  server.Config         `mapstructure:"service"`
 	NewRelic metric.NewRelicConfig `mapstructure:"newrelic"`

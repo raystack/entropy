@@ -2,42 +2,37 @@ package mongodb
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// DBConfig contains the database configuration
-type DBConfig struct {
-	Host string `mapstructure:"host" default:"localhost"`
-	Port string `mapstructure:"port" default:"27017"`
+// Config contains the database configurations.
+type Config struct {
+	// URI should be valid MongodDB connection string.
+	// https://www.mongodb.com/docs/manual/reference/connection-string/
+	URI string `mapstructure:"uri" default:"mongodb://localhost:27017"`
+
+	// Name should be the name of the database to use.
 	Name string `mapstructure:"name" default:"entropy"`
+
+	// PingTimeout decides the maximum time to wait for ping response.
+	PingTimeout time.Duration `mapstructure:"ping_timeout" default:"3s"`
 }
 
-// New returns the database instance
-func New(config *DBConfig) (*mongo.Database, error) {
-	uri := fmt.Sprintf(
-		"mongodb://%s:%s/%s",
-		config.Host,
-		config.Port,
-		config.Name,
-	)
-
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
+// Connect returns the database instance
+func Connect(cfg Config) (*mongo.Database, error) {
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(cfg.URI))
 	if err != nil {
 		return nil, err
 	}
 
-	pingCtx, pingCancel := context.WithTimeout(context.TODO(), time.Second*5)
+	pingCtx, pingCancel := context.WithTimeout(context.TODO(), cfg.PingTimeout)
 	defer pingCancel()
-
-	err = client.Ping(pingCtx, nil)
-
-	if err != nil {
+	if err := client.Ping(pingCtx, nil); err != nil {
 		return nil, err
 	}
 
-	return client.Database(config.Name), nil
+	return client.Database(cfg.Name), nil
 }

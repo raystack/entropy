@@ -50,7 +50,7 @@ func runServer(c Config) error {
 		return err
 	}
 
-	mongoStore, err := mongodb.New(&c.DB)
+	mongoStore, err := mongodb.Connect(c.DB)
 	if err != nil {
 		return err
 	}

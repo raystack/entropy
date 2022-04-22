@@ -31,8 +31,8 @@ func cmdMigrate() *cobra.Command {
 	return cmd
 }
 
-func runMigrations(ctx context.Context, cfg mongodb.DBConfig) error {
-	mongoStore, err := mongodb.New(&cfg)
+func runMigrations(ctx context.Context, cfg mongodb.Config) error {
+	mongoStore, err := mongodb.Connect(cfg)
 	if err != nil {
 		return err
 	}

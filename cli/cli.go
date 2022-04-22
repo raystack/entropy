@@ -18,6 +18,7 @@ func Execute() {
 		cmdServe(),
 		cmdMigrate(),
 		cmdVersion(),
+		cmdShowConfigs(),
 	)
 
 	cmdx.SetHelp(rootCmd)
