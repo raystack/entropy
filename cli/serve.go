@@ -57,20 +57,20 @@ func runServer(c Config) error {
 
 	resourceRepository := mongodb.NewResourceRepository(mongoStore)
 	providerRepository := mongodb.NewProviderRepository(mongoStore)
-
 	moduleRepository := inmemory.NewModuleRepository()
+
+	resourceService := resource.NewService(resourceRepository, moduleRepository, time.Now)
+	providerService := provider.NewService(providerRepository, time.Now)
+
 	err = moduleRepository.Register(log.New(loggerInstance))
 	if err != nil {
 		return err
 	}
 
-	err = moduleRepository.Register(firehose.New(providerRepository))
+	err = moduleRepository.Register(firehose.New(providerService))
 	if err != nil {
 		return err
 	}
-
-	resourceService := resource.NewService(resourceRepository, moduleRepository, time.Now)
-	providerService := provider.NewService(providerRepository, time.Now)
 
 	return entropyserver.Serve(ctx, c.Service, loggerInstance, nr, resourceService, providerService)
 }

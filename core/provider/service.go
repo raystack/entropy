@@ -22,6 +22,17 @@ type Service struct {
 	repo  Repository
 }
 
+func (s *Service) GetByURN(ctx context.Context, urn string) (*Provider, error) {
+	p, err := s.repo.GetByURN(ctx, urn)
+	if err != nil {
+		if errors.Is(err, errors.ErrNotFound) {
+			return nil, errors.ErrNotFound.WithMsgf("provider with urn '%s' not found", urn)
+		}
+		return nil, errors.ErrInternal.WithCausef(err.Error())
+	}
+	return p, nil
+}
+
 func (s *Service) CreateProvider(ctx context.Context, pro Provider) (*Provider, error) {
 	if err := pro.Validate(); err != nil {
 		return nil, err

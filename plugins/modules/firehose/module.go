@@ -8,6 +8,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	gjs "github.com/xeipuuv/gojsonschema"
+	"k8s.io/client-go/rest"
 
 	"github.com/odpf/entropy/core/provider"
 	"github.com/odpf/entropy/core/resource"
@@ -31,28 +32,32 @@ const (
 //go:embed config_schema.json
 var configSchemaString string
 
-func New(providerRepository provider.Repository) *Module {
+func New(providerSvc providerService) *Module {
 	schemaLoader := gjs.NewStringLoader(configSchemaString)
 	schema, err := gjs.NewSchema(schemaLoader)
 	if err != nil {
 		return nil
 	}
 	return &Module{
-		schema:             schema,
-		providerRepository: providerRepository,
+		schema:      schema,
+		providerSvc: providerSvc,
 	}
 }
 
+type providerService interface {
+	GetByURN(ctx context.Context, urn string) (*provider.Provider, error)
+}
+
 type Module struct {
-	schema             *gjs.Schema
-	providerRepository provider.Repository
+	schema      *gjs.Schema
+	providerSvc providerService
 }
 
 func (m *Module) ID() string { return "firehose" }
 
 func (m *Module) Apply(r resource.Resource) (resource.Status, error) {
 	for _, p := range r.Providers {
-		p, err := m.providerRepository.GetByURN(context.TODO(), p.URN)
+		p, err := m.providerSvc.GetByURN(context.TODO(), p.URN)
 		if err != nil {
 			return resource.StatusError, err
 		}
@@ -120,10 +125,15 @@ func (m *Module) Act(r resource.Resource, action string, params map[string]inter
 	return r.Configs, nil
 }
 
-func (m *Module) Log(ctx context.Context, r *resource.Resource, filter map[string]string) (<-chan resource.LogChunk, error) {
-	var releaseConfig *helm.ReleaseConfig
+func (m *Module) Log(ctx context.Context, r resource.Resource, filter map[string]string) (<-chan resource.LogChunk, error) {
+	var releaseConfig helm.ReleaseConfig
 	if err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig); err != nil {
 		return nil, errors.New("unable to parse configs")
+	}
+
+	cfg, err := m.loadKubeConfig(ctx, r.Providers)
+	if err != nil {
+		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
 
 	var selectors []string
@@ -133,11 +143,26 @@ func (m *Module) Log(ctx context.Context, r *resource.Resource, filter map[strin
 	}
 	selector := strings.Join(selectors, ",")
 
-	logs, err := kubelogger.GetStreamingLogs(ctx, releaseConfig.Namespace, selector)
-	if err != nil {
-		return nil, err
+	return kubelogger.GetStreamingLogs(ctx, releaseConfig.Namespace, selector, *cfg)
+}
+
+func (m *Module) loadKubeConfig(ctx context.Context, providers []resource.ProviderSelector) (*rest.Config, error) {
+	for _, providerSelector := range providers {
+		p, err := m.providerSvc.GetByURN(ctx, providerSelector.URN)
+		if err != nil {
+			return nil, err
+		}
+
+		if p.Kind == providerKindKubernetes {
+			var kubeCfg kubeConfig
+			if err := mapstructure.Decode(p.Configs, &kubeCfg); err != nil {
+				return nil, err
+			}
+			return kubeCfg.ToRESTConfig(), nil
+		}
 	}
-	return logs, nil
+
+	return nil, errors.ErrInternal.WithCausef("kubernetes provider not found in resource")
 }
 
 func getReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
@@ -153,4 +178,22 @@ func getReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
 	}
 
 	return releaseConfig, nil
+}
+
+type kubeConfig struct {
+	Host          string `mapstructure:"host"`
+	ClientKey     string `mapstructure:"clientKey"`
+	ClientCert    string `mapstructure:"clientCertificate"`
+	ClusterCACert string `mapstructure:"clientCACertificate"`
+}
+
+func (kc kubeConfig) ToRESTConfig() *rest.Config {
+	return &rest.Config{
+		Host: kc.Host,
+		TLSClientConfig: rest.TLSClientConfig{
+			CAData:   []byte(kc.ClusterCACert),
+			KeyData:  []byte(kc.ClientKey),
+			CertData: []byte(kc.ClientCert),
+		},
+	}
 }
