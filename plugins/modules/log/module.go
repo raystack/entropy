@@ -21,9 +21,9 @@ const (
 	LevelWarn  Level = "WARN"
 	LevelInfo  Level = "INFO"
 	LevelDebug Level = "DEBUG"
-
-	levelConfigString = "log_level"
 )
+
+const levelConfigString = "log_level"
 
 const configSchemaString = `
 {
@@ -79,12 +79,16 @@ func (m *Module) Apply(r resource.Resource) (resource.Status, error) {
 	switch cfg.LogLevel {
 	case LevelError:
 		m.logger.Sugar().Error(r)
+
 	case LevelWarn:
 		m.logger.Sugar().Warn(r)
+
 	case LevelInfo:
 		m.logger.Sugar().Info(r)
+
 	case LevelDebug:
 		m.logger.Sugar().Debug(r)
+
 	default:
 		return resource.StatusError, errors.New("unknown log level")
 	}
@@ -94,6 +98,7 @@ func (m *Module) Apply(r resource.Resource) (resource.Status, error) {
 
 func (m *Module) Validate(r resource.Resource) error {
 	resourceLoader := gjs.NewGoLoader(r.Configs)
+
 	result, err := m.schema.Validate(resourceLoader)
 	if err != nil {
 		return errors.ErrInvalid.WithCausef(err.Error())
@@ -104,9 +109,9 @@ func (m *Module) Validate(r resource.Resource) error {
 		for _, resultErr := range result.Errors() {
 			errorStrings = append(errorStrings, resultErr.String())
 		}
-		errorString := strings.Join(errorStrings, "\n")
-		return errors.New(errorString)
+		return errors.ErrInvalid.WithMsgf(strings.Join(errorStrings, "\n"))
 	}
+
 	return nil
 }
 
@@ -123,6 +128,7 @@ func (m *Module) Log(ctx context.Context, r resource.Resource, filter map[string
 	if err := mapstructure.Decode(r.Configs, &cfg); err != nil {
 		return nil, errors.New("unable to parse configs")
 	}
+
 	logs := make(chan resource.LogChunk)
 	go func() {
 		defer close(logs)
@@ -133,11 +139,13 @@ func (m *Module) Log(ctx context.Context, r resource.Resource, filter map[string
 				Labels: map[string]string{"resource": r.URN},
 			}:
 				time.Sleep(time.Millisecond * time.Duration(cfg.DelayMs))
+
 			case <-ctx.Done():
 				return
 			}
 		}
 	}()
+
 	return logs, nil
 }
 

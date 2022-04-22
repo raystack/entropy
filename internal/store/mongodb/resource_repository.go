@@ -39,6 +39,7 @@ func (rc *ResourceRepository) Create(ctx context.Context, res resource.Resource)
 		}
 		return err
 	}
+
 	return nil
 }
 
@@ -48,8 +49,8 @@ func (rc *ResourceRepository) Update(ctx context.Context, r resource.Resource) e
 		map[string]interface{}{"urn": r.URN},
 		map[string]interface{}{"$set": r},
 	)
-	err := singleResult.Err()
-	if err != nil {
+
+	if err := singleResult.Err(); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return errors.ErrNotFound
 		}
