@@ -3,7 +3,6 @@ package firehose
 import (
 	"context"
 	_ "embed"
-	"fmt"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -136,15 +135,12 @@ func (m *Module) Log(ctx context.Context, r resource.Resource, filter map[string
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
 
-	var selectors []string
-	for k, v := range filter {
-		s := fmt.Sprintf("%s=%s", k, v)
-		selectors = append(selectors, s)
+	if filter == nil {
+		filter = make(map[string]string)
 	}
-	selectors = append(selectors, fmt.Sprintf("app=%s", r.URN))
+	filter["app"] = r.URN
 
-	selector := strings.Join(selectors, ",")
-	return kubelogger.GetStreamingLogs(ctx, defaultNamespace, selector, *cfg)
+	return kubelogger.GetStreamingLogs(ctx, defaultNamespace, filter, *cfg)
 }
 
 func (m *Module) loadKubeConfig(ctx context.Context, providers []resource.ProviderSelector) (*rest.Config, error) {
