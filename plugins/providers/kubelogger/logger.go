@@ -24,7 +24,7 @@ func GetStreamingLogs(ctx context.Context, namespace string, filter map[string]s
 
 	clientSet, err := kubernetes.NewForConfig(&cfg)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	for k, v := range filter {
