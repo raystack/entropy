@@ -19,8 +19,8 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-const BUFFER_SIZE = 4096
-const SLEEP_TIME = 500
+const bufferSize = 4096
+const sleepTime = 500
 
 func GetStreamingLogs(ctx context.Context, namespace string, filter map[string]string, cfg rest.Config) (<-chan resource.LogChunk, error) {
 	var selectors []string
@@ -42,13 +42,13 @@ func GetStreamingLogs(ctx context.Context, namespace string, filter map[string]s
 		case "sinceSeconds":
 			i, err := strconv.ParseInt(v, 10, 64)
 			if err != nil {
-				panic(err)
+				return nil, errors.ErrInvalid.WithMsgf("invalid sinceSeconds filter value: %v", err)
 			}
 			sinceSeconds = i
 		case "tailLine":
 			i, err := strconv.ParseInt(v, 10, 64)
 			if err != nil {
-				panic(err)
+				return nil, errors.ErrInvalid.WithMsgf("invalid tailLine filter value: %v", err)
 			}
 			tailLines = i
 		default:
@@ -121,7 +121,7 @@ func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- r
 	filter["pod"] = podName
 	filter["container"] = container.Name
 
-	buf := make([]byte, BUFFER_SIZE)
+	buf := make([]byte, bufferSize)
 	for {
 		numBytes, err := podLogs.Read(buf)
 		if err != nil {
@@ -130,7 +130,7 @@ func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- r
 			}
 			return err
 		} else if numBytes == 0 {
-			time.Sleep(SLEEP_TIME * time.Millisecond)
+			time.Sleep(sleepTime * time.Millisecond)
 			continue
 		}
 
