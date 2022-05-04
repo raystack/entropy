@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -18,9 +19,13 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
+const BUFFER_SIZE = 4096
+const SLEEP_TIME = 500
+
 func GetStreamingLogs(ctx context.Context, namespace string, filter map[string]string, cfg rest.Config) (<-chan resource.LogChunk, error) {
 	var selectors []string
 	var podName, containerName, labelSelector, filedSelector string
+	var sinceSeconds, tailLines int64
 	var opts metav1.ListOptions
 
 	clientSet, err := kubernetes.NewForConfig(&cfg)
@@ -34,6 +39,18 @@ func GetStreamingLogs(ctx context.Context, namespace string, filter map[string]s
 			podName = v
 		case "container":
 			containerName = v
+		case "sinceSeconds":
+			i, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			sinceSeconds = i
+		case "tailLine":
+			i, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			tailLines = i
 		default:
 			s := fmt.Sprintf("%s=%s", k, v)
 			selectors = append(selectors, s)
@@ -48,10 +65,10 @@ func GetStreamingLogs(ctx context.Context, namespace string, filter map[string]s
 		opts = metav1.ListOptions{FieldSelector: filedSelector}
 	}
 
-	return streamFromPods(ctx, clientSet, namespace, containerName, opts, filter)
+	return streamFromPods(ctx, clientSet, namespace, containerName, opts, tailLines, sinceSeconds, filter)
 }
 
-func streamFromPods(ctx context.Context, clientSet *kubernetes.Clientset, namespace, containerName string, opts metav1.ListOptions, filter map[string]string) (<-chan resource.LogChunk, error) {
+func streamFromPods(ctx context.Context, clientSet *kubernetes.Clientset, namespace, containerName string, opts metav1.ListOptions, tailLines, sinceSeconds int64, filter map[string]string) (<-chan resource.LogChunk, error) {
 	pods, err := clientSet.CoreV1().Pods(namespace).List(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -68,7 +85,7 @@ func streamFromPods(ctx context.Context, clientSet *kubernetes.Clientset, namesp
 			wg.Add(1)
 			go func(podName string, c v1.Container) {
 				defer wg.Done()
-				if err := streamContainerLogs(ctx, namespace, podName, logCh, clientSet, c, filter); err != nil {
+				if err := streamContainerLogs(ctx, namespace, podName, logCh, clientSet, c, tailLines, sinceSeconds, filter); err != nil {
 					log.Printf("[WARN] failed to stream from container '%s':%s", c.Name, err)
 				}
 			}(pod.Name, container)
@@ -83,11 +100,18 @@ func streamFromPods(ctx context.Context, clientSet *kubernetes.Clientset, namesp
 	return logCh, nil
 }
 
-func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- resource.LogChunk, clientSet *kubernetes.Clientset, container v1.Container, filter map[string]string) error {
+func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- resource.LogChunk, clientSet *kubernetes.Clientset, container v1.Container, tailLines, sinceSeconds int64, filter map[string]string) error {
 	podLogOpts := v1.PodLogOptions{}
 	podLogOpts.Follow = true
-	podLogOpts.TailLines = &[]int64{100}[0]
 	podLogOpts.Container = container.Name
+
+	if sinceSeconds > 0 {
+		podLogOpts.SinceSeconds = &sinceSeconds
+	}
+
+	if tailLines > 0 {
+		podLogOpts.TailLines = &tailLines
+	}
 
 	podLogs, err := clientSet.CoreV1().Pods(ns).GetLogs(podName, &podLogOpts).Stream(ctx)
 	if err != nil {
@@ -97,7 +121,7 @@ func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- r
 	filter["pod"] = podName
 	filter["container"] = container.Name
 
-	buf := make([]byte, 4096)
+	buf := make([]byte, BUFFER_SIZE)
 	for {
 		numBytes, err := podLogs.Read(buf)
 		if err != nil {
@@ -106,7 +130,7 @@ func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- r
 			}
 			return err
 		} else if numBytes == 0 {
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(SLEEP_TIME * time.Millisecond)
 			continue
 		}
 
