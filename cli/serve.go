@@ -15,8 +15,6 @@ import (
 	"github.com/odpf/entropy/internal/store/mongodb"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
-	"github.com/odpf/entropy/plugins/modules/firehose"
-	"github.com/odpf/entropy/plugins/modules/log"
 )
 
 func cmdServe() *cobra.Command {
@@ -61,16 +59,6 @@ func runServer(c Config) error {
 
 	resourceService := resource.NewService(resourceRepository, moduleRepository, time.Now)
 	providerService := provider.NewService(providerRepository, time.Now)
-
-	err = moduleRepository.Register(log.New(loggerInstance))
-	if err != nil {
-		return err
-	}
-
-	err = moduleRepository.Register(firehose.New(providerService))
-	if err != nil {
-		return err
-	}
 
 	return entropyserver.Serve(ctx, c.Service, loggerInstance, nr, resourceService, providerService)
 }

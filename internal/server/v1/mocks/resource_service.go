@@ -299,13 +299,13 @@ func (_c *ResourceService_ListResources_Call) Return(_a0 []resource.Resource, _a
 	return _c
 }
 
-// UpdateResource provides a mock function with given fields: ctx, urn, updates
-func (_m *ResourceService) UpdateResource(ctx context.Context, urn string, updates resource.Updates) (*resource.Resource, error) {
-	ret := _m.Called(ctx, urn, updates)
+// UpdateResource provides a mock function with given fields: ctx, urn, newSpec
+func (_m *ResourceService) UpdateResource(ctx context.Context, urn string, newSpec resource.Spec) (*resource.Resource, error) {
+	ret := _m.Called(ctx, urn, newSpec)
 
 	var r0 *resource.Resource
-	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Updates) *resource.Resource); ok {
-		r0 = rf(ctx, urn, updates)
+	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Spec) *resource.Resource); ok {
+		r0 = rf(ctx, urn, newSpec)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*resource.Resource)
@@ -313,8 +313,8 @@ func (_m *ResourceService) UpdateResource(ctx context.Context, urn string, updat
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, resource.Updates) error); ok {
-		r1 = rf(ctx, urn, updates)
+	if rf, ok := ret.Get(1).(func(context.Context, string, resource.Spec) error); ok {
+		r1 = rf(ctx, urn, newSpec)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -330,14 +330,14 @@ type ResourceService_UpdateResource_Call struct {
 // UpdateResource is a helper method to define mock.On call
 //  - ctx context.Context
 //  - urn string
-//  - updates resource.Updates
-func (_e *ResourceService_Expecter) UpdateResource(ctx interface{}, urn interface{}, updates interface{}) *ResourceService_UpdateResource_Call {
-	return &ResourceService_UpdateResource_Call{Call: _e.mock.On("UpdateResource", ctx, urn, updates)}
+//  - newSpec resource.Spec
+func (_e *ResourceService_Expecter) UpdateResource(ctx interface{}, urn interface{}, newSpec interface{}) *ResourceService_UpdateResource_Call {
+	return &ResourceService_UpdateResource_Call{Call: _e.mock.On("UpdateResource", ctx, urn, newSpec)}
 }
 
-func (_c *ResourceService_UpdateResource_Call) Run(run func(ctx context.Context, urn string, updates resource.Updates)) *ResourceService_UpdateResource_Call {
+func (_c *ResourceService_UpdateResource_Call) Run(run func(ctx context.Context, urn string, newSpec resource.Spec)) *ResourceService_UpdateResource_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(resource.Updates))
+		run(args[0].(context.Context), args[1].(string), args[2].(resource.Spec))
 	})
 	return _c
 }

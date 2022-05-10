@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/odpf/entropy/core/resource"
+	"github.com/odpf/entropy/core/resource/mocks"
 	"github.com/odpf/entropy/pkg/errors"
-	"github.com/odpf/entropy/plugins/modules/log"
 )
 
 func TestModuleRepository_Get(t *testing.T) {
@@ -16,7 +16,9 @@ func TestModuleRepository_Get(t *testing.T) {
 	type args struct {
 		id string
 	}
-	mod := &log.Module{}
+	mod := &mocks.Module{}
+	mod.EXPECT().ID().Return("mock")
+
 	tests := []struct {
 		name    string
 		fields  fields
@@ -32,7 +34,7 @@ func TestModuleRepository_Get(t *testing.T) {
 				},
 			},
 			args: args{
-				id: "log",
+				id: "mock",
 			},
 			want:    mod,
 			wantErr: nil,
@@ -75,7 +77,9 @@ func TestModuleRepository_Register(t *testing.T) {
 	type args struct {
 		module resource.Module
 	}
-	mod := &log.Module{}
+	mod := &mocks.Module{}
+	mod.EXPECT().ID().Return("mock")
+
 	tests := []struct {
 		name    string
 		fields  fields

@@ -30,3 +30,13 @@ type ModuleRegistry interface {
 	Get(id string) (Module, error)
 	Register(m Module) error
 }
+
+type ModuleX interface {
+	Plan(ctx context.Context, spec ModuleSpec, act Action) (*Resource, error)
+	Sync(ctx context.Context, spec ModuleSpec) (*State, error)
+}
+
+type ModuleSpec struct {
+	Resource     Resource
+	Dependencies map[string]map[string]interface{}
+}

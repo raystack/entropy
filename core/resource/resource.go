@@ -4,19 +4,21 @@ package resource
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"time"
 
 	"github.com/odpf/entropy/pkg/errors"
 )
 
+const resourceURNPrefix = "urn:odpf:entropy"
+
 const (
-	StatusUnspecified Status = "STATUS_UNSPECIFIED"
-	StatusPending     Status = "STATUS_PENDING"
-	StatusError       Status = "STATUS_ERROR"
-	StatusRunning     Status = "STATUS_RUNNING"
-	StatusStopped     Status = "STATUS_STOPPED"
-	StatusCompleted   Status = "STATUS_COMPLETED"
+	StatusUnspecified Status = "STATUS_UNSPECIFIED" // unknown
+	StatusPending     Status = "STATUS_PENDING"     // intermediate
+	StatusError       Status = "STATUS_ERROR"       // terminal
+	StatusRunning     Status = "STATUS_DELETED"     // terminal
+	StatusCompleted   Status = "STATUS_COMPLETED"   // terminal
 )
 
 type Repository interface {
@@ -30,24 +32,37 @@ type Repository interface {
 }
 
 type Resource struct {
-	URN       string                 `bson:"urn"`
-	Kind      string                 `bson:"kind"`
-	Name      string                 `bson:"name"`
-	Parent    string                 `bson:"parent"`
-	Status    Status                 `bson:"status"`
-	Labels    map[string]string      `bson:"labels"`
-	Configs   map[string]interface{} `bson:"configs"`
-	Providers []ProviderSelector     `bson:"providers"`
-	CreatedAt time.Time              `bson:"created_at"`
-	UpdatedAt time.Time              `bson:"updated_at"`
+	URN       string            `bson:"urn"`
+	Kind      string            `bson:"kind"`
+	Name      string            `bson:"name"`
+	Project   string            `bson:"project"`
+	Labels    map[string]string `bson:"labels"`
+	CreatedAt time.Time         `bson:"created_at"`
+	UpdatedAt time.Time         `bson:"updated_at"`
+
+	Spec  Spec  `bson:"spec"`
+	State State `bson:"state"`
 }
+
+type Output map[string]interface{}
+
+type State struct {
+	Status     Status          `bson:"status"`
+	Output     Output          `bson:"output"`
+	ModuleData json.RawMessage `bson:"module_data"`
+}
+
+type Spec struct {
+	Configs      map[string]interface{} `bson:"configs"`
+	Dependencies map[string]string      `bson:"dependencies"`
+}
+
+type Status string
 
 type Action struct {
 	Name   string
 	Params map[string]interface{}
 }
-
-type Status string
 
 type Updates struct {
 	Configs map[string]interface{}
@@ -61,21 +76,20 @@ type ProviderSelector struct {
 func (res *Resource) Validate() error {
 	res.Kind = strings.TrimSpace(res.Kind)
 	res.Name = strings.TrimSpace(res.Name)
-	res.Parent = strings.TrimSpace(res.Parent)
-	res.Status = Status(strings.TrimSpace(string(res.Status)))
+	res.Project = strings.TrimSpace(res.Project)
 
 	if res.Kind == "" {
-		return errors.ErrInvalid.WithMsgf("resource must have a kind")
+		return errors.ErrInvalid.WithMsgf("kind must be set")
 	}
 	if res.Name == "" {
-		return errors.ErrInvalid.WithMsgf("resource must have a name")
+		return errors.ErrInvalid.WithMsgf("name must be set")
 	}
-	if res.Parent == "" {
-		return errors.ErrInvalid.WithMsgf("resource must have a parent")
+	if res.Project == "" {
+		return errors.ErrInvalid.WithMsgf("project must be set")
 	}
 
-	if res.Status == "" {
-		res.Status = StatusUnspecified
+	if res.State.Status == "" {
+		res.State.Status = StatusUnspecified
 	}
 
 	res.URN = generateURN(*res)
@@ -84,10 +98,11 @@ func (res *Resource) Validate() error {
 
 func generateURN(res Resource) string {
 	return strings.Join([]string{
-		sanitizeString(res.Parent),
-		sanitizeString(res.Name),
+		resourceURNPrefix,
 		sanitizeString(res.Kind),
-	}, "-")
+		sanitizeString(res.Project),
+		sanitizeString(res.Name),
+	}, ":")
 }
 
 func sanitizeString(s string) string {

@@ -21,7 +21,7 @@ type ResourceService interface {
 	GetResource(ctx context.Context, urn string) (*resource.Resource, error)
 	ListResources(ctx context.Context, parent string, kind string) ([]resource.Resource, error)
 	CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error)
-	UpdateResource(ctx context.Context, urn string, updates resource.Updates) (*resource.Resource, error)
+	UpdateResource(ctx context.Context, urn string, newSpec resource.Spec) (*resource.Resource, error)
 	DeleteResource(ctx context.Context, urn string) error
 
 	ApplyAction(ctx context.Context, urn string, action resource.Action) (*resource.Resource, error)
@@ -67,11 +67,11 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 }
 
 func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1beta1.UpdateResourceRequest) (*entropyv1beta1.UpdateResourceResponse, error) {
-	updates := resource.Updates{
+	newSpec := resource.Spec{
 		Configs: request.GetConfigs().GetStructValue().AsMap(),
 	}
 
-	res, err := server.resourceService.UpdateResource(ctx, request.GetUrn(), updates)
+	res, err := server.resourceService.UpdateResource(ctx, request.GetUrn(), newSpec)
 	if err != nil {
 		return nil, generateRPCErr(err)
 	}
@@ -224,19 +224,19 @@ func (server APIServer) ListProviders(ctx context.Context, request *entropyv1bet
 }
 
 func resourceToProto(res *resource.Resource) (*entropyv1beta1.Resource, error) {
-	conf, err := structpb.NewValue(res.Configs)
+	conf, err := structpb.NewValue(res.Spec.Configs)
 	if err != nil {
 		return nil, err
 	}
 	return &entropyv1beta1.Resource{
 		Urn:       res.URN,
 		Name:      res.Name,
-		Parent:    res.Parent,
+		Parent:    res.Project,
 		Kind:      res.Kind,
 		Configs:   conf,
 		Labels:    res.Labels,
-		Providers: resourceProvidersToProto(res.Providers),
-		Status:    resourceStatusToProto(string(res.Status)),
+		Providers: nil,
+		Status:    resourceStatusToProto(string(res.State.Status)),
 		CreatedAt: timestamppb.New(res.CreatedAt),
 		UpdatedAt: timestamppb.New(res.UpdatedAt),
 	}, nil
@@ -281,13 +281,14 @@ func resourceStatusToProto(status string) entropyv1beta1.Resource_Status {
 
 func resourceFromProto(res *entropyv1beta1.Resource) *resource.Resource {
 	return &resource.Resource{
-		URN:       res.GetUrn(),
-		Name:      res.GetName(),
-		Parent:    res.GetParent(),
-		Kind:      res.GetKind(),
-		Configs:   res.GetConfigs().GetStructValue().AsMap(),
-		Labels:    res.GetLabels(),
-		Providers: providerSelectorFromProto(res.GetProviders()),
+		URN:     res.GetUrn(),
+		Kind:    res.GetKind(),
+		Name:    res.GetName(),
+		Project: res.GetParent(),
+		Spec: resource.Spec{
+			Configs: res.GetConfigs().GetStructValue().AsMap(),
+		},
+		Labels: res.GetLabels(),
 	}
 }
 

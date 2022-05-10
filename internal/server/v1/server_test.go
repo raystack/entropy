@@ -83,17 +83,21 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				resourceService.EXPECT().
 					CreateResource(mock.Anything, mock.Anything).
 					Return(&resource.Resource{
-						URN:    "p-testdata-gl-testname-log",
-						Name:   "testname",
-						Parent: "p-testdata-gl",
-						Kind:   "log",
-						Configs: map[string]interface{}{
-							"replicas": "10",
-						},
+						URN:       "p-testdata-gl-testname-log",
+						Kind:      "log",
+						Name:      "testname",
+						Project:   "p-testdata-gl",
 						Labels:    nil,
-						Status:    resource.StatusPending,
 						CreatedAt: createdAt,
 						UpdatedAt: createdAt,
+						Spec: resource.Spec{
+							Configs: map[string]interface{}{
+								"replicas": "10",
+							},
+						},
+						State: resource.State{
+							Status: resource.StatusPending,
+						},
 					}, nil).Once()
 
 				return NewApiServer(resourceService, nil)
@@ -192,17 +196,21 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				resourceService.EXPECT().
 					UpdateResource(mock.Anything, "p-testdata-gl-testname-log", mock.Anything).
 					Return(&resource.Resource{
-						URN:    "p-testdata-gl-testname-log",
-						Name:   "testname",
-						Parent: "p-testdata-gl",
-						Kind:   "log",
-						Configs: map[string]interface{}{
-							"replicas": "10",
-						},
+						URN:       "p-testdata-gl-testname-log",
+						Kind:      "log",
+						Name:      "testname",
+						Project:   "p-testdata-gl",
 						Labels:    nil,
-						Status:    resource.StatusPending,
 						CreatedAt: createdAt,
 						UpdatedAt: updatedAt,
+						Spec: resource.Spec{
+							Configs: map[string]interface{}{
+								"replicas": "10",
+							},
+						},
+						State: resource.State{
+							Status: resource.StatusPending,
+						},
 					}, nil).Once()
 
 				return NewApiServer(resourceService, nil)
@@ -279,17 +287,21 @@ func TestAPIServer_GetResource(t *testing.T) {
 				resourceService.EXPECT().
 					GetResource(mock.Anything, "p-testdata-gl-testname-log").
 					Return(&resource.Resource{
-						URN:    "p-testdata-gl-testname-log",
-						Name:   "testname",
-						Parent: "p-testdata-gl",
-						Kind:   "log",
-						Configs: map[string]interface{}{
-							"replicas": "10",
-						},
+						URN:       "p-testdata-gl-testname-log",
+						Kind:      "log",
+						Name:      "testname",
+						Project:   "p-testdata-gl",
 						Labels:    nil,
-						Status:    resource.StatusPending,
 						CreatedAt: createdAt,
 						UpdatedAt: updatedAt,
+						Spec: resource.Spec{
+							Configs: map[string]interface{}{
+								"replicas": "10",
+							},
+						},
+						State: resource.State{
+							Status: resource.StatusPending,
+						},
 					}, nil).Once()
 
 				return NewApiServer(resourceService, nil)
@@ -368,17 +380,21 @@ func TestAPIServer_ListResources(t *testing.T) {
 					ListResources(mock.Anything, mock.Anything, mock.Anything).
 					Return([]resource.Resource{
 						{
-							URN:    "p-testdata-gl-testname-log",
-							Name:   "testname",
-							Parent: "p-testdata-gl",
-							Kind:   "log",
-							Configs: map[string]interface{}{
-								"replicas": "10",
-							},
+							URN:       "p-testdata-gl-testname-log",
+							Kind:      "log",
+							Name:      "testname",
+							Project:   "p-testdata-gl",
 							Labels:    nil,
-							Status:    resource.StatusPending,
 							CreatedAt: createdAt,
 							UpdatedAt: updatedAt,
+							Spec: resource.Spec{
+								Configs: map[string]interface{}{
+									"replicas": "10",
+								},
+							},
+							State: resource.State{
+								Status: resource.StatusPending,
+							},
 						},
 					}, nil).Once()
 
@@ -515,17 +531,21 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 				resourceService.EXPECT().
 					ApplyAction(mock.Anything, "p-testdata-gl-testname-log", mock.Anything).
 					Return(&resource.Resource{
-						URN:    "p-testdata-gl-testname-log",
-						Name:   "testname",
-						Parent: "p-testdata-gl",
-						Kind:   "log",
-						Configs: map[string]interface{}{
-							"replicas": "10",
-						},
+						URN:       "p-testdata-gl-testname-log",
+						Kind:      "log",
+						Name:      "testname",
+						Project:   "p-testdata-gl",
 						Labels:    nil,
-						Status:    resource.StatusPending,
 						CreatedAt: createdAt,
 						UpdatedAt: updatedAt,
+						Spec: resource.Spec{
+							Configs: map[string]interface{}{
+								"replicas": "10",
+							},
+						},
+						State: resource.State{
+							Status: resource.StatusPending,
+						},
 					}, nil).Once()
 
 				return NewApiServer(resourceService, nil)

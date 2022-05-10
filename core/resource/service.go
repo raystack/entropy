@@ -61,7 +61,7 @@ func (s *Service) CreateResource(ctx context.Context, res Resource) (*Resource, 
 	if err := res.Validate(); err != nil {
 		return nil, err
 	}
-	res.Status = StatusPending
+	res.State = State{Status: StatusPending}
 	res.CreatedAt = s.clock()
 	res.UpdatedAt = res.CreatedAt
 
@@ -79,15 +79,19 @@ func (s *Service) CreateResource(ctx context.Context, res Resource) (*Resource, 
 	return s.sync(ctx, res)
 }
 
-func (s *Service) UpdateResource(ctx context.Context, urn string, updates Updates) (*Resource, error) {
+func (s *Service) UpdateResource(ctx context.Context, urn string, newSpec Spec) (*Resource, error) {
 	res, err := s.GetResource(ctx, urn)
 	if err != nil {
 		return nil, err
 	}
 
-	res.Status = StatusPending
-	res.Configs = updates.Configs
 	res.UpdatedAt = s.clock()
+	res.Spec = newSpec
+	res.State = State{
+		Status:     StatusPending,
+		Output:     res.State.Output,
+		ModuleData: res.State.ModuleData,
+	}
 	if err := s.validateByModule(ctx, *res); err != nil {
 		return nil, err
 	}
@@ -130,8 +134,7 @@ func (s *Service) ApplyAction(ctx context.Context, urn string, action Action) (*
 			WithMsgf("executing module action failed").
 			WithCausef(err.Error())
 	}
-	res.Configs = configs
-
+	res.Spec.Configs = configs
 	return s.sync(ctx, *res)
 }
 
@@ -160,9 +163,9 @@ func (s *Service) sync(ctx context.Context, r Resource) (*Resource, error) {
 	// TODO: clarify and fix the expected behaviour here.
 	m, err := s.moduleRegistry.Get(r.Kind)
 	if err != nil {
-		r.Status = StatusError
+		r.State.Status = StatusError
 	} else {
-		r.Status, err = m.Apply(r)
+		r.State.Status, err = m.Apply(r)
 		if err != nil {
 			log.Printf("apply failed: %v", err)
 		}
