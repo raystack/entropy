@@ -2,15 +2,18 @@ package firehose
 
 import (
 	"context"
+	_ "embed"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	gjs "github.com/xeipuuv/gojsonschema"
+	"k8s.io/client-go/rest"
 
 	"github.com/odpf/entropy/core/provider"
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
 	"github.com/odpf/entropy/plugins/providers/helm"
+	"github.com/odpf/entropy/plugins/providers/kubelogger"
 )
 
 const (
@@ -22,302 +25,38 @@ const (
 	defaultRepositoryString = "https://odpf.github.io/charts/"
 	defaultChartString      = "firehose"
 	defaultVersionString    = "0.1.1"
-	defaultNamespaceString  = "firehose"
+	defaultNamespace        = "firehose"
 )
 
-const configSchemaString = `
-{
-	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "http://json-schema.org/draft-07/schema#",
-	"type": "object",
-	"properties": {
-	  "release_configs": {
-		"type": "object",
-		"properties": {
-		  "name": {
-			"type": "string"
-		  },
-		  "repository": {
-			"type": "string"
-		  },
-		  "chart": {
-			"type": "string"
-		  },
-		  "version": {
-			"type": "string"
-		  },
-		  "namespace": {
-			"type": "string"
-		  },
-		  "timeout": {
-			"type": "number"
-		  },
-		  "force_update": {
-			"type": "boolean"
-		  },
-		  "recreate_pods": {
-			"type": "boolean"
-		  },
-		  "wait": {
-			"type": "boolean"
-		  },
-		  "wait_for_jobs": {
-			"type": "boolean"
-		  },
-		  "replace": {
-			"type": "boolean"
-		  },
-		  "description": {
-			"type": "string"
-		  },
-		  "create_namespace": {
-			"type": "boolean"
-		  },
-		  "state": {
-			"type": "string",
-			"enum": [
-			  "RUNNING",
-			  "STOPPED"
-			]
-		  },
-		  "values": {
-			"type": "object",
-			"properties": {
-			  "image": {
-				"type": "string"
-			  },
-			  "replicaCount": {
-				"type": "number"
-			  },
-			  "namespace": {
-				"type": "string"
-			  },
-			  "cluster": {
-				"type": "string"
-			  },
-			  "sink_type": {
-				"type": "string",
-				"enum": [
-				  "LOG",
-				  "HTTP"
-				]
-			  },
-			  "stop_date": {
-				"type": "string",
-				"format": "date-time"
-			  },
-			  "description": {
-				"type": "string"
-			  }
-			},
-			"allOf": [
-			  {
-				"if": {
-				  "properties": {
-					"sink_type": {
-					  "const": "LOG"
-					}
-				  },
-				  "required": [
-					"sink_type"
-				  ]
-				},
-				"then": {
-				  "properties": {
-					"configuration": {
-					  "type": "object",
-					  "properties": {
-						"KAFKA_RECORD_PARSER_MODE": {
-						  "type": "string"
-						},
-						"SOURCE_KAFKA_BROKERS": {
-						  "type": "string"
-						},
-						"SOURCE_KAFKA_TOPIC": {
-						  "type": "string"
-						},
-						"SOURCE_KAFKA_CONSUMER_GROUP_ID": {
-						  "type": "string"
-						},
-						"INPUT_SCHEMA_PROTO_CLASS": {
-						  "type": "string"
-						}
-					  },
-					  "required": [
-						"KAFKA_RECORD_PARSER_MODE",
-						"SOURCE_KAFKA_BROKERS",
-						"SOURCE_KAFKA_TOPIC",
-						"SOURCE_KAFKA_CONSUMER_GROUP_ID",
-						"INPUT_SCHEMA_PROTO_CLASS"
-					  ]
-					}
-				  }
-				}
-			  },
-			  {
-				"if": {
-				  "properties": {
-					"sink_type": {
-					  "const": "HTTP"
-					}
-				  },
-				  "required": [
-					"sink_type"
-				  ]
-				},
-				"then": {
-				  "properties": {
-					"configuration": {
-					  "type": "object",
-					  "properties": {
-						"SOURCE_KAFKA_BROKERS": {
-						  "type": "string"
-						},
-						"SOURCE_KAFKA_TOPIC": {
-						  "type": "string"
-						},
-						"SOURCE_KAFKA_CONSUMER_GROUP_ID": {
-						  "type": "string"
-						},
-						"INPUT_SCHEMA_PROTO_CLASS": {
-						  "type": "string"
-						},
-						"SINK_HTTP_RETRY_STATUS_CODE_RANGES": {
-						  "type": "string"
-						},
-						"SINK_HTTP_REQUEST_LOG_STATUS_CODE_RANGES": {
-						  "type": "string"
-						},
-						"SINK_HTTP_REQUEST_TIMEOUT_MS": {
-						  "type": "number"
-						},
-						"SINK_HTTP_REQUEST_METHOD": {
-						  "type": "string",
-						  "enum": [
-							"put",
-							"post"
-						  ]
-						},
-						"SINK_HTTP_MAX_CONNECTIONS": {
-						  "type": "number"
-						},
-						"SINK_HTTP_SERVICE_URL": {
-						  "type": "string"
-						},
-						"SINK_HTTP_HEADERS": {
-						  "type": "string"
-						},
-						"SINK_HTTP_PARAMETER_SOURCE": {
-						  "type": "string",
-						  "enum": [
-							"key",
-							"message",
-							"disabled"
-						  ]
-						},
-						"SINK_HTTP_DATA_FORMAT": {
-						  "type": "string",
-						  "enum": [
-							"proto",
-							"json"
-						  ]
-						},
-						"SINK_HTTP_OAUTH2_ENABLE": {
-						  "type": "boolean"
-						},
-						"SINK_HTTP_OAUTH2_ACCESS_TOKEN_URL": {
-						  "type": "string"
-						},
-						"SINK_HTTP_OAUTH2_CLIENT_NAME": {
-						  "type": "string"
-						},
-						"SINK_HTTP_OAUTH2_CLIENT_SECRET": {
-						  "type": "string"
-						},
-						"SINK_HTTP_OAUTH2_SCOPE": {
-						  "type": "string"
-						},
-						"SINK_HTTP_JSON_BODY_TEMPLATE": {
-						  "type": "string"
-						},
-						"SINK_HTTP_PARAMETER_PLACEMENT": {
-						  "type": "string",
-						  "enum": [
-							"query",
-							"header"
-						  ]
-						},
-						"SINK_HTTP_PARAMETER_SCHEMA_PROTO_CLASS": {
-						  "type": "string"
-						}
-					  },
-					  "required": [
-						"SOURCE_KAFKA_BROKERS",
-						"SOURCE_KAFKA_TOPIC",
-						"SOURCE_KAFKA_CONSUMER_GROUP_ID",
-						"INPUT_SCHEMA_PROTO_CLASS",
-						"SINK_HTTP_PARAMETER_SCHEMA_PROTO_CLASS",
-						"SINK_HTTP_PARAMETER_PLACEMENT",
-						"SINK_HTTP_JSON_BODY_TEMPLATE",
-						"SINK_HTTP_OAUTH2_SCOPE",
-						"SINK_HTTP_OAUTH2_CLIENT_SECRET",
-						"SINK_HTTP_OAUTH2_CLIENT_NAME",
-						"SINK_HTTP_OAUTH2_ACCESS_TOKEN_URL",
-						"SINK_HTTP_OAUTH2_ENABLE",
-						"SINK_HTTP_DATA_FORMAT",
-						"SINK_HTTP_PARAMETER_SOURCE",
-						"SINK_HTTP_HEADERS",
-						"SINK_HTTP_SERVICE_URL",
-						"SINK_HTTP_MAX_CONNECTIONS",
-						"SINK_HTTP_REQUEST_METHOD",
-						"SINK_HTTP_REQUEST_TIMEOUT_MS",
-						"SINK_HTTP_REQUEST_LOG_STATUS_CODE_RANGES",
-						"SINK_HTTP_RETRY_STATUS_CODE_RANGES"
-					  ]
-					}
-				  }
-				}
-			  }
-			],
-			"required": [
-			  "image",
-			  "replicaCount",
-			  "namespace"
-			]
-		  }
-		},
-		"required": [
-		  "state"
-		]
-	  }
-	}
-  }
-`
+//go:embed config_schema.json
+var configSchemaString string
 
-type Module struct {
-	schema             *gjs.Schema
-	providerRepository provider.Repository
-}
-
-func (m *Module) ID() string {
-	return "firehose"
-}
-
-func New(providerRepository provider.Repository) *Module {
+func New(providerSvc providerService) *Module {
 	schemaLoader := gjs.NewStringLoader(configSchemaString)
 	schema, err := gjs.NewSchema(schemaLoader)
 	if err != nil {
 		return nil
 	}
 	return &Module{
-		schema:             schema,
-		providerRepository: providerRepository,
+		schema:      schema,
+		providerSvc: providerSvc,
 	}
 }
 
+type providerService interface {
+	GetByURN(ctx context.Context, urn string) (*provider.Provider, error)
+}
+
+type Module struct {
+	schema      *gjs.Schema
+	providerSvc providerService
+}
+
+func (m *Module) ID() string { return "firehose" }
+
 func (m *Module) Apply(r resource.Resource) (resource.Status, error) {
 	for _, p := range r.Providers {
-		p, err := m.providerRepository.GetByURN(context.TODO(), p.URN)
+		p, err := m.providerSvc.GetByURN(context.TODO(), p.URN)
 		if err != nil {
 			return resource.StatusError, err
 		}
@@ -339,7 +78,7 @@ func (m *Module) Apply(r resource.Resource) (resource.Status, error) {
 			helmProvider := helm.NewProvider(helmConfig)
 			_, err = helmProvider.Release(releaseConfig)
 			if err != nil {
-				return resource.StatusError, nil
+				return resource.StatusError, err
 			}
 		}
 	}
@@ -385,12 +124,50 @@ func (m *Module) Act(r resource.Resource, action string, params map[string]inter
 	return r.Configs, nil
 }
 
+func (m *Module) Log(ctx context.Context, r resource.Resource, filter map[string]string) (<-chan resource.LogChunk, error) {
+	var releaseConfig helm.ReleaseConfig
+	if err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig); err != nil {
+		return nil, errors.New("unable to parse configs")
+	}
+
+	cfg, err := m.loadKubeConfig(ctx, r.Providers)
+	if err != nil {
+		return nil, errors.ErrInternal.WithCausef(err.Error())
+	}
+
+	if filter == nil {
+		filter = make(map[string]string)
+	}
+	filter["app"] = r.URN
+
+	return kubelogger.GetStreamingLogs(ctx, defaultNamespace, filter, *cfg)
+}
+
+func (m *Module) loadKubeConfig(ctx context.Context, providers []resource.ProviderSelector) (*rest.Config, error) {
+	for _, providerSelector := range providers {
+		p, err := m.providerSvc.GetByURN(ctx, providerSelector.URN)
+		if err != nil {
+			return nil, err
+		}
+
+		if p.Kind == providerKindKubernetes {
+			var kubeCfg kubeConfig
+			if err := mapstructure.Decode(p.Configs, &kubeCfg); err != nil {
+				return nil, err
+			}
+			return kubeCfg.ToRESTConfig(), nil
+		}
+	}
+
+	return nil, errors.ErrInternal.WithCausef("kubernetes provider not found in resource")
+}
+
 func getReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
 	releaseConfig := helm.DefaultReleaseConfig()
 	releaseConfig.Repository = defaultRepositoryString
 	releaseConfig.Chart = defaultChartString
 	releaseConfig.Version = defaultVersionString
-	releaseConfig.Namespace = defaultNamespaceString
+	releaseConfig.Namespace = defaultNamespace
 	releaseConfig.Name = r.URN
 	err := mapstructure.Decode(r.Configs[releaseConfigString], &releaseConfig)
 	if err != nil {
@@ -398,4 +175,22 @@ func getReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
 	}
 
 	return releaseConfig, nil
+}
+
+type kubeConfig struct {
+	Host          string `mapstructure:"host"`
+	ClientKey     string `mapstructure:"clientKey"`
+	ClientCert    string `mapstructure:"clientCertificate"`
+	ClusterCACert string `mapstructure:"clusterCACertificate"`
+}
+
+func (kc kubeConfig) ToRESTConfig() *rest.Config {
+	return &rest.Config{
+		Host: kc.Host,
+		TLSClientConfig: rest.TLSClientConfig{
+			CAData:   []byte(kc.ClusterCACert),
+			KeyData:  []byte(kc.ClientKey),
+			CertData: []byte(kc.ClientCert),
+		},
+	}
 }
