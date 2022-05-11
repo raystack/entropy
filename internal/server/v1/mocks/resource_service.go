@@ -7,6 +7,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	module "github.com/odpf/entropy/core/module"
+
 	resource "github.com/odpf/entropy/core/resource"
 )
 
@@ -24,11 +26,11 @@ func (_m *ResourceService) EXPECT() *ResourceService_Expecter {
 }
 
 // ApplyAction provides a mock function with given fields: ctx, urn, action
-func (_m *ResourceService) ApplyAction(ctx context.Context, urn string, action resource.Action) (*resource.Resource, error) {
+func (_m *ResourceService) ApplyAction(ctx context.Context, urn string, action module.ActionRequest) (*resource.Resource, error) {
 	ret := _m.Called(ctx, urn, action)
 
 	var r0 *resource.Resource
-	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Action) *resource.Resource); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, module.ActionRequest) *resource.Resource); ok {
 		r0 = rf(ctx, urn, action)
 	} else {
 		if ret.Get(0) != nil {
@@ -37,7 +39,7 @@ func (_m *ResourceService) ApplyAction(ctx context.Context, urn string, action r
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, resource.Action) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, module.ActionRequest) error); ok {
 		r1 = rf(ctx, urn, action)
 	} else {
 		r1 = ret.Error(1)
@@ -54,14 +56,14 @@ type ResourceService_ApplyAction_Call struct {
 // ApplyAction is a helper method to define mock.On call
 //  - ctx context.Context
 //  - urn string
-//  - action resource.Action
+//  - action module.ActionRequest
 func (_e *ResourceService_Expecter) ApplyAction(ctx interface{}, urn interface{}, action interface{}) *ResourceService_ApplyAction_Call {
 	return &ResourceService_ApplyAction_Call{Call: _e.mock.On("ApplyAction", ctx, urn, action)}
 }
 
-func (_c *ResourceService_ApplyAction_Call) Run(run func(ctx context.Context, urn string, action resource.Action)) *ResourceService_ApplyAction_Call {
+func (_c *ResourceService_ApplyAction_Call) Run(run func(ctx context.Context, urn string, action module.ActionRequest)) *ResourceService_ApplyAction_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(resource.Action))
+		run(args[0].(context.Context), args[1].(string), args[2].(module.ActionRequest))
 	})
 	return _c
 }
@@ -157,15 +159,15 @@ func (_c *ResourceService_DeleteResource_Call) Return(_a0 error) *ResourceServic
 }
 
 // GetLog provides a mock function with given fields: ctx, urn, filter
-func (_m *ResourceService) GetLog(ctx context.Context, urn string, filter map[string]string) (<-chan resource.LogChunk, error) {
+func (_m *ResourceService) GetLog(ctx context.Context, urn string, filter map[string]string) (<-chan module.LogChunk, error) {
 	ret := _m.Called(ctx, urn, filter)
 
-	var r0 <-chan resource.LogChunk
-	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]string) <-chan resource.LogChunk); ok {
+	var r0 <-chan module.LogChunk
+	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]string) <-chan module.LogChunk); ok {
 		r0 = rf(ctx, urn, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(<-chan resource.LogChunk)
+			r0 = ret.Get(0).(<-chan module.LogChunk)
 		}
 	}
 
@@ -199,7 +201,7 @@ func (_c *ResourceService_GetLog_Call) Run(run func(ctx context.Context, urn str
 	return _c
 }
 
-func (_c *ResourceService_GetLog_Call) Return(_a0 <-chan resource.LogChunk, _a1 error) *ResourceService_GetLog_Call {
+func (_c *ResourceService_GetLog_Call) Return(_a0 <-chan module.LogChunk, _a1 error) *ResourceService_GetLog_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }

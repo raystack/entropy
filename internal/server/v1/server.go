@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
 )
@@ -22,8 +23,8 @@ type ResourceService interface {
 	UpdateResource(ctx context.Context, urn string, newSpec resource.Spec) (*resource.Resource, error)
 	DeleteResource(ctx context.Context, urn string) error
 
-	ApplyAction(ctx context.Context, urn string, action resource.Action) (*resource.Resource, error)
-	GetLog(ctx context.Context, urn string, filter map[string]string) (<-chan resource.LogChunk, error)
+	ApplyAction(ctx context.Context, urn string, action module.ActionRequest) (*resource.Resource, error)
+	GetLog(ctx context.Context, urn string, filter map[string]string) (<-chan module.LogChunk, error)
 }
 
 type APIServer struct {
@@ -122,7 +123,7 @@ func (server APIServer) DeleteResource(ctx context.Context, request *entropyv1be
 }
 
 func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1.ApplyActionRequest) (*entropyv1beta1.ApplyActionResponse, error) {
-	action := resource.Action{
+	action := module.ActionRequest{
 		Name:   request.GetAction(),
 		Params: request.GetParams().GetStructValue().AsMap(),
 	}

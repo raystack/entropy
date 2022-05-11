@@ -192,43 +192,6 @@ func (_c *ResourceRepository_List_Call) Return(_a0 []*resource.Resource, _a1 err
 	return _c
 }
 
-// Migrate provides a mock function with given fields: ctx
-func (_m *ResourceRepository) Migrate(ctx context.Context) error {
-	ret := _m.Called(ctx)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// ResourceRepository_Migrate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Migrate'
-type ResourceRepository_Migrate_Call struct {
-	*mock.Call
-}
-
-// Migrate is a helper method to define mock.On call
-//  - ctx context.Context
-func (_e *ResourceRepository_Expecter) Migrate(ctx interface{}) *ResourceRepository_Migrate_Call {
-	return &ResourceRepository_Migrate_Call{Call: _e.mock.On("Migrate", ctx)}
-}
-
-func (_c *ResourceRepository_Migrate_Call) Run(run func(ctx context.Context)) *ResourceRepository_Migrate_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *ResourceRepository_Migrate_Call) Return(_a0 error) *ResourceRepository_Migrate_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
 // Update provides a mock function with given fields: ctx, r
 func (_m *ResourceRepository) Update(ctx context.Context, r resource.Resource) error {
 	ret := _m.Called(ctx, r)

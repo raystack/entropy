@@ -1,10 +1,6 @@
 package resource
 
-//go:generate mockery --name=Repository -r --case underscore --with-expecter --structname ResourceRepository --filename=resource_repository.go --output=./mocks
-
 import (
-	"context"
-	"encoding/json"
 	"regexp"
 	"strings"
 	"time"
@@ -15,24 +11,6 @@ import (
 const urnSeparator = ":"
 
 var namingPattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]+$`)
-
-const (
-	StatusUnspecified Status = "STATUS_UNSPECIFIED" // unknown
-	StatusPending     Status = "STATUS_PENDING"     // intermediate
-	StatusError       Status = "STATUS_ERROR"       // terminal
-	StatusDeleted     Status = "STATUS_DELETED"     // terminal
-	StatusCompleted   Status = "STATUS_COMPLETED"   // terminal
-)
-
-type Repository interface {
-	Migrate(ctx context.Context) error
-
-	GetByURN(ctx context.Context, urn string) (*Resource, error)
-	List(ctx context.Context, filter map[string]string) ([]*Resource, error)
-	Create(ctx context.Context, r Resource) error
-	Update(ctx context.Context, r Resource) error
-	Delete(ctx context.Context, urn string) error
-}
 
 type Resource struct {
 	URN       string            `bson:"urn"`
@@ -47,24 +25,9 @@ type Resource struct {
 	State State `bson:"state"`
 }
 
-type Output map[string]interface{}
-
-type State struct {
-	Status     Status          `bson:"status"`
-	Output     Output          `bson:"output"`
-	ModuleData json.RawMessage `bson:"module_data"`
-}
-
 type Spec struct {
 	Configs      map[string]interface{} `bson:"configs"`
 	Dependencies map[string]string      `bson:"dependencies"`
-}
-
-type Status string
-
-type Action struct {
-	Name   string
-	Params map[string]interface{}
 }
 
 func (res *Resource) Validate() error {

@@ -8,9 +8,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/odpf/entropy/core/resource"
+	"github.com/odpf/entropy/core"
+	"github.com/odpf/entropy/core/module"
 	entropyserver "github.com/odpf/entropy/internal/server"
-	"github.com/odpf/entropy/internal/store/inmemory"
 	"github.com/odpf/entropy/internal/store/mongodb"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
@@ -51,11 +51,9 @@ func runServer(c Config) error {
 	if err != nil {
 		return err
 	}
-
 	resourceRepository := mongodb.NewResourceRepository(mongoStore)
-	moduleRepository := inmemory.NewModuleRepository()
 
-	resourceService := resource.NewService(resourceRepository, moduleRepository, time.Now)
-
+	moduleRegistry := module.NewRegistry()
+	resourceService := core.New(resourceRepository, moduleRegistry.Resolve, time.Now)
 	return entropyserver.Serve(ctx, c.Service, loggerInstance, nr, resourceService)
 }
