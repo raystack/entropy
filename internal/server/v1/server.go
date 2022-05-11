@@ -16,7 +16,7 @@ import (
 
 type ResourceService interface {
 	GetResource(ctx context.Context, urn string) (*resource.Resource, error)
-	ListResources(ctx context.Context, parent string, kind string) ([]resource.Resource, error)
+	ListResources(ctx context.Context, project string, kind string) ([]resource.Resource, error)
 	CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error)
 	UpdateResource(ctx context.Context, urn string, newSpec resource.Spec) (*resource.Resource, error)
 	DeleteResource(ctx context.Context, urn string) error

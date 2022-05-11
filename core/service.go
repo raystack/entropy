@@ -39,13 +39,13 @@ func (s *Service) GetResource(ctx context.Context, urn string) (*resource.Resour
 	return res, nil
 }
 
-func (s *Service) ListResources(ctx context.Context, parent string, kind string) ([]resource.Resource, error) {
+func (s *Service) ListResources(ctx context.Context, project string, kind string) ([]resource.Resource, error) {
 	filter := map[string]string{}
 	if kind != "" {
 		filter["kind"] = kind
 	}
-	if parent != "" {
-		filter["parent"] = parent
+	if project != "" {
+		filter["project"] = project
 	}
 
 	resources, err := s.resourceRepository.List(ctx, filter)

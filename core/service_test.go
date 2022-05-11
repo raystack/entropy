@@ -99,7 +99,7 @@ func TestService_ListResources(t *testing.T) {
 	tests := []struct {
 		name    string
 		setup   func(t *testing.T) *core.Service
-		parent  string
+		project string
 		kind    string
 		want    []resource.Resource
 		wantErr error
@@ -149,7 +149,7 @@ func TestService_ListResources(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			svc := tt.setup(t)
 
-			got, err := svc.ListResources(context.Background(), tt.parent, tt.kind)
+			got, err := svc.ListResources(context.Background(), tt.project, tt.kind)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))
@@ -186,7 +186,7 @@ func TestService_CreateResource(t *testing.T) {
 			res: resource.Resource{
 				Kind:    "mock",
 				Name:    "child",
-				Project: "parent",
+				Project: "project",
 			},
 			want:    nil,
 			wantErr: errSample,
@@ -200,7 +200,7 @@ func TestService_CreateResource(t *testing.T) {
 					Return(&resource.Resource{
 						Kind:    "mock",
 						Name:    "child",
-						Project: "parent",
+						Project: "project",
 					}, nil).Once()
 
 				resourceRepo := &mocks.ResourceRepository{}
@@ -211,7 +211,7 @@ func TestService_CreateResource(t *testing.T) {
 			res: resource.Resource{
 				Kind:    "mock",
 				Name:    "child",
-				Project: "parent",
+				Project: "project",
 			},
 			want:    nil,
 			wantErr: errSample,
@@ -225,7 +225,7 @@ func TestService_CreateResource(t *testing.T) {
 					Return(&resource.Resource{
 						Kind:    "mock",
 						Name:    "child",
-						Project: "parent",
+						Project: "project",
 					}, nil).Once()
 
 				resourceRepo := &mocks.ResourceRepository{}
@@ -236,7 +236,7 @@ func TestService_CreateResource(t *testing.T) {
 			res: resource.Resource{
 				Kind:    "mock",
 				Name:    "child",
-				Project: "parent",
+				Project: "project",
 			},
 			want:    nil,
 			wantErr: errors.ErrConflict,
@@ -250,7 +250,7 @@ func TestService_CreateResource(t *testing.T) {
 					Return(&resource.Resource{
 						Kind:    "mock",
 						Name:    "child",
-						Project: "parent",
+						Project: "project",
 						State:   resource.State{Status: resource.StatusCompleted},
 					}, nil).Once()
 
@@ -262,13 +262,13 @@ func TestService_CreateResource(t *testing.T) {
 			res: resource.Resource{
 				Kind:    "mock",
 				Name:    "child",
-				Project: "parent",
+				Project: "project",
 			},
 			want: &resource.Resource{
-				URN:       "urn:odpf:entropy:mock:parent:child",
+				URN:       "urn:odpf:entropy:mock:project:child",
 				Kind:      "mock",
 				Name:      "child",
-				Project:   "parent",
+				Project:   "project",
 				State:     resource.State{Status: resource.StatusCompleted},
 				CreatedAt: frozenTime,
 				UpdatedAt: frozenTime,
@@ -297,10 +297,10 @@ func TestService_UpdateResource(t *testing.T) {
 	t.Parallel()
 	testErr := errors.New("failed")
 	testResource := resource.Resource{
-		URN:       "urn:odpf:entropy:mock:parent:child",
+		URN:       "urn:odpf:entropy:mock:project:child",
 		Kind:      "mock",
 		Name:      "child",
-		Project:   "parent",
+		Project:   "project",
 		State:     resource.State{Status: resource.StatusCompleted},
 		CreatedAt: frozenTime,
 	}
@@ -318,13 +318,13 @@ func TestService_UpdateResource(t *testing.T) {
 			setup: func(t *testing.T) *core.Service {
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:parent:child").
+					GetByURN(mock.Anything, "urn:odpf:entropy:mock:project:child").
 					Return(nil, errors.ErrNotFound).
 					Once()
 
 				return core.New(resourceRepo, nil, deadClock)
 			},
-			urn:     "urn:odpf:entropy:mock:parent:child",
+			urn:     "urn:odpf:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
 			want:    nil,
 			wantErr: errors.ErrNotFound,
@@ -339,13 +339,13 @@ func TestService_UpdateResource(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:parent:child").
+					GetByURN(mock.Anything, "urn:odpf:entropy:mock:project:child").
 					Return(&testResource, nil).
 					Once()
 
 				return core.New(resourceRepo, returnModuleOrErr(mod), deadClock)
 			},
-			urn:     "urn:odpf:entropy:mock:parent:child",
+			urn:     "urn:odpf:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
 			want:    nil,
 			wantErr: errors.ErrInvalid,
@@ -360,7 +360,7 @@ func TestService_UpdateResource(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:parent:child").
+					GetByURN(mock.Anything, "urn:odpf:entropy:mock:project:child").
 					Return(&testResource, nil).
 					Once()
 
@@ -370,7 +370,7 @@ func TestService_UpdateResource(t *testing.T) {
 
 				return core.New(resourceRepo, returnModuleOrErr(mod), deadClock)
 			},
-			urn:     "urn:odpf:entropy:mock:parent:child",
+			urn:     "urn:odpf:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
 			want:    nil,
 			wantErr: testErr,
@@ -385,7 +385,7 @@ func TestService_UpdateResource(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:parent:child").
+					GetByURN(mock.Anything, "urn:odpf:entropy:mock:project:child").
 					Return(&testResource, nil).Once()
 
 				resourceRepo.EXPECT().
@@ -394,13 +394,13 @@ func TestService_UpdateResource(t *testing.T) {
 
 				return core.New(resourceRepo, returnModuleOrErr(mod), deadClock)
 			},
-			urn:     "urn:odpf:entropy:mock:parent:child",
+			urn:     "urn:odpf:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
 			want: &resource.Resource{
-				URN:       "urn:odpf:entropy:mock:parent:child",
+				URN:       "urn:odpf:entropy:mock:project:child",
 				Kind:      "mock",
 				Name:      "child",
-				Project:   "parent",
+				Project:   "project",
 				CreatedAt: frozenTime,
 				UpdatedAt: frozenTime,
 				State:     resource.State{Status: resource.StatusPending},
@@ -433,10 +433,10 @@ func TestService_DeleteResource(t *testing.T) {
 
 	testErr := errors.New("failed")
 	testResource := resource.Resource{
-		URN:       "urn:odpf:entropy:mock:parent:child",
+		URN:       "urn:odpf:entropy:mock:project:child",
 		Kind:      "mock",
 		Name:      "child",
-		Project:   "parent",
+		Project:   "project",
 		State:     resource.State{Status: resource.StatusCompleted},
 		CreatedAt: frozenTime,
 	}

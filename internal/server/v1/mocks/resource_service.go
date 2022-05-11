@@ -253,13 +253,13 @@ func (_c *ResourceService_GetResource_Call) Return(_a0 *resource.Resource, _a1 e
 	return _c
 }
 
-// ListResources provides a mock function with given fields: ctx, parent, kind
-func (_m *ResourceService) ListResources(ctx context.Context, parent string, kind string) ([]resource.Resource, error) {
-	ret := _m.Called(ctx, parent, kind)
+// ListResources provides a mock function with given fields: ctx, project, kind
+func (_m *ResourceService) ListResources(ctx context.Context, project string, kind string) ([]resource.Resource, error) {
+	ret := _m.Called(ctx, project, kind)
 
 	var r0 []resource.Resource
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) []resource.Resource); ok {
-		r0 = rf(ctx, parent, kind)
+		r0 = rf(ctx, project, kind)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]resource.Resource)
@@ -268,7 +268,7 @@ func (_m *ResourceService) ListResources(ctx context.Context, parent string, kin
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, parent, kind)
+		r1 = rf(ctx, project, kind)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -283,13 +283,13 @@ type ResourceService_ListResources_Call struct {
 
 // ListResources is a helper method to define mock.On call
 //  - ctx context.Context
-//  - parent string
+//  - project string
 //  - kind string
-func (_e *ResourceService_Expecter) ListResources(ctx interface{}, parent interface{}, kind interface{}) *ResourceService_ListResources_Call {
-	return &ResourceService_ListResources_Call{Call: _e.mock.On("ListResources", ctx, parent, kind)}
+func (_e *ResourceService_Expecter) ListResources(ctx interface{}, project interface{}, kind interface{}) *ResourceService_ListResources_Call {
+	return &ResourceService_ListResources_Call{Call: _e.mock.On("ListResources", ctx, project, kind)}
 }
 
-func (_c *ResourceService_ListResources_Call) Run(run func(ctx context.Context, parent string, kind string)) *ResourceService_ListResources_Call {
+func (_c *ResourceService_ListResources_Call) Run(run func(ctx context.Context, project string, kind string)) *ResourceService_ListResources_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
