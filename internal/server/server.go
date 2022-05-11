@@ -63,11 +63,6 @@ func Serve(ctx context.Context, cfg Config, logger *zap.Logger, nr *newrelic.App
 		return err
 	}
 
-	err = gw.RegisterHandler(ctx, entropyv1beta1.RegisterProviderServiceHandlerFromEndpoint)
-	if err != nil {
-		return err
-	}
-
 	muxServer.SetGateway("/api", gw)
 	muxServer.RegisterHandler("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprintf(w, "pong")

@@ -8,8 +8,6 @@ import (
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
@@ -40,7 +38,10 @@ func NewApiServer(resourceService ResourceService) *APIServer {
 }
 
 func (server APIServer) CreateResource(ctx context.Context, request *entropyv1beta1.CreateResourceRequest) (*entropyv1beta1.CreateResourceResponse, error) {
-	res := resourceFromProto(request.Resource)
+	res, err := resourceFromProto(request.Resource)
+	if err != nil {
+		return nil, generateRPCErr(err)
+	}
 
 	result, err := server.resourceService.CreateResource(ctx, *res)
 	if err != nil {
@@ -58,11 +59,12 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 }
 
 func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1beta1.UpdateResourceRequest) (*entropyv1beta1.UpdateResourceResponse, error) {
-	newSpec := resource.Spec{
-		Configs: request.GetConfigs().GetStructValue().AsMap(),
+	newSpec, err := resourceSpecFromProto(request.GetNewSpec())
+	if err != nil {
+		return nil, generateRPCErr(err)
 	}
 
-	res, err := server.resourceService.UpdateResource(ctx, request.GetUrn(), newSpec)
+	res, err := server.resourceService.UpdateResource(ctx, request.GetUrn(), *newSpec)
 	if err != nil {
 		return nil, generateRPCErr(err)
 	}
@@ -94,7 +96,7 @@ func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1
 }
 
 func (server APIServer) ListResources(ctx context.Context, request *entropyv1beta1.ListResourcesRequest) (*entropyv1beta1.ListResourcesResponse, error) {
-	resources, err := server.resourceService.ListResources(ctx, request.GetParent(), request.GetKind())
+	resources, err := server.resourceService.ListResources(ctx, request.GetProject(), request.GetKind())
 	if err != nil {
 		return nil, generateRPCErr(err)
 	}
@@ -172,45 +174,6 @@ func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream ent
 				return generateRPCErr(err)
 			}
 		}
-	}
-}
-
-func resourceToProto(res *resource.Resource) (*entropyv1beta1.Resource, error) {
-	conf, err := structpb.NewValue(res.Spec.Configs)
-	if err != nil {
-		return nil, err
-	}
-	return &entropyv1beta1.Resource{
-		Urn:       res.URN,
-		Name:      res.Name,
-		Parent:    res.Project,
-		Kind:      res.Kind,
-		Configs:   conf,
-		Labels:    res.Labels,
-		Providers: nil,
-		Status:    resourceStatusToProto(string(res.State.Status)),
-		CreatedAt: timestamppb.New(res.CreatedAt),
-		UpdatedAt: timestamppb.New(res.UpdatedAt),
-	}, nil
-}
-
-func resourceStatusToProto(status string) entropyv1beta1.Resource_Status {
-	if resourceStatus, ok := entropyv1beta1.Resource_Status_value[status]; ok {
-		return entropyv1beta1.Resource_Status(resourceStatus)
-	}
-	return entropyv1beta1.Resource_STATUS_UNSPECIFIED
-}
-
-func resourceFromProto(res *entropyv1beta1.Resource) *resource.Resource {
-	return &resource.Resource{
-		URN:     res.GetUrn(),
-		Kind:    res.GetKind(),
-		Name:    res.GetName(),
-		Project: res.GetParent(),
-		Spec: resource.Spec{
-			Configs: res.GetConfigs().GetStructValue().AsMap(),
-		},
-		Labels: res.GetLabels(),
 	}
 }
 
