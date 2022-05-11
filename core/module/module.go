@@ -48,8 +48,8 @@ type ActionDesc struct {
 
 // ActionRequest describes an invocation of action on module.
 type ActionRequest struct {
-	Name   string
-	Params map[string]interface{}
+	Name   string                 `json:"name"`
+	Params map[string]interface{} `json:"params"`
 }
 
 // Spec represents the context for Plan() or Sync() invocations.

@@ -12,6 +12,6 @@ type Loggable interface {
 }
 
 type LogChunk struct {
-	Data   []byte
-	Labels map[string]string
+	Data   []byte            `json:"data"`
+	Labels map[string]string `json:"labels"`
 }
