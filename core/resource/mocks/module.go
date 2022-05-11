@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	context "context"
+
 	resource "github.com/odpf/entropy/core/resource"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -18,98 +20,6 @@ type Module_Expecter struct {
 
 func (_m *Module) EXPECT() *Module_Expecter {
 	return &Module_Expecter{mock: &_m.Mock}
-}
-
-// Act provides a mock function with given fields: r, action, params
-func (_m *Module) Act(r resource.Resource, action string, params map[string]interface{}) (map[string]interface{}, error) {
-	ret := _m.Called(r, action, params)
-
-	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func(resource.Resource, string, map[string]interface{}) map[string]interface{}); ok {
-		r0 = rf(r, action, params)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]interface{})
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(resource.Resource, string, map[string]interface{}) error); ok {
-		r1 = rf(r, action, params)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Module_Act_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Act'
-type Module_Act_Call struct {
-	*mock.Call
-}
-
-// Act is a helper method to define mock.On call
-//  - r resource.Resource
-//  - action string
-//  - params map[string]interface{}
-func (_e *Module_Expecter) Act(r interface{}, action interface{}, params interface{}) *Module_Act_Call {
-	return &Module_Act_Call{Call: _e.mock.On("Act", r, action, params)}
-}
-
-func (_c *Module_Act_Call) Run(run func(r resource.Resource, action string, params map[string]interface{})) *Module_Act_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(resource.Resource), args[1].(string), args[2].(map[string]interface{}))
-	})
-	return _c
-}
-
-func (_c *Module_Act_Call) Return(_a0 map[string]interface{}, _a1 error) *Module_Act_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-// Apply provides a mock function with given fields: r
-func (_m *Module) Apply(r resource.Resource) (resource.Status, error) {
-	ret := _m.Called(r)
-
-	var r0 resource.Status
-	if rf, ok := ret.Get(0).(func(resource.Resource) resource.Status); ok {
-		r0 = rf(r)
-	} else {
-		r0 = ret.Get(0).(resource.Status)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(resource.Resource) error); ok {
-		r1 = rf(r)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Module_Apply_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Apply'
-type Module_Apply_Call struct {
-	*mock.Call
-}
-
-// Apply is a helper method to define mock.On call
-//  - r resource.Resource
-func (_e *Module_Expecter) Apply(r interface{}) *Module_Apply_Call {
-	return &Module_Apply_Call{Call: _e.mock.On("Apply", r)}
-}
-
-func (_c *Module_Apply_Call) Run(run func(r resource.Resource)) *Module_Apply_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(resource.Resource))
-	})
-	return _c
-}
-
-func (_c *Module_Apply_Call) Return(_a0 resource.Status, _a1 error) *Module_Apply_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
 }
 
 // ID provides a mock function with given fields:
@@ -148,39 +58,97 @@ func (_c *Module_ID_Call) Return(_a0 string) *Module_ID_Call {
 	return _c
 }
 
-// Validate provides a mock function with given fields: r
-func (_m *Module) Validate(r resource.Resource) error {
-	ret := _m.Called(r)
+// Plan provides a mock function with given fields: ctx, spec, act
+func (_m *Module) Plan(ctx context.Context, spec resource.ModuleSpec, act resource.Action) (*resource.Resource, error) {
+	ret := _m.Called(ctx, spec, act)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(resource.Resource) error); ok {
-		r0 = rf(r)
+	var r0 *resource.Resource
+	if rf, ok := ret.Get(0).(func(context.Context, resource.ModuleSpec, resource.Action) *resource.Resource); ok {
+		r0 = rf(ctx, spec, act)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*resource.Resource)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, resource.ModuleSpec, resource.Action) error); ok {
+		r1 = rf(ctx, spec, act)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
-// Module_Validate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Validate'
-type Module_Validate_Call struct {
+// Module_Plan_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Plan'
+type Module_Plan_Call struct {
 	*mock.Call
 }
 
-// Validate is a helper method to define mock.On call
-//  - r resource.Resource
-func (_e *Module_Expecter) Validate(r interface{}) *Module_Validate_Call {
-	return &Module_Validate_Call{Call: _e.mock.On("Validate", r)}
+// Plan is a helper method to define mock.On call
+//  - ctx context.Context
+//  - spec resource.ModuleSpec
+//  - act resource.Action
+func (_e *Module_Expecter) Plan(ctx interface{}, spec interface{}, act interface{}) *Module_Plan_Call {
+	return &Module_Plan_Call{Call: _e.mock.On("Plan", ctx, spec, act)}
 }
 
-func (_c *Module_Validate_Call) Run(run func(r resource.Resource)) *Module_Validate_Call {
+func (_c *Module_Plan_Call) Run(run func(ctx context.Context, spec resource.ModuleSpec, act resource.Action)) *Module_Plan_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(resource.Resource))
+		run(args[0].(context.Context), args[1].(resource.ModuleSpec), args[2].(resource.Action))
 	})
 	return _c
 }
 
-func (_c *Module_Validate_Call) Return(_a0 error) *Module_Validate_Call {
-	_c.Call.Return(_a0)
+func (_c *Module_Plan_Call) Return(_a0 *resource.Resource, _a1 error) *Module_Plan_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// Sync provides a mock function with given fields: ctx, spec
+func (_m *Module) Sync(ctx context.Context, spec resource.ModuleSpec) (*resource.State, error) {
+	ret := _m.Called(ctx, spec)
+
+	var r0 *resource.State
+	if rf, ok := ret.Get(0).(func(context.Context, resource.ModuleSpec) *resource.State); ok {
+		r0 = rf(ctx, spec)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*resource.State)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, resource.ModuleSpec) error); ok {
+		r1 = rf(ctx, spec)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Module_Sync_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Sync'
+type Module_Sync_Call struct {
+	*mock.Call
+}
+
+// Sync is a helper method to define mock.On call
+//  - ctx context.Context
+//  - spec resource.ModuleSpec
+func (_e *Module_Expecter) Sync(ctx interface{}, spec interface{}) *Module_Sync_Call {
+	return &Module_Sync_Call{Call: _e.mock.On("Sync", ctx, spec)}
+}
+
+func (_c *Module_Sync_Call) Run(run func(ctx context.Context, spec resource.ModuleSpec)) *Module_Sync_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(resource.ModuleSpec))
+	})
+	return _c
+}
+
+func (_c *Module_Sync_Call) Return(_a0 *resource.State, _a1 error) *Module_Sync_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }

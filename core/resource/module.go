@@ -10,9 +10,13 @@ import (
 
 type Module interface {
 	ID() string
-	Act(r Resource, action string, params map[string]interface{}) (map[string]interface{}, error)
-	Apply(r Resource) (Status, error)
-	Validate(r Resource) error
+	Plan(ctx context.Context, spec ModuleSpec, act Action) (*Resource, error)
+	Sync(ctx context.Context, spec ModuleSpec) (*State, error)
+}
+
+type ModuleSpec struct {
+	Resource     Resource
+	Dependencies map[string]Output
 }
 
 type LoggableModule interface {
@@ -29,14 +33,4 @@ type LogChunk struct {
 type ModuleRegistry interface {
 	Get(id string) (Module, error)
 	Register(m Module) error
-}
-
-type ModuleX interface {
-	Plan(ctx context.Context, spec ModuleSpec, act Action) (*Resource, error)
-	Sync(ctx context.Context, spec ModuleSpec) (*State, error)
-}
-
-type ModuleSpec struct {
-	Resource     Resource
-	Dependencies map[string]map[string]interface{}
 }

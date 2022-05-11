@@ -5,19 +5,22 @@ package resource
 import (
 	"context"
 	"encoding/json"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-const resourceURNPrefix = "urn:odpf:entropy"
+const urnSeparator = ":"
+
+var namingPattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]+$`)
 
 const (
 	StatusUnspecified Status = "STATUS_UNSPECIFIED" // unknown
 	StatusPending     Status = "STATUS_PENDING"     // intermediate
 	StatusError       Status = "STATUS_ERROR"       // terminal
-	StatusRunning     Status = "STATUS_DELETED"     // terminal
+	StatusDeleted     Status = "STATUS_DELETED"     // terminal
 	StatusCompleted   Status = "STATUS_COMPLETED"   // terminal
 )
 
@@ -64,28 +67,19 @@ type Action struct {
 	Params map[string]interface{}
 }
 
-type Updates struct {
-	Configs map[string]interface{}
-}
-
-type ProviderSelector struct {
-	URN    string `bson:"urn"`
-	Target string `bson:"target"`
-}
-
 func (res *Resource) Validate() error {
 	res.Kind = strings.TrimSpace(res.Kind)
 	res.Name = strings.TrimSpace(res.Name)
 	res.Project = strings.TrimSpace(res.Project)
 
-	if res.Kind == "" {
-		return errors.ErrInvalid.WithMsgf("kind must be set")
+	if !namingPattern.MatchString(res.Kind) {
+		return errors.ErrInvalid.WithMsgf("kind must match pattern '%s'", namingPattern)
 	}
-	if res.Name == "" {
-		return errors.ErrInvalid.WithMsgf("name must be set")
+	if !namingPattern.MatchString(res.Name) {
+		return errors.ErrInvalid.WithMsgf("name must match pattern '%s'", namingPattern)
 	}
-	if res.Project == "" {
-		return errors.ErrInvalid.WithMsgf("project must be set")
+	if !namingPattern.MatchString(res.Project) {
+		return errors.ErrInvalid.WithMsgf("project must match pattern '%s'", namingPattern)
 	}
 
 	if res.State.Status == "" {
@@ -97,14 +91,6 @@ func (res *Resource) Validate() error {
 }
 
 func generateURN(res Resource) string {
-	return strings.Join([]string{
-		resourceURNPrefix,
-		sanitizeString(res.Kind),
-		sanitizeString(res.Project),
-		sanitizeString(res.Name),
-	}, ":")
-}
-
-func sanitizeString(s string) string {
-	return strings.ReplaceAll(s, " ", "_")
+	var parts = []string{"urn", "odpf", "entropy", res.Kind, res.Project, res.Name}
+	return strings.Join(parts, urnSeparator)
 }

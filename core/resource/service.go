@@ -2,10 +2,14 @@ package resource
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/odpf/entropy/pkg/errors"
+)
+
+const (
+	ActionCreate = "create"
+	ActionUpdate = "update"
 )
 
 func NewService(repository Repository, moduleReg ModuleRegistry, now func() time.Time) *Service {
@@ -58,25 +62,30 @@ func (s *Service) ListResources(ctx context.Context, parent string, kind string)
 }
 
 func (s *Service) CreateResource(ctx context.Context, res Resource) (*Resource, error) {
-	if err := res.Validate(); err != nil {
+	act := Action{
+		Name:   ActionCreate,
+		Params: res.Spec.Configs,
+	}
+	res.Spec.Configs = nil
+
+	plannedRes, err := s.planChange(ctx, res, act)
+	if err != nil {
 		return nil, err
 	}
-	res.State = State{Status: StatusPending}
-	res.CreatedAt = s.clock()
-	res.UpdatedAt = res.CreatedAt
 
-	if err := s.validateByModule(ctx, res); err != nil {
+	plannedRes.CreatedAt = s.clock()
+	plannedRes.UpdatedAt = plannedRes.CreatedAt
+	if err := plannedRes.Validate(); err != nil {
 		return nil, err
 	}
 
-	if err := s.resourceRepository.Create(ctx, res); err != nil {
+	if err := s.resourceRepository.Create(ctx, *plannedRes); err != nil {
 		if errors.Is(err, errors.ErrConflict) {
 			return nil, errors.ErrConflict.WithMsgf("resource with urn '%s' already exists", res.URN)
 		}
 		return nil, err
 	}
-
-	return s.sync(ctx, res)
+	return plannedRes, nil
 }
 
 func (s *Service) UpdateResource(ctx context.Context, urn string, newSpec Spec) (*Resource, error) {
@@ -92,21 +101,27 @@ func (s *Service) UpdateResource(ctx context.Context, urn string, newSpec Spec) 
 		Output:     res.State.Output,
 		ModuleData: res.State.ModuleData,
 	}
-	if err := s.validateByModule(ctx, *res); err != nil {
+
+	plannedRes, err := s.planChange(ctx, *res, Action{Name: ActionUpdate})
+	if err != nil {
 		return nil, err
 	}
 
-	if err := s.resourceRepository.Update(ctx, *res); err != nil {
+	if err := s.resourceRepository.Update(ctx, *plannedRes); err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
-
-	return s.sync(ctx, *res)
+	return plannedRes, nil
 }
 
 func (s *Service) DeleteResource(ctx context.Context, urn string) error {
-	// TODO: notify the module about deletion.
+	res, err := s.GetResource(ctx, urn)
+	if err != nil {
+		return err
+	}
 
-	if err := s.resourceRepository.Delete(ctx, urn); err != nil {
+	res.State.Status = StatusDeleted
+	res.UpdatedAt = s.clock()
+	if err := s.resourceRepository.Update(ctx, *res); err != nil {
 		if errors.Is(err, errors.ErrNotFound) {
 			return nil
 		}
@@ -121,21 +136,17 @@ func (s *Service) ApplyAction(ctx context.Context, urn string, action Action) (*
 		return nil, err
 	}
 
-	m, err := s.moduleRegistry.Get(res.Kind)
+	plannedRes, err := s.planChange(ctx, *res, action)
 	if err != nil {
-		return nil, errors.ErrInternal.
-			WithMsgf("failed to resolve module for kind '%s'", res.Kind).
-			WithCausef(err.Error())
+		return nil, err
 	}
 
-	configs, err := m.Act(*res, action.Name, action.Params)
-	if err != nil {
-		return nil, errors.ErrInternal.
-			WithMsgf("executing module action failed").
-			WithCausef(err.Error())
+	plannedRes.CreatedAt = res.CreatedAt
+	plannedRes.UpdatedAt = s.clock()
+	if err := s.resourceRepository.Update(ctx, *plannedRes); err != nil {
+		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
-	res.Spec.Configs = configs
-	return s.sync(ctx, *res)
+	return plannedRes, nil
 }
 
 func (s *Service) GetLog(ctx context.Context, urn string, filter map[string]string) (<-chan LogChunk, error) {
@@ -159,33 +170,28 @@ func (s *Service) GetLog(ctx context.Context, urn string, filter map[string]stri
 	return moduleLogStream.Log(ctx, *res, filter)
 }
 
-func (s *Service) sync(ctx context.Context, r Resource) (*Resource, error) {
-	// TODO: clarify and fix the expected behaviour here.
-	m, err := s.moduleRegistry.Get(r.Kind)
+func (s *Service) planChange(ctx context.Context, res Resource, act Action) (*Resource, error) {
+	modSpec := ModuleSpec{
+		Resource:     res,
+		Dependencies: map[string]Output{},
+	}
+
+	m, err := s.moduleRegistry.Get(res.Kind)
 	if err != nil {
-		r.State.Status = StatusError
-	} else {
-		r.State.Status, err = m.Apply(r)
-		if err != nil {
-			log.Printf("apply failed: %v", err)
-		}
+		return nil, errors.ErrInvalid.
+			WithMsgf("failed to resolve module for kind '%s'", res.Kind).
+			WithCausef(err.Error())
 	}
 
-	r.UpdatedAt = s.clock()
-	if err := s.resourceRepository.Update(ctx, r); err != nil {
-		return nil, errors.ErrInternal.WithCausef(err.Error())
-	}
-
-	return &r, nil
-}
-
-func (s *Service) validateByModule(ctx context.Context, r Resource) error {
-	m, err := s.moduleRegistry.Get(r.Kind)
+	plannedRes, err := m.Plan(ctx, modSpec, act)
 	if err != nil {
-		if errors.Is(err, errors.ErrNotFound) {
-			return errors.ErrInvalid.WithMsgf("invalid resource kind '%s'", r.Kind)
+		if errors.Is(err, errors.ErrInvalid) {
+			return nil, err
 		}
-		return errors.ErrInternal.WithCausef(err.Error())
+
+		return nil, errors.ErrInternal.
+			WithMsgf("plan() failed").
+			WithCausef(err.Error())
 	}
-	return m.Validate(r)
+	return plannedRes, nil
 }

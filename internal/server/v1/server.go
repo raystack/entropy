@@ -184,45 +184,6 @@ func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream ent
 	}
 }
 
-func (server APIServer) CreateProvider(ctx context.Context, request *entropyv1beta1.CreateProviderRequest) (*entropyv1beta1.CreateProviderResponse, error) {
-	pro := providerFromProto(request.Provider)
-
-	createdProvider, err := server.providerService.CreateProvider(ctx, *pro)
-	if err != nil {
-		return nil, generateRPCErr(err)
-	}
-
-	responseProvider, err := providerToProto(createdProvider)
-	if err != nil {
-		return nil, generateRPCErr(err)
-	}
-	response := entropyv1beta1.CreateProviderResponse{
-		Provider: responseProvider,
-	}
-	return &response, nil
-}
-
-func (server APIServer) ListProviders(ctx context.Context, request *entropyv1beta1.ListProvidersRequest) (*entropyv1beta1.ListProvidersResponse, error) {
-	var responseProviders []*entropyv1beta1.Provider
-	providers, err := server.providerService.ListProviders(ctx, request.GetParent(), request.GetKind())
-	if err != nil {
-		return nil, generateRPCErr(err)
-	}
-
-	for _, pro := range providers {
-		responseProvider, err := providerToProto(pro)
-		if err != nil {
-			return nil, generateRPCErr(err)
-		}
-		responseProviders = append(responseProviders, responseProvider)
-	}
-
-	response := entropyv1beta1.ListProvidersResponse{
-		Providers: responseProviders,
-	}
-	return &response, nil
-}
-
 func resourceToProto(res *resource.Resource) (*entropyv1beta1.Resource, error) {
 	conf, err := structpb.NewValue(res.Spec.Configs)
 	if err != nil {
@@ -239,36 +200,6 @@ func resourceToProto(res *resource.Resource) (*entropyv1beta1.Resource, error) {
 		Status:    resourceStatusToProto(string(res.State.Status)),
 		CreatedAt: timestamppb.New(res.CreatedAt),
 		UpdatedAt: timestamppb.New(res.UpdatedAt),
-	}, nil
-}
-
-func resourceProvidersToProto(ps []resource.ProviderSelector) []*entropyv1beta1.ProviderSelector {
-	var providerSelectors []*entropyv1beta1.ProviderSelector
-
-	for _, p := range ps {
-		selector := &entropyv1beta1.ProviderSelector{
-			Urn:    p.URN,
-			Target: p.Target,
-		}
-		providerSelectors = append(providerSelectors, selector)
-	}
-	return providerSelectors
-}
-
-func providerToProto(pro *provider.Provider) (*entropyv1beta1.Provider, error) {
-	conf, err := structpb.NewValue(pro.Configs)
-	if err != nil {
-		return nil, err
-	}
-	return &entropyv1beta1.Provider{
-		Urn:       pro.URN,
-		Name:      pro.Name,
-		Parent:    pro.Parent,
-		Kind:      pro.Kind,
-		Configs:   conf,
-		Labels:    pro.Labels,
-		CreatedAt: timestamppb.New(pro.CreatedAt),
-		UpdatedAt: timestamppb.New(pro.UpdatedAt),
 	}, nil
 }
 
@@ -289,30 +220,6 @@ func resourceFromProto(res *entropyv1beta1.Resource) *resource.Resource {
 			Configs: res.GetConfigs().GetStructValue().AsMap(),
 		},
 		Labels: res.GetLabels(),
-	}
-}
-
-func providerSelectorFromProto(ps []*entropyv1beta1.ProviderSelector) []resource.ProviderSelector {
-	var providerSelectors []resource.ProviderSelector
-
-	for _, p := range ps {
-		selector := resource.ProviderSelector{
-			URN:    p.GetUrn(),
-			Target: p.GetTarget(),
-		}
-		providerSelectors = append(providerSelectors, selector)
-	}
-	return providerSelectors
-}
-
-func providerFromProto(pro *entropyv1beta1.Provider) *provider.Provider {
-	return &provider.Provider{
-		URN:     pro.GetUrn(),
-		Name:    pro.GetName(),
-		Parent:  pro.GetParent(),
-		Kind:    pro.GetKind(),
-		Configs: pro.GetConfigs().GetStructValue().AsMap(),
-		Labels:  pro.GetLabels(),
 	}
 }
 

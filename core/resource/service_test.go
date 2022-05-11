@@ -166,8 +166,9 @@ func TestService_CreateResource(t *testing.T) {
 			name: "ModuleValidationError",
 			setup: func(t *testing.T) *resource.Service {
 				mod := &mocks.Module{}
-				mod.EXPECT().ID().Return("mock").Once()
-				mod.EXPECT().Validate(mock.Anything).Return(errSample).Once()
+				mod.EXPECT().
+					Plan(mock.Anything, mock.Anything, mock.Anything).
+					Return(nil, errSample).Once()
 
 				modReg := &mocks.ModuleRegistry{}
 				modReg.EXPECT().Get("mock").Return(mod, nil).Once()
@@ -186,8 +187,13 @@ func TestService_CreateResource(t *testing.T) {
 			name: "CreateResourceFailure",
 			setup: func(t *testing.T) *resource.Service {
 				mod := &mocks.Module{}
-				mod.EXPECT().ID().Return("mock").Once()
-				mod.EXPECT().Validate(mock.Anything).Return(nil).Once()
+				mod.EXPECT().
+					Plan(mock.Anything, mock.Anything, mock.Anything).
+					Return(&resource.Resource{
+						Kind:    "mock",
+						Name:    "child",
+						Project: "parent",
+					}, nil).Once()
 
 				modReg := &mocks.ModuleRegistry{}
 				modReg.EXPECT().Get("mock").Return(mod, nil).Once()
@@ -209,8 +215,13 @@ func TestService_CreateResource(t *testing.T) {
 			name: "AlreadyExists",
 			setup: func(t *testing.T) *resource.Service {
 				mod := &mocks.Module{}
-				mod.EXPECT().ID().Return("mock").Once()
-				mod.EXPECT().Validate(mock.Anything).Return(nil).Once()
+				mod.EXPECT().
+					Plan(mock.Anything, mock.Anything, mock.Anything).
+					Return(&resource.Resource{
+						Kind:    "mock",
+						Name:    "child",
+						Project: "parent",
+					}, nil).Once()
 
 				modReg := &mocks.ModuleRegistry{}
 				modReg.EXPECT().Get("mock").Return(mod, nil).Once()
@@ -229,77 +240,23 @@ func TestService_CreateResource(t *testing.T) {
 			wantErr: errors.ErrConflict,
 		},
 		{
-			name: "SyncFailure",
-			setup: func(t *testing.T) *resource.Service {
-				mod := &mocks.Module{}
-				mod.EXPECT().ID().Return("mock").Once()
-				mod.EXPECT().Validate(mock.Anything).Return(nil).Once()
-				mod.EXPECT().Apply(mock.Anything).Return(resource.StatusError, errSample).Once()
-
-				modReg := &mocks.ModuleRegistry{}
-				modReg.EXPECT().Get("mock").Return(mod, nil).Twice()
-
-				resourceRepo := &mocks.ResourceRepository{}
-				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(nil).Once()
-				resourceRepo.EXPECT().Update(mock.Anything, mock.Anything).Return(nil).Once()
-
-				return resource.NewService(resourceRepo, modReg, deadClock)
-			},
-			res: resource.Resource{
-				Kind:    "mock",
-				Name:    "child",
-				Project: "parent",
-			},
-			want: &resource.Resource{
-				URN:       "urn:odpf:entropy:mock:parent:child",
-				Kind:      "mock",
-				Name:      "child",
-				Project:   "parent",
-				CreatedAt: frozenTime,
-				UpdatedAt: frozenTime,
-				State:     resource.State{Status: resource.StatusError},
-			},
-			wantErr: nil,
-		},
-		{
-			name: "UpdateFailure",
-			setup: func(t *testing.T) *resource.Service {
-				mod := &mocks.Module{}
-				mod.EXPECT().ID().Return("mock").Once()
-				mod.EXPECT().Validate(mock.Anything).Return(nil).Once()
-				mod.EXPECT().Apply(mock.Anything).Return(resource.StatusCompleted, nil).Once().Once()
-
-				modReg := &mocks.ModuleRegistry{}
-				modReg.EXPECT().Get("mock").Return(mod, nil).Twice()
-
-				resourceRepo := &mocks.ResourceRepository{}
-				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(nil).Once()
-				resourceRepo.EXPECT().Update(mock.Anything, mock.Anything).Return(errSample).Once()
-
-				return resource.NewService(resourceRepo, modReg, deadClock)
-			},
-			res: resource.Resource{
-				Kind:    "mock",
-				Name:    "child",
-				Project: "parent",
-			},
-			want:    nil,
-			wantErr: errSample,
-		},
-		{
 			name: "Success",
 			setup: func(t *testing.T) *resource.Service {
 				mod := &mocks.Module{}
-				mod.EXPECT().ID().Return("mock").Once()
-				mod.EXPECT().Validate(mock.Anything).Return(nil).Once()
-				mod.EXPECT().Apply(mock.Anything).Return(resource.StatusCompleted, nil).Once()
+				mod.EXPECT().
+					Plan(mock.Anything, mock.Anything, mock.Anything).
+					Return(&resource.Resource{
+						Kind:    "mock",
+						Name:    "child",
+						Project: "parent",
+						State:   resource.State{Status: resource.StatusCompleted},
+					}, nil).Once()
 
 				modReg := &mocks.ModuleRegistry{}
 				modReg.EXPECT().Get("mock").Return(mod, nil).Twice()
 
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(nil).Once()
-				resourceRepo.EXPECT().Update(mock.Anything, mock.Anything).Return(nil)
 
 				return resource.NewService(resourceRepo, modReg, deadClock)
 			},
@@ -377,8 +334,9 @@ func TestService_UpdateResource(t *testing.T) {
 			name: "ModuleValidationError",
 			setup: func(t *testing.T) *resource.Service {
 				mod := &mocks.Module{}
-				mod.EXPECT().ID().Return("mock").Once()
-				mod.EXPECT().Validate(mock.Anything).Return(errors.ErrInvalid).Once()
+				mod.EXPECT().
+					Plan(mock.Anything, mock.Anything, mock.Anything).
+					Return(nil, errors.ErrInvalid).Once()
 
 				modReg := &mocks.ModuleRegistry{}
 				modReg.EXPECT().Get("mock").Return(mod, nil).Twice()
@@ -400,8 +358,9 @@ func TestService_UpdateResource(t *testing.T) {
 			name: "UpdateFailure",
 			setup: func(t *testing.T) *resource.Service {
 				mod := &mocks.Module{}
-				mod.EXPECT().ID().Return("mock").Once()
-				mod.EXPECT().Validate(mock.Anything).Return(nil).Once()
+				mod.EXPECT().
+					Plan(mock.Anything, mock.Anything, mock.Anything).
+					Return(&testResource, nil).Once()
 
 				modReg := &mocks.ModuleRegistry{}
 				modReg.EXPECT().Get("mock").Return(mod, nil).Twice()
@@ -412,7 +371,9 @@ func TestService_UpdateResource(t *testing.T) {
 					Return(&testResource, nil).
 					Once()
 
-				resourceRepo.EXPECT().Update(mock.Anything, mock.Anything).Return(testErr)
+				resourceRepo.EXPECT().
+					Update(mock.Anything, mock.Anything).
+					Return(testErr)
 
 				return resource.NewService(resourceRepo, modReg, deadClock)
 			},
@@ -425,16 +386,21 @@ func TestService_UpdateResource(t *testing.T) {
 			name: "Success",
 			setup: func(t *testing.T) *resource.Service {
 				mod := &mocks.Module{}
-				mod.EXPECT().ID().Return("mock").Once()
-				mod.EXPECT().Validate(mock.Anything).Return(nil).Once()
-				mod.EXPECT().Apply(mock.Anything).Return(resource.StatusCompleted, nil).Once()
+				mod.EXPECT().
+					Plan(mock.Anything, mock.Anything, mock.Anything).
+					Return(&testResource, nil).Once()
 
 				modReg := &mocks.ModuleRegistry{}
 				modReg.EXPECT().Get("mock").Return(mod, nil).Twice()
 
 				resourceRepo := &mocks.ResourceRepository{}
-				resourceRepo.EXPECT().GetByURN(mock.Anything, "urn:odpf:entropy:mock:parent:child").Return(&testResource, nil).Once()
-				resourceRepo.EXPECT().Update(mock.Anything, mock.Anything).Return(nil).Twice()
+				resourceRepo.EXPECT().
+					GetByURN(mock.Anything, "urn:odpf:entropy:mock:parent:child").
+					Return(&testResource, nil).Once()
+
+				resourceRepo.EXPECT().
+					Update(mock.Anything, mock.Anything).
+					Return(nil).Twice()
 
 				return resource.NewService(resourceRepo, modReg, deadClock)
 			},
@@ -447,7 +413,7 @@ func TestService_UpdateResource(t *testing.T) {
 				Project:   "parent",
 				CreatedAt: frozenTime,
 				UpdatedAt: frozenTime,
-				State:     resource.State{Status: resource.StatusCompleted},
+				State:     resource.State{Status: resource.StatusPending},
 				Spec: resource.Spec{
 					Configs: map[string]interface{}{"foo": "bar"},
 				},
@@ -474,43 +440,72 @@ func TestService_UpdateResource(t *testing.T) {
 
 func TestService_DeleteResource(t *testing.T) {
 	t.Parallel()
+
 	testErr := errors.New("failed")
+	testResource := resource.Resource{
+		URN:       "urn:odpf:entropy:mock:parent:child",
+		Kind:      "mock",
+		Name:      "child",
+		Project:   "parent",
+		State:     resource.State{Status: resource.StatusCompleted},
+		CreatedAt: frozenTime,
+	}
 
 	tests := []struct {
 		name    string
 		setup   func(t *testing.T) *resource.Service
 		urn     string
-		updates resource.Updates
 		wantErr error
 	}{
 		{
-			name: "InternalError",
+			name: "ResourceNotFound",
 			setup: func(t *testing.T) *resource.Service {
 				resourceRepo := &mocks.ResourceRepository{}
-				resourceRepo.EXPECT().Delete(mock.Anything, mock.Anything).Return(testErr).Once()
+				resourceRepo.EXPECT().
+					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
+					Return(nil, testErr).
+					Once()
 
 				return resource.NewService(resourceRepo, nil, deadClock)
 			},
-			wantErr: errors.ErrInternal,
+			urn:     "urn:odpf:entropy:mock:foo:bar",
+			wantErr: testErr,
 		},
 		{
-			name: "NotFound",
+			name: "UpdateFailure",
 			setup: func(t *testing.T) *resource.Service {
 				resourceRepo := &mocks.ResourceRepository{}
-				resourceRepo.EXPECT().Delete(mock.Anything, mock.Anything).Return(errors.ErrNotFound).Once()
+				resourceRepo.EXPECT().
+					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
+					Return(&testResource, nil).
+					Once()
+
+				resourceRepo.EXPECT().
+					Update(mock.Anything, mock.Anything).
+					Return(testErr).
+					Once()
 
 				return resource.NewService(resourceRepo, nil, deadClock)
 			},
-			wantErr: nil,
+			urn:     "urn:odpf:entropy:mock:foo:bar",
+			wantErr: errors.ErrInternal,
 		},
 		{
 			name: "Success",
 			setup: func(t *testing.T) *resource.Service {
 				resourceRepo := &mocks.ResourceRepository{}
-				resourceRepo.EXPECT().Delete(mock.Anything, mock.Anything).Return(nil).Once()
+				resourceRepo.EXPECT().
+					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
+					Return(&testResource, nil).
+					Once()
 
+				resourceRepo.EXPECT().
+					Update(mock.Anything, mock.Anything).
+					Return(nil).
+					Once()
 				return resource.NewService(resourceRepo, nil, deadClock)
 			},
+			urn:     "urn:odpf:entropy:mock:foo:bar",
 			wantErr: nil,
 		},
 	}
@@ -550,11 +545,14 @@ func TestService_ApplyAction(t *testing.T) {
 			name: "NotFound",
 			setup: func(t *testing.T) *resource.Service {
 				resourceRepo := &mocks.ResourceRepository{}
-				resourceRepo.EXPECT().GetByURN(mock.Anything, "urn::foo").Return(nil, errors.ErrNotFound).Once()
+				resourceRepo.EXPECT().
+					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
+					Return(nil, errors.ErrNotFound).
+					Once()
 
 				return resource.NewService(resourceRepo, nil, deadClock)
 			},
-			urn:     "urn::foo",
+			urn:     "urn:odpf:entropy:mock:foo:bar",
 			action:  sampleAction,
 			want:    nil,
 			wantErr: errors.ErrNotFound,
@@ -563,48 +561,58 @@ func TestService_ApplyAction(t *testing.T) {
 			name: "ModuleResolutionFailure",
 			setup: func(t *testing.T) *resource.Service {
 				moduleReg := &mocks.ModuleRegistry{}
-				moduleReg.EXPECT().Get("mock").Return(nil, errors.ErrNotFound).Once()
+				moduleReg.EXPECT().
+					Get("mock").
+					Return(nil, errors.ErrNotFound).
+					Once()
 
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn::foo").
+					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
 					Return(&resource.Resource{
-						URN:  "urn::foo",
-						Kind: "mock",
+						URN:     "urn:odpf:entropy:mock:foo:bar",
+						Kind:    "mock",
+						Project: "foo",
+						Name:    "bar",
 					}, nil).
 					Once()
 
 				return resource.NewService(resourceRepo, moduleReg, deadClock)
 			},
-			urn:     "urn::foo",
+			urn:     "urn:odpf:entropy:mock:foo:bar",
 			action:  sampleAction,
 			want:    nil,
-			wantErr: errors.ErrInternal,
+			wantErr: errors.ErrInvalid,
 		},
 		{
-			name: "ActFailure",
+			name: "PlanFailure",
 			setup: func(t *testing.T) *resource.Service {
 				mockModule := &mocks.Module{}
 				mockModule.EXPECT().
-					Act(mock.Anything, "scale", mock.Anything).
+					Plan(mock.Anything, mock.Anything, sampleAction).
 					Return(nil, errors.New("failed")).
 					Once()
 
 				moduleReg := &mocks.ModuleRegistry{}
-				moduleReg.EXPECT().Get("mock").Return(mockModule, nil).Once()
+				moduleReg.EXPECT().
+					Get("mock").
+					Return(mockModule, nil).
+					Once()
 
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn::foo").
+					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
 					Return(&resource.Resource{
-						URN:  "urn::foo",
-						Kind: "mock",
+						URN:     "urn:odpf:entropy:mock:foo:bar",
+						Kind:    "mock",
+						Project: "foo",
+						Name:    "bar",
 					}, nil).
 					Once()
 
 				return resource.NewService(resourceRepo, moduleReg, deadClock)
 			},
-			urn:     "urn::foo",
+			urn:     "urn:odpf:entropy:mock:foo:bar",
 			action:  sampleAction,
 			want:    nil,
 			wantErr: errors.ErrInternal,
@@ -614,23 +622,30 @@ func TestService_ApplyAction(t *testing.T) {
 			setup: func(t *testing.T) *resource.Service {
 				mockModule := &mocks.Module{}
 				mockModule.EXPECT().
-					Act(mock.Anything, "scale", mock.Anything).
-					Return(nil, nil).
-					Once()
-				mockModule.EXPECT().
-					Apply(mock.Anything).
-					Return(resource.StatusCompleted, nil).
+					Plan(mock.Anything, mock.Anything, sampleAction).
+					Return(&resource.Resource{
+						URN:     "urn:odpf:entropy:mock:foo:bar",
+						Kind:    "mock",
+						Project: "foo",
+						Name:    "bar",
+						State:   resource.State{Status: resource.StatusPending},
+					}, nil).
 					Once()
 
 				moduleReg := &mocks.ModuleRegistry{}
-				moduleReg.EXPECT().Get("mock").Return(mockModule, nil).Twice()
+				moduleReg.EXPECT().
+					Get("mock").
+					Return(mockModule, nil).
+					Twice()
 
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn::foo").
+					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
 					Return(&resource.Resource{
-						URN:       "urn::foo",
+						URN:       "urn:odpf:entropy:mock:foo:bar",
 						Kind:      "mock",
+						Project:   "foo",
+						Name:      "bar",
 						CreatedAt: frozenTime,
 					}, nil).
 					Once()
@@ -641,12 +656,14 @@ func TestService_ApplyAction(t *testing.T) {
 
 				return resource.NewService(resourceRepo, moduleReg, deadClock)
 			},
-			urn:    "urn::foo",
+			urn:    "urn:odpf:entropy:mock:foo:bar",
 			action: sampleAction,
 			want: &resource.Resource{
-				URN:       "urn::foo",
+				URN:       "urn:odpf:entropy:mock:foo:bar",
 				Kind:      "mock",
-				State:     resource.State{Status: resource.StatusCompleted},
+				Project:   "foo",
+				Name:      "bar",
+				State:     resource.State{Status: resource.StatusPending},
 				CreatedAt: frozenTime,
 				UpdatedAt: frozenTime,
 			},
