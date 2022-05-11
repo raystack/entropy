@@ -31,8 +31,7 @@ type Config struct {
 func (cfg Config) addr() string { return fmt.Sprintf("%s:%d", cfg.Host, cfg.Port) }
 
 func Serve(ctx context.Context, cfg Config, logger *zap.Logger, nr *newrelic.Application,
-	resourceSvc handlersv1.ResourceService, providerSvc handlersv1.ProviderService,
-) error {
+	resourceSvc handlersv1.ResourceService) error {
 	serverCfg := server.Config{
 		Host: cfg.Host,
 		Port: cfg.Port,
@@ -79,15 +78,10 @@ func Serve(ctx context.Context, cfg Config, logger *zap.Logger, nr *newrelic.App
 		common.New(version.GetVersionAndBuildInfo()),
 	)
 
-	v1Handler := handlersv1.NewApiServer(resourceSvc, providerSvc)
+	v1Handler := handlersv1.NewApiServer(resourceSvc)
 
 	muxServer.RegisterService(
 		&entropyv1beta1.ResourceService_ServiceDesc,
-		v1Handler,
-	)
-
-	muxServer.RegisterService(
-		&entropyv1beta1.ProviderService_ServiceDesc,
 		v1Handler,
 	)
 

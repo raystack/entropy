@@ -8,7 +8,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/odpf/entropy/core/provider"
 	"github.com/odpf/entropy/core/resource"
 	entropyserver "github.com/odpf/entropy/internal/server"
 	"github.com/odpf/entropy/internal/store/inmemory"
@@ -54,11 +53,9 @@ func runServer(c Config) error {
 	}
 
 	resourceRepository := mongodb.NewResourceRepository(mongoStore)
-	providerRepository := mongodb.NewProviderRepository(mongoStore)
 	moduleRepository := inmemory.NewModuleRepository()
 
 	resourceService := resource.NewService(resourceRepository, moduleRepository, time.Now)
-	providerService := provider.NewService(providerRepository, time.Now)
 
-	return entropyserver.Serve(ctx, c.Service, loggerInstance, nr, resourceService, providerService)
+	return entropyserver.Serve(ctx, c.Service, loggerInstance, nr, resourceService)
 }

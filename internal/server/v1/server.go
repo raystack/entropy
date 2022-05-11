@@ -1,7 +1,6 @@
 package handlersv1
 
 //go:generate mockery --name=ResourceService -r --case underscore --with-expecter --structname ResourceService  --filename=resource_service.go --output=./mocks
-//go:generate mockery --name=ProviderService -r --case underscore --with-expecter --structname ProviderService  --filename=provider_service.go --output=./mocks
 
 import (
 	"context"
@@ -12,7 +11,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/odpf/entropy/core/provider"
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
 )
@@ -28,23 +26,15 @@ type ResourceService interface {
 	GetLog(ctx context.Context, urn string, filter map[string]string) (<-chan resource.LogChunk, error)
 }
 
-type ProviderService interface {
-	CreateProvider(ctx context.Context, res provider.Provider) (*provider.Provider, error)
-	ListProviders(ctx context.Context, parent string, kind string) ([]*provider.Provider, error)
-}
-
 type APIServer struct {
 	entropyv1beta1.UnimplementedResourceServiceServer
-	entropyv1beta1.UnimplementedProviderServiceServer
 
 	resourceService ResourceService
-	providerService ProviderService
 }
 
-func NewApiServer(resourceService ResourceService, providerService ProviderService) *APIServer {
+func NewApiServer(resourceService ResourceService) *APIServer {
 	return &APIServer{
 		resourceService: resourceService,
-		providerService: providerService,
 	}
 }
 
