@@ -13,9 +13,12 @@ import (
 // RunSync runs a loop for processing resources in pending state. It runs until
 // context is cancelled.
 func (s *Service) RunSync(ctx context.Context) error {
-	const pollInterval = 500 * time.Millisecond
+	const (
+		backOff      = 2
+		pollInterval = 500 * time.Millisecond
+	)
 
-	pollTicker := time.NewTicker(pollInterval)
+	pollTicker := time.NewTimer(pollInterval)
 	defer pollTicker.Stop()
 
 	for {
@@ -24,9 +27,16 @@ func (s *Service) RunSync(ctx context.Context) error {
 			return nil
 
 		case <-pollTicker.C:
-			// TODO: handle repeated failure scenarios?
-			if err := s.repository.DoPending(ctx, s.syncChange); err != nil {
-				s.logger.Error("failed to handle pending item", zap.Error(err))
+			err := s.repository.DoPending(ctx, s.syncChange)
+			if err != nil {
+				if errors.Is(err, errors.ErrNotFound) {
+					// backOff to reduce polling pressure.
+					pollTicker.Reset(backOff * pollInterval)
+				} else {
+					s.logger.Error("failed to handle pending item", zap.Error(err))
+				}
+			} else {
+				pollTicker.Reset(pollInterval)
 			}
 		}
 	}
