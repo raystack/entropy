@@ -23,29 +23,33 @@ func NewResourceRepository(db *mongo.Database) *ResourceRepository {
 type ResourceRepository struct{ coll *mongo.Collection }
 
 func (rc *ResourceRepository) GetByURN(ctx context.Context, urn string) (*resource.Resource, error) {
-	res := &resource.Resource{}
-	err := rc.coll.FindOne(ctx, map[string]interface{}{"urn": urn}).Decode(res)
-	if err != nil {
+	var rm resourceModel
+
+	filter := map[string]interface{}{"urn": urn}
+	if err := rc.coll.FindOne(ctx, filter).Decode(&rm); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, errors.ErrNotFound
 		}
 		return nil, err
 	}
-	return res, nil
+
+	return modelToResource(rm), nil
 }
 
 func (rc *ResourceRepository) List(ctx context.Context, filter map[string]string) ([]*resource.Resource, error) {
-	var res []*resource.Resource
 	cur, err := rc.coll.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	err = cur.All(context.TODO(), &res)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return res, nil
-		}
+
+	var records []resourceModel
+	if err = cur.All(ctx, &records); err != nil && err != mongo.ErrNoDocuments {
 		return nil, err
+	}
+
+	var res []*resource.Resource
+	for _, rec := range records {
+		res = append(res, modelToResource(rec))
 	}
 	return res, nil
 }
@@ -54,7 +58,7 @@ func (rc *ResourceRepository) Create(ctx context.Context, res resource.Resource)
 	res.CreatedAt = time.Now()
 	res.UpdatedAt = time.Now()
 
-	_, err := rc.coll.InsertOne(ctx, res)
+	_, err := rc.coll.InsertOne(ctx, modelFromResource(res))
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
 			return errors.ErrConflict
@@ -65,11 +69,11 @@ func (rc *ResourceRepository) Create(ctx context.Context, res resource.Resource)
 	return nil
 }
 
-func (rc *ResourceRepository) Update(ctx context.Context, r resource.Resource) error {
-	r.UpdatedAt = time.Now()
+func (rc *ResourceRepository) Update(ctx context.Context, res resource.Resource) error {
+	res.UpdatedAt = time.Now()
 
-	filter := map[string]interface{}{"urn": r.URN}
-	updates := map[string]interface{}{"$set": r}
+	filter := map[string]interface{}{"urn": res.URN}
+	updates := map[string]interface{}{"$set": modelFromResource(res)}
 
 	_, err := rc.coll.UpdateOne(ctx, filter, updates)
 	if err != nil {
@@ -94,17 +98,18 @@ func (rc *ResourceRepository) Delete(ctx context.Context, urn string) error {
 }
 
 func (rc *ResourceRepository) DoPending(ctx context.Context, fn resource.PendingHandler) error {
-	var res resource.Resource
-
 	filter := map[string]interface{}{"state.status": resource.StatusPending}
-	if err := rc.coll.FindOne(ctx, filter).Decode(res); err != nil {
+
+	var rec resourceModel
+	if err := rc.coll.FindOne(ctx, filter).Decode(&rec); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return errors.ErrNotFound // no pending item is available.
 		}
 		return err
 	}
 
-	modified, shouldDelete, err := fn(ctx, res)
+	res := modelToResource(rec)
+	modified, shouldDelete, err := fn(ctx, *res)
 	if err != nil {
 		return err
 	}
