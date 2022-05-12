@@ -32,7 +32,9 @@ func (s *Service) RunSync(ctx context.Context) error {
 	}
 }
 
-func (s *Service) syncChange(ctx context.Context, res resource.Resource) (updated *resource.Resource, delete bool, err error) {
+func (s *Service) syncChange(ctx context.Context,
+	res resource.Resource) (updated *resource.Resource, delete bool, err error) {
+
 	modSpec, err := s.generateModuleSpec(ctx, res)
 	if err != nil {
 		return nil, false, err

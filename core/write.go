@@ -2,64 +2,11 @@ package core
 
 import (
 	"context"
-	"time"
-
-	"go.uber.org/zap"
 
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
 )
-
-func New(resourceRepo resource.Repository, rootModule module.Module, clockFn func() time.Time, lg *zap.Logger) *Service {
-	if clockFn == nil {
-		clockFn = time.Now
-	}
-	return &Service{
-		clock:      clockFn,
-		repository: resourceRepo,
-		rootModule: rootModule,
-	}
-}
-
-type Service struct {
-	logger     *zap.Logger
-	clock      func() time.Time
-	repository resource.Repository
-	rootModule module.Module
-}
-
-func (s *Service) GetResource(ctx context.Context, urn string) (*resource.Resource, error) {
-	res, err := s.repository.GetByURN(ctx, urn)
-	if err != nil {
-		if errors.Is(err, errors.ErrNotFound) {
-			return nil, errors.ErrNotFound.WithMsgf("resource with urn '%s' not found", urn)
-		}
-		return nil, errors.ErrInternal.WithCausef(err.Error())
-	}
-	return res, nil
-}
-
-func (s *Service) ListResources(ctx context.Context, project string, kind string) ([]resource.Resource, error) {
-	filter := map[string]string{}
-	if kind != "" {
-		filter["kind"] = kind
-	}
-	if project != "" {
-		filter["project"] = project
-	}
-
-	resources, err := s.repository.List(ctx, filter)
-	if err != nil {
-		return nil, errors.ErrInternal.WithCausef(err.Error())
-	}
-
-	var result []resource.Resource
-	for _, res := range resources {
-		result = append(result, *res)
-	}
-	return result, nil
-}
 
 func (s *Service) CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error) {
 	act := module.ActionRequest{
@@ -159,25 +106,6 @@ func (s *Service) ApplyAction(ctx context.Context, urn string, action module.Act
 	return plannedRes, nil
 }
 
-func (s *Service) GetLog(ctx context.Context, urn string, filter map[string]string) (<-chan module.LogChunk, error) {
-	res, err := s.GetResource(ctx, urn)
-	if err != nil {
-		return nil, err
-	}
-
-	moduleLogStream, supported := s.rootModule.(module.Loggable)
-	if !supported {
-		return nil, errors.ErrUnsupported.WithMsgf("log streaming not supported for kind '%s'", res.Kind)
-	}
-
-	modSpec := module.Spec{
-		Resource:     *res,
-		Dependencies: map[string]resource.Output{},
-	}
-
-	return moduleLogStream.Log(ctx, modSpec, filter)
-}
-
 func (s *Service) planChange(ctx context.Context, res resource.Resource, act module.ActionRequest) (*resource.Resource, error) {
 	modSpec, err := s.generateModuleSpec(ctx, res)
 	if err != nil {
@@ -194,29 +122,4 @@ func (s *Service) planChange(ctx context.Context, res resource.Resource, act mod
 	}
 
 	return plannedRes, nil
-}
-
-func (s *Service) generateModuleSpec(ctx context.Context, res resource.Resource) (*module.Spec, error) {
-	modSpec := module.Spec{
-		Resource:     res,
-		Dependencies: map[string]resource.Output{},
-	}
-
-	for key, resURN := range res.Spec.Dependencies {
-		d, err := s.GetResource(ctx, resURN)
-		if err != nil {
-			if errors.Is(err, errors.ErrNotFound) {
-				return nil, errors.ErrInvalid.
-					WithMsgf("dependency '%s' not found", resURN)
-			}
-			return nil, err
-		} else if d.State.Status != resource.StatusCompleted {
-			return nil, errors.ErrInvalid.
-				WithMsgf("dependency '%s' is in incomplete state (%s)", resURN, d.State.Status)
-		}
-
-		modSpec.Dependencies[key] = d.State.Output
-	}
-
-	return &modSpec, nil
 }
