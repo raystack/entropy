@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"os/signal"
+	"reflect"
 	"syscall"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/odpf/entropy/core/module"
 	entropyserver "github.com/odpf/entropy/internal/server"
 	"github.com/odpf/entropy/internal/store/mongodb"
+	"github.com/odpf/entropy/modules/kubernetes"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
 )
@@ -54,7 +56,7 @@ func runServer(c Config) error {
 	}
 	resourceRepository := mongodb.NewResourceRepository(mongoStore)
 
-	moduleRegistry := module.NewRegistry()
+	moduleRegistry := setupRegistry(zapLog, kubernetes.KubeModule)
 	resourceService := core.New(resourceRepository, moduleRegistry, time.Now, zapLog)
 
 	go func() {
@@ -65,4 +67,18 @@ func runServer(c Config) error {
 	}()
 
 	return entropyserver.Serve(ctx, c.Service, zapLog, nr, resourceService)
+}
+
+func setupRegistry(logger *zap.Logger, modules ...module.Descriptor) *module.Registry {
+	moduleRegistry := module.NewRegistry()
+	for _, desc := range modules {
+		if err := moduleRegistry.Register(desc); err != nil {
+			logger.Fatal("failed to register module",
+				zap.String("module_kind", desc.Kind),
+				zap.String("go_type", reflect.TypeOf(desc.Module).String()),
+				zap.Error(err),
+			)
+		}
+	}
+	return moduleRegistry
 }
