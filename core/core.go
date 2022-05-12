@@ -16,6 +16,7 @@ func New(repo resource.Repository, rootModule module.Module, clockFn func() time
 		clockFn = time.Now
 	}
 	return &Service{
+		logger:     lg,
 		clock:      clockFn,
 		repository: repo,
 		rootModule: rootModule,
