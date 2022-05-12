@@ -54,6 +54,6 @@ func runServer(c Config) error {
 	resourceRepository := mongodb.NewResourceRepository(mongoStore)
 
 	moduleRegistry := module.NewRegistry()
-	resourceService := core.New(resourceRepository, moduleRegistry.Resolve, time.Now)
+	resourceService := core.New(resourceRepository, moduleRegistry, time.Now)
 	return entropyserver.Serve(ctx, c.Service, loggerInstance, nr, resourceService)
 }

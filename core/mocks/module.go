@@ -24,42 +24,6 @@ func (_m *Module) EXPECT() *Module_Expecter {
 	return &Module_Expecter{mock: &_m.Mock}
 }
 
-// Describe provides a mock function with given fields:
-func (_m *Module) Describe() module.Desc {
-	ret := _m.Called()
-
-	var r0 module.Desc
-	if rf, ok := ret.Get(0).(func() module.Desc); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(module.Desc)
-	}
-
-	return r0
-}
-
-// Module_Describe_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Describe'
-type Module_Describe_Call struct {
-	*mock.Call
-}
-
-// Describe is a helper method to define mock.On call
-func (_e *Module_Expecter) Describe() *Module_Describe_Call {
-	return &Module_Describe_Call{Call: _e.mock.On("Describe")}
-}
-
-func (_c *Module_Describe_Call) Run(run func()) *Module_Describe_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Module_Describe_Call) Return(_a0 module.Desc) *Module_Describe_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
 // Plan provides a mock function with given fields: ctx, spec, act
 func (_m *Module) Plan(ctx context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
 	ret := _m.Called(ctx, spec, act)
@@ -109,15 +73,15 @@ func (_c *Module_Plan_Call) Return(_a0 *resource.Resource, _a1 error) *Module_Pl
 }
 
 // Sync provides a mock function with given fields: ctx, spec
-func (_m *Module) Sync(ctx context.Context, spec module.Spec) (*resource.Output, error) {
+func (_m *Module) Sync(ctx context.Context, spec module.Spec) (*resource.State, error) {
 	ret := _m.Called(ctx, spec)
 
-	var r0 *resource.Output
-	if rf, ok := ret.Get(0).(func(context.Context, module.Spec) *resource.Output); ok {
+	var r0 *resource.State
+	if rf, ok := ret.Get(0).(func(context.Context, module.Spec) *resource.State); ok {
 		r0 = rf(ctx, spec)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*resource.Output)
+			r0 = ret.Get(0).(*resource.State)
 		}
 	}
 
@@ -150,7 +114,7 @@ func (_c *Module_Sync_Call) Run(run func(ctx context.Context, spec module.Spec))
 	return _c
 }
 
-func (_c *Module_Sync_Call) Return(_a0 *resource.Output, _a1 error) *Module_Sync_Call {
+func (_c *Module_Sync_Call) Return(_a0 *resource.State, _a1 error) *Module_Sync_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }

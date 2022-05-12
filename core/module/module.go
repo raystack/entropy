@@ -16,10 +16,6 @@ const (
 // Module is responsible for achieving desired external system states based
 // on a resource in Entropy.
 type Module interface {
-	// Describe should return a descriptor with information about the module.
-	// This descriptor will be used for discovery of supported actions, etc.
-	Describe() Desc
-
 	// Plan SHOULD validate the action on the current version of the resource,
 	// return the resource with config/status/state changes (if any) applied.
 	// Plan SHOULD NOT have side effects on anything other than the resource.
@@ -29,14 +25,15 @@ type Module interface {
 	// StatusCompleted. Module implementation is free to execute an action in
 	// a single Sync() call or split into multiple steps for better feedback
 	// to the end-user about the progress.
-	Sync(ctx context.Context, spec Spec) (*resource.Output, error)
+	Sync(ctx context.Context, spec Spec) (*resource.State, error)
 }
 
-// Desc is a module descriptor that represents supported actions, resource-kind
+// Descriptor is a module descriptor that represents supported actions, resource-kind
 // the module can operate on, etc.
-type Desc struct {
+type Descriptor struct {
 	Kind    string       `json:"kind"`
 	Actions []ActionDesc `json:"actions"`
+	Module  Module       `json:"-"`
 }
 
 // ActionDesc is a descriptor for an action supported by a module.

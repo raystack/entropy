@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -25,15 +26,6 @@ var (
 
 	frozenTime = time.Unix(1650536955, 0)
 	deadClock  = func() time.Time { return frozenTime }
-
-	returnModuleOrErr = func(m module.Module) func(kind string) (module.Module, error) {
-		return func(kind string) (module.Module, error) {
-			if m == nil {
-				return nil, errors.ErrNotFound
-			}
-			return m, nil
-		}
-	}
 )
 
 func TestService_GetResource(t *testing.T) {
@@ -181,7 +173,7 @@ func TestService_CreateResource(t *testing.T) {
 					Plan(mock.Anything, mock.Anything, mock.Anything).
 					Return(nil, errSample).Once()
 
-				return core.New(nil, returnModuleOrErr(mod), deadClock)
+				return core.New(nil, mod, deadClock)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -206,7 +198,7 @@ func TestService_CreateResource(t *testing.T) {
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(errSample).Once()
 
-				return core.New(resourceRepo, returnModuleOrErr(mod), deadClock)
+				return core.New(resourceRepo, mod, deadClock)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -231,7 +223,7 @@ func TestService_CreateResource(t *testing.T) {
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(errors.ErrConflict).Once()
 
-				return core.New(resourceRepo, returnModuleOrErr(mod), deadClock)
+				return core.New(resourceRepo, mod, deadClock)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -257,7 +249,7 @@ func TestService_CreateResource(t *testing.T) {
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(nil).Once()
 
-				return core.New(resourceRepo, returnModuleOrErr(mod), deadClock)
+				return core.New(resourceRepo, mod, deadClock)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -343,7 +335,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Return(&testResource, nil).
 					Once()
 
-				return core.New(resourceRepo, returnModuleOrErr(mod), deadClock)
+				return core.New(resourceRepo, mod, deadClock)
 			},
 			urn:     "urn:odpf:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
@@ -368,7 +360,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Update(mock.Anything, mock.Anything).
 					Return(testErr)
 
-				return core.New(resourceRepo, returnModuleOrErr(mod), deadClock)
+				return core.New(resourceRepo, mod, deadClock)
 			},
 			urn:     "urn:odpf:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
@@ -381,7 +373,17 @@ func TestService_UpdateResource(t *testing.T) {
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
-					Return(&testResource, nil).Once()
+					Return(&resource.Resource{
+						URN:     "urn:odpf:entropy:mock:project:child",
+						Kind:    "mock",
+						Name:    "child",
+						Project: "project",
+						Spec: resource.Spec{
+							Configs: map[string]interface{}{"foo": "bar"},
+						},
+						State:     resource.State{Status: resource.StatusPending},
+						CreatedAt: frozenTime,
+					}, nil).Once()
 
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
@@ -392,7 +394,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Update(mock.Anything, mock.Anything).
 					Return(nil).Twice()
 
-				return core.New(resourceRepo, returnModuleOrErr(mod), deadClock)
+				return core.New(resourceRepo, mod, deadClock)
 			},
 			urn:     "urn:odpf:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
@@ -432,14 +434,6 @@ func TestService_DeleteResource(t *testing.T) {
 	t.Parallel()
 
 	testErr := errors.New("failed")
-	testResource := resource.Resource{
-		URN:       "urn:odpf:entropy:mock:project:child",
-		Kind:      "mock",
-		Name:      "child",
-		Project:   "project",
-		State:     resource.State{Status: resource.StatusCompleted},
-		CreatedAt: frozenTime,
-	}
 
 	tests := []struct {
 		name    string
@@ -467,7 +461,15 @@ func TestService_DeleteResource(t *testing.T) {
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
-					Return(&testResource, nil).
+					Return(&resource.Resource{
+						URN:       "urn:odpf:entropy:mock:project:child",
+						Kind:      "mock",
+						Name:      "child",
+						Project:   "project",
+						State:     resource.State{Status: resource.StatusCompleted},
+						CreatedAt: frozenTime,
+						UpdatedAt: frozenTime,
+					}, nil).
 					Once()
 
 				resourceRepo.EXPECT().
@@ -486,7 +488,15 @@ func TestService_DeleteResource(t *testing.T) {
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
-					Return(&testResource, nil).
+					Return(&resource.Resource{
+						URN:       "urn:odpf:entropy:mock:project:child",
+						Kind:      "mock",
+						Name:      "child",
+						Project:   "project",
+						State:     resource.State{Status: resource.StatusCompleted},
+						CreatedAt: frozenTime,
+						UpdatedAt: frozenTime,
+					}, nil).
 					Once()
 
 				resourceRepo.EXPECT().
@@ -561,7 +571,7 @@ func TestService_ApplyAction(t *testing.T) {
 					}, nil).
 					Once()
 
-				return core.New(resourceRepo, returnModuleOrErr(nil), deadClock)
+				return core.New(resourceRepo, nil, deadClock)
 			},
 			urn:     "urn:odpf:entropy:mock:foo:bar",
 			action:  sampleAction,
@@ -585,10 +595,11 @@ func TestService_ApplyAction(t *testing.T) {
 						Kind:    "mock",
 						Project: "foo",
 						Name:    "bar",
+						State:   resource.State{Status: resource.StatusCompleted},
 					}, nil).
 					Once()
 
-				return core.New(resourceRepo, returnModuleOrErr(mod), deadClock)
+				return core.New(resourceRepo, mod, deadClock)
 			},
 			urn:     "urn:odpf:entropy:mock:foo:bar",
 			action:  sampleAction,
@@ -619,6 +630,7 @@ func TestService_ApplyAction(t *testing.T) {
 						Project:   "foo",
 						Name:      "bar",
 						CreatedAt: frozenTime,
+						State:     resource.State{Status: resource.StatusCompleted},
 					}, nil).
 					Once()
 				resourceRepo.EXPECT().
@@ -626,7 +638,7 @@ func TestService_ApplyAction(t *testing.T) {
 					Return(nil).
 					Once()
 
-				return core.New(resourceRepo, returnModuleOrErr(mod), deadClock)
+				return core.New(resourceRepo, mod, deadClock)
 			},
 			urn:    "urn:odpf:entropy:mock:foo:bar",
 			action: sampleAction,
@@ -650,7 +662,7 @@ func TestService_ApplyAction(t *testing.T) {
 			got, err := svc.ApplyAction(context.Background(), tt.urn, tt.action)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
-				assert.True(t, errors.Is(err, tt.wantErr))
+				assert.True(t, errors.Is(err, tt.wantErr), cmp.Diff(tt.want, err))
 			} else {
 				assert.NoError(t, err)
 			}

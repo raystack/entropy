@@ -9,27 +9,25 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-func New(resourceRepo resource.Repository, resolver moduleResolverFn, clockFn func() time.Time) *Service {
+func New(resourceRepo resource.Repository, rootModule module.Module, clockFn func() time.Time) *Service {
 	if clockFn == nil {
 		clockFn = time.Now
 	}
 	return &Service{
-		clock:              clockFn,
-		resolveModule:      resolver,
-		resourceRepository: resourceRepo,
+		clock:      clockFn,
+		repository: resourceRepo,
+		rootModule: rootModule,
 	}
 }
 
-type moduleResolverFn func(kind string) (module.Module, error)
-
 type Service struct {
-	clock              func() time.Time
-	resolveModule      moduleResolverFn
-	resourceRepository resource.Repository
+	clock      func() time.Time
+	repository resource.Repository
+	rootModule module.Module
 }
 
 func (s *Service) GetResource(ctx context.Context, urn string) (*resource.Resource, error) {
-	res, err := s.resourceRepository.GetByURN(ctx, urn)
+	res, err := s.repository.GetByURN(ctx, urn)
 	if err != nil {
 		if errors.Is(err, errors.ErrNotFound) {
 			return nil, errors.ErrNotFound.WithMsgf("resource with urn '%s' not found", urn)
@@ -48,7 +46,7 @@ func (s *Service) ListResources(ctx context.Context, project string, kind string
 		filter["project"] = project
 	}
 
-	resources, err := s.resourceRepository.List(ctx, filter)
+	resources, err := s.repository.List(ctx, filter)
 	if err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
@@ -65,7 +63,6 @@ func (s *Service) CreateResource(ctx context.Context, res resource.Resource) (*r
 		Name:   module.CreateAction,
 		Params: res.Spec.Configs,
 	}
-	res.Spec.Configs = nil
 
 	plannedRes, err := s.planChange(ctx, res, act)
 	if err != nil {
@@ -78,7 +75,7 @@ func (s *Service) CreateResource(ctx context.Context, res resource.Resource) (*r
 		return nil, err
 	}
 
-	if err := s.resourceRepository.Create(ctx, *plannedRes); err != nil {
+	if err := s.repository.Create(ctx, *plannedRes); err != nil {
 		if errors.Is(err, errors.ErrConflict) {
 			return nil, errors.ErrConflict.WithMsgf("resource with urn '%s' already exists", res.URN)
 		}
@@ -88,25 +85,31 @@ func (s *Service) CreateResource(ctx context.Context, res resource.Resource) (*r
 }
 
 func (s *Service) UpdateResource(ctx context.Context, urn string, newSpec resource.Spec) (*resource.Resource, error) {
+	if len(newSpec.Dependencies) != 0 {
+		return nil, errors.ErrUnsupported.WithMsgf("updating dependencies is not supported")
+	} else if len(newSpec.Configs) == 0 {
+		return nil, errors.ErrInvalid.WithMsgf("no config is being updated, nothing to do")
+	}
+
 	res, err := s.GetResource(ctx, urn)
 	if err != nil {
 		return nil, err
+	} else if !res.State.IsTerminal() {
+		return nil, errors.ErrInvalid.WithMsgf("resource must be in a terminal state to be updatable")
 	}
 
-	res.UpdatedAt = s.clock()
-	res.Spec = newSpec
-	res.State = resource.State{
-		Status:     resource.StatusPending,
-		Output:     res.State.Output,
-		ModuleData: res.State.ModuleData,
+	act := module.ActionRequest{
+		Name:   module.UpdateAction,
+		Params: newSpec.Configs,
 	}
 
-	plannedRes, err := s.planChange(ctx, *res, module.ActionRequest{Name: module.UpdateAction})
+	plannedRes, err := s.planChange(ctx, *res, act)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := s.resourceRepository.Update(ctx, *plannedRes); err != nil {
+	plannedRes.UpdatedAt = s.clock()
+	if err := s.repository.Update(ctx, *plannedRes); err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
 	return plannedRes, nil
@@ -116,11 +119,14 @@ func (s *Service) DeleteResource(ctx context.Context, urn string) error {
 	res, err := s.GetResource(ctx, urn)
 	if err != nil {
 		return err
+	} else if !res.State.IsTerminal() {
+		return errors.ErrInvalid.
+			WithMsgf("resource state '%s' is inappropriate for scheduling deletion", res.State.Status)
 	}
 
 	res.State.Status = resource.StatusDeleted
 	res.UpdatedAt = s.clock()
-	if err := s.resourceRepository.Update(ctx, *res); err != nil {
+	if err := s.repository.Update(ctx, *res); err != nil {
 		if errors.Is(err, errors.ErrNotFound) {
 			return nil
 		}
@@ -133,6 +139,8 @@ func (s *Service) ApplyAction(ctx context.Context, urn string, action module.Act
 	res, err := s.GetResource(ctx, urn)
 	if err != nil {
 		return nil, err
+	} else if !res.State.IsTerminal() {
+		return nil, errors.ErrInvalid.WithMsgf("resource must be in terminal state for applying actions")
 	}
 
 	plannedRes, err := s.planChange(ctx, *res, action)
@@ -142,7 +150,7 @@ func (s *Service) ApplyAction(ctx context.Context, urn string, action module.Act
 
 	plannedRes.CreatedAt = res.CreatedAt
 	plannedRes.UpdatedAt = s.clock()
-	if err := s.resourceRepository.Update(ctx, *plannedRes); err != nil {
+	if err := s.repository.Update(ctx, *plannedRes); err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
 	return plannedRes, nil
@@ -154,14 +162,7 @@ func (s *Service) GetLog(ctx context.Context, urn string, filter map[string]stri
 		return nil, err
 	}
 
-	m, err := s.resolveModule(res.Kind)
-	if err != nil {
-		return nil, errors.ErrInternal.
-			WithMsgf("failed to resolve module for kind '%s'", res.Kind).
-			WithCausef(err.Error())
-	}
-
-	moduleLogStream, supported := m.(module.Loggable)
+	moduleLogStream, supported := s.rootModule.(module.Loggable)
 	if !supported {
 		return nil, errors.ErrUnsupported.WithMsgf("log streaming not supported for kind '%s'", res.Kind)
 	}
@@ -174,20 +175,39 @@ func (s *Service) GetLog(ctx context.Context, urn string, filter map[string]stri
 	return moduleLogStream.Log(ctx, modSpec, filter)
 }
 
-func (s *Service) planChange(ctx context.Context, res resource.Resource, act module.ActionRequest) (*resource.Resource, error) {
-	modSpec := module.Spec{
-		Resource:     res,
-		Dependencies: map[string]resource.Output{},
-	}
-
-	m, err := s.resolveModule(res.Kind)
+func (s *Service) syncChange(ctx context.Context, res resource.Resource) error {
+	modSpec, err := s.generateModuleSpec(ctx, res)
 	if err != nil {
-		return nil, errors.ErrInvalid.
-			WithMsgf("failed to resolve module for kind '%s'", res.Kind).
-			WithCausef(err.Error())
+		return err
 	}
 
-	plannedRes, err := m.Plan(ctx, modSpec, act)
+	oldState := res.State.Clone()
+	newState, err := s.rootModule.Sync(ctx, *modSpec)
+	if err != nil {
+		if errors.Is(err, errors.ErrInvalid) {
+			return err
+		}
+		return errors.ErrInternal.WithMsgf("sync() failed").WithCausef(err.Error())
+	}
+
+	if oldState.InDeletion() && newState.IsTerminal() {
+		// TODO: clarify on behaviour when resource schedule for deletion reaches error.
+		return s.repository.Delete(ctx, res.URN)
+	}
+
+	res.UpdatedAt = time.Now()
+	res.State = *newState
+	return s.repository.Update(ctx, res)
+}
+
+func (s *Service) planChange(ctx context.Context, res resource.Resource, act module.ActionRequest) (*resource.Resource, error) {
+	modSpec, err := s.generateModuleSpec(ctx, res)
+	if err != nil {
+		return nil, err
+	}
+	res.Spec.Configs = map[string]interface{}{}
+
+	plannedRes, err := s.rootModule.Plan(ctx, *modSpec, act)
 	if err != nil {
 		if errors.Is(err, errors.ErrInvalid) {
 			return nil, err
@@ -196,4 +216,29 @@ func (s *Service) planChange(ctx context.Context, res resource.Resource, act mod
 	}
 
 	return plannedRes, nil
+}
+
+func (s *Service) generateModuleSpec(ctx context.Context, res resource.Resource) (*module.Spec, error) {
+	modSpec := module.Spec{
+		Resource:     res,
+		Dependencies: map[string]resource.Output{},
+	}
+
+	for key, resURN := range res.Spec.Dependencies {
+		d, err := s.GetResource(ctx, resURN)
+		if err != nil {
+			if errors.Is(err, errors.ErrNotFound) {
+				return nil, errors.ErrInvalid.
+					WithMsgf("dependency '%s' not found", resURN)
+			}
+			return nil, err
+		} else if d.State.Status != resource.StatusCompleted {
+			return nil, errors.ErrInvalid.
+				WithMsgf("dependency '%s' is in incomplete state (%s)", resURN, d.State.Status)
+		}
+
+		modSpec.Dependencies[key] = d.State.Output
+	}
+
+	return &modSpec, nil
 }
