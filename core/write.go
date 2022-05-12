@@ -95,7 +95,7 @@ func (s *Service) upsertResource(ctx context.Context,
 		plannedRes.UpdatedAt = s.clock()
 		if err := s.repository.Update(ctx, *plannedRes); err != nil {
 			if errors.Is(err, errors.ErrNotFound) {
-				return nil, errors.ErrNotFound.WithMsgf("resource with urn '%s' already exists", res.URN)
+				return nil, errors.ErrNotFound.WithMsgf("resource with urn '%s' does not exist", res.URN)
 			}
 			return nil, errors.ErrInternal.WithCausef(err.Error())
 		}
