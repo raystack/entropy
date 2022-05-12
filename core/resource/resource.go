@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"context"
 	"regexp"
 	"strings"
 	"time"
@@ -28,6 +29,18 @@ type Spec struct {
 	Configs      map[string]interface{} `json:"configs" bson:"configs"`
 	Dependencies map[string]string      `json:"dependencies" bson:"dependencies"`
 }
+
+type Repository interface {
+	GetByURN(ctx context.Context, urn string) (*Resource, error)
+	List(ctx context.Context, filter map[string]string) ([]*Resource, error)
+	Create(ctx context.Context, r Resource) error
+	Update(ctx context.Context, r Resource) error
+	Delete(ctx context.Context, urn string) error
+
+	DoPending(ctx context.Context, fn PendingHandler) error
+}
+
+type PendingHandler func(ctx context.Context, res Resource) (updated *Resource, delete bool, err error)
 
 func (res *Resource) Validate() error {
 	res.Kind = strings.TrimSpace(res.Kind)
