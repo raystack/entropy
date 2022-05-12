@@ -6,11 +6,7 @@ import (
 	"context"
 
 	"github.com/odpf/entropy/core/resource"
-)
-
-const (
-	CreateAction = "create"
-	UpdateAction = "update"
+	"github.com/odpf/entropy/pkg/errors"
 )
 
 // Module is responsible for achieving desired external system states based
@@ -28,29 +24,56 @@ type Module interface {
 	Sync(ctx context.Context, spec Spec) (*resource.State, error)
 }
 
+// Spec represents the context for Plan() or Sync() invocations.
+type Spec struct {
+	Resource     resource.Resource             `json:"resource"`
+	Dependencies map[string]ResolvedDependency `json:"dependencies"`
+}
+
+type ResolvedDependency struct {
+	Kind   string          `json:"kind"`
+	Output resource.Output `json:"output"`
+}
+
 // Descriptor is a module descriptor that represents supported actions, resource-kind
 // the module can operate on, etc.
 type Descriptor struct {
-	Kind    string       `json:"kind"`
-	Actions []ActionDesc `json:"actions"`
-	Module  Module       `json:"-"`
+	Kind         string            `json:"kind"`
+	Actions      []ActionDesc      `json:"actions"`
+	Dependencies map[string]string `json:"dependencies"`
+	Module       Module            `json:"-"`
 }
 
-// ActionDesc is a descriptor for an action supported by a module.
-type ActionDesc struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	ParamSchema string `json:"param_schema"`
+func (desc Descriptor) validateDependencies(dependencies map[string]ResolvedDependency) error {
+	for key, resolvedDep := range dependencies {
+		wantKind, found := desc.Dependencies[key]
+		if !found {
+			return errors.ErrInvalid.
+				WithMsgf("unwanted dependency '%s' (kind '%s')", key, resolvedDep.Kind)
+		} else if wantKind != resolvedDep.Kind {
+			return errors.ErrInvalid.
+				WithMsgf("value for '%s' must be from kind '%s', not '%s'", key, wantKind, resolvedDep.Kind)
+		}
+	}
+	return nil
 }
 
-// ActionRequest describes an invocation of action on module.
-type ActionRequest struct {
-	Name   string                 `json:"name"`
-	Params map[string]interface{} `json:"params"`
+func (desc Descriptor) validateActionReq(spec Spec, req ActionRequest) error {
+	kind := spec.Resource.Kind
+
+	actDesc := desc.findAction(req.Name)
+	if actDesc == nil {
+		return errors.ErrInvalid.WithMsgf("action '%s' is not valid on kind '%s'", req.Name, kind)
+	}
+
+	return actDesc.validateReq(req)
 }
 
-// Spec represents the context for Plan() or Sync() invocations.
-type Spec struct {
-	Resource     resource.Resource          `json:"resource"`
-	Dependencies map[string]resource.Output `json:"dependencies"`
+func (desc Descriptor) findAction(name string) *ActionDesc {
+	for _, action := range desc.Actions {
+		if action.Name == name {
+			return &action
+		}
+	}
+	return nil
 }

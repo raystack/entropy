@@ -4,6 +4,8 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/xeipuuv/gojsonschema"
+
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
 )
@@ -26,6 +28,18 @@ func (mr *Registry) Register(desc Descriptor) error {
 			WithMsgf("module '%s' is already registered for kind '%s'", reflect.TypeOf(v), desc.Kind)
 	}
 
+	for i, action := range desc.Actions {
+		loader := gojsonschema.NewStringLoader(action.ParamSchema)
+
+		schema, err := gojsonschema.NewSchema(loader)
+		if err != nil {
+			return errors.ErrInvalid.
+				WithMsgf("parameter schema for action '%s' is not valid", action.Name).
+				WithCausef(err.Error())
+		}
+		desc.Actions[i].schema = schema
+	}
+
 	mr.collection[desc.Kind] = desc
 	return nil
 }
@@ -33,29 +47,29 @@ func (mr *Registry) Register(desc Descriptor) error {
 func (mr *Registry) Plan(ctx context.Context, spec Spec, act ActionRequest) (*resource.Resource, error) {
 	kind := spec.Resource.Kind
 
-	_, found := mr.collection[kind]
+	desc, found := mr.collection[kind]
 	if !found {
 		return nil, errors.ErrInvalid.WithMsgf("kind '%s' is not valid", kind)
+	} else if err := desc.validateDependencies(spec.Dependencies); err != nil {
+		return nil, err
+	} else if err := desc.validateActionReq(spec, act); err != nil {
+		return nil, err
 	}
 
-	// TODO: perform action-request validation using the descriptor.
-	// TODO: dispatch Plan() to specific module.
-
-	return &spec.Resource, nil
+	return desc.Module.Plan(ctx, spec, act)
 }
 
 func (mr *Registry) Sync(ctx context.Context, spec Spec) (*resource.State, error) {
 	kind := spec.Resource.Kind
 
-	_, found := mr.collection[kind]
+	desc, found := mr.collection[kind]
 	if !found {
 		return nil, errors.ErrInvalid.WithMsgf("kind '%s' is not valid", kind)
+	} else if err := desc.validateDependencies(spec.Dependencies); err != nil {
+		return nil, err
 	}
 
-	// TODO: perform dependency validation using the descriptor.
-	// TODO: dispatch Sync() to specific module.
-
-	return &spec.Resource.State, nil
+	return desc.Module.Sync(ctx, spec)
 }
 
 func (mr *Registry) Log(ctx context.Context, spec Spec, filter map[string]string) (<-chan LogChunk, error) {

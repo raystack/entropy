@@ -33,7 +33,7 @@ type Service struct {
 func (s *Service) generateModuleSpec(ctx context.Context, res resource.Resource) (*module.Spec, error) {
 	modSpec := module.Spec{
 		Resource:     res,
-		Dependencies: map[string]resource.Output{},
+		Dependencies: map[string]module.ResolvedDependency{},
 	}
 
 	for key, resURN := range res.Spec.Dependencies {
@@ -49,7 +49,10 @@ func (s *Service) generateModuleSpec(ctx context.Context, res resource.Resource)
 				WithMsgf("dependency '%s' is in incomplete state (%s)", resURN, d.State.Status)
 		}
 
-		modSpec.Dependencies[key] = d.State.Output
+		modSpec.Dependencies[key] = module.ResolvedDependency{
+			Kind:   d.Kind,
+			Output: d.State.Output,
+		}
 	}
 
 	return &modSpec, nil

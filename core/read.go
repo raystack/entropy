@@ -53,7 +53,7 @@ func (s *Service) GetLog(ctx context.Context, urn string, filter map[string]stri
 
 	modSpec := module.Spec{
 		Resource:     *res,
-		Dependencies: map[string]resource.Output{},
+		Dependencies: map[string]module.ResolvedDependency{},
 	}
 
 	return moduleLogStream.Log(ctx, modSpec, filter)
