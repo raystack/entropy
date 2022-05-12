@@ -46,7 +46,7 @@ func TestService_GetResource(t *testing.T) {
 					GetByURN(mock.Anything, mock.Anything).
 					Return(nil, errors.ErrNotFound).
 					Once()
-				return core.New(repo, nil, nil)
+				return core.New(repo, nil, nil, nil)
 			},
 			urn:     "foo:bar:baz",
 			wantErr: errors.ErrNotFound,
@@ -59,7 +59,7 @@ func TestService_GetResource(t *testing.T) {
 					GetByURN(mock.Anything, mock.Anything).
 					Return(&sampleResource, nil).
 					Once()
-				return core.New(repo, nil, deadClock)
+				return core.New(repo, nil, deadClock, nil)
 			},
 			urn:     "foo:bar:baz",
 			want:    &sampleResource,
@@ -104,7 +104,7 @@ func TestService_ListResources(t *testing.T) {
 					List(mock.Anything, mock.Anything).
 					Return(nil, nil).
 					Once()
-				return core.New(repo, nil, deadClock)
+				return core.New(repo, nil, deadClock, nil)
 			},
 			want:    nil,
 			wantErr: nil,
@@ -117,7 +117,7 @@ func TestService_ListResources(t *testing.T) {
 					List(mock.Anything, mock.Anything).
 					Return(nil, errRepoFailure).
 					Once()
-				return core.New(repo, nil, deadClock)
+				return core.New(repo, nil, deadClock, nil)
 			},
 			want:    nil,
 			wantErr: errors.ErrInternal,
@@ -130,7 +130,7 @@ func TestService_ListResources(t *testing.T) {
 					List(mock.Anything, mock.Anything).
 					Return([]*resource.Resource{&sampleResource}, nil).
 					Once()
-				return core.New(repo, nil, deadClock)
+				return core.New(repo, nil, deadClock, nil)
 			},
 			want:    []resource.Resource{sampleResource},
 			wantErr: nil,
@@ -173,7 +173,7 @@ func TestService_CreateResource(t *testing.T) {
 					Plan(mock.Anything, mock.Anything, mock.Anything).
 					Return(nil, errSample).Once()
 
-				return core.New(nil, mod, deadClock)
+				return core.New(nil, mod, deadClock, nil)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -198,7 +198,7 @@ func TestService_CreateResource(t *testing.T) {
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(errSample).Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -223,7 +223,7 @@ func TestService_CreateResource(t *testing.T) {
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(errors.ErrConflict).Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -249,7 +249,7 @@ func TestService_CreateResource(t *testing.T) {
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(nil).Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -314,7 +314,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Return(nil, errors.ErrNotFound).
 					Once()
 
-				return core.New(resourceRepo, nil, deadClock)
+				return core.New(resourceRepo, nil, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
@@ -335,7 +335,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Return(&testResource, nil).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
@@ -360,7 +360,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Update(mock.Anything, mock.Anything).
 					Return(testErr)
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
@@ -394,7 +394,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Update(mock.Anything, mock.Anything).
 					Return(nil).Twice()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
@@ -450,7 +450,7 @@ func TestService_DeleteResource(t *testing.T) {
 					Return(nil, testErr).
 					Once()
 
-				return core.New(resourceRepo, nil, deadClock)
+				return core.New(resourceRepo, nil, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:foo:bar",
 			wantErr: testErr,
@@ -477,7 +477,7 @@ func TestService_DeleteResource(t *testing.T) {
 					Return(testErr).
 					Once()
 
-				return core.New(resourceRepo, nil, deadClock)
+				return core.New(resourceRepo, nil, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:foo:bar",
 			wantErr: errors.ErrInternal,
@@ -503,7 +503,7 @@ func TestService_DeleteResource(t *testing.T) {
 					Update(mock.Anything, mock.Anything).
 					Return(nil).
 					Once()
-				return core.New(resourceRepo, nil, deadClock)
+				return core.New(resourceRepo, nil, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:foo:bar",
 			wantErr: nil,
@@ -550,7 +550,7 @@ func TestService_ApplyAction(t *testing.T) {
 					Return(nil, errors.ErrNotFound).
 					Once()
 
-				return core.New(resourceRepo, nil, deadClock)
+				return core.New(resourceRepo, nil, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:foo:bar",
 			action:  sampleAction,
@@ -571,7 +571,7 @@ func TestService_ApplyAction(t *testing.T) {
 					}, nil).
 					Once()
 
-				return core.New(resourceRepo, nil, deadClock)
+				return core.New(resourceRepo, nil, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:foo:bar",
 			action:  sampleAction,
@@ -599,7 +599,7 @@ func TestService_ApplyAction(t *testing.T) {
 					}, nil).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:foo:bar",
 			action:  sampleAction,
@@ -638,7 +638,7 @@ func TestService_ApplyAction(t *testing.T) {
 					Return(nil).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:    "urn:odpf:entropy:mock:foo:bar",
 			action: sampleAction,

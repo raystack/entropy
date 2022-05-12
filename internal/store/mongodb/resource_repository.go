@@ -18,6 +18,14 @@ type ResourceRepository struct {
 	collection *mongo.Collection
 }
 
+func (rc *ResourceRepository) DoPending(ctx context.Context, fn resource.PendingHandler) error {
+	// TODO: fetch pending item from DB
+	// TODO: apply fn() to it.
+	// TODO: update/delete the resource as per return value.
+
+	return nil
+}
+
 func NewResourceRepository(db *mongo.Database) *ResourceRepository {
 	return &ResourceRepository{
 		collection: db.Collection(resourceRepoName),

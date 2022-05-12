@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
 	"github.com/odpf/entropy/core"
 	"github.com/odpf/entropy/core/module"
@@ -42,7 +43,7 @@ func runServer(c Config) error {
 		return err
 	}
 
-	loggerInstance, err := logger.New(&c.Log)
+	zapLog, err := logger.New(&c.Log)
 	if err != nil {
 		return err
 	}
@@ -54,6 +55,14 @@ func runServer(c Config) error {
 	resourceRepository := mongodb.NewResourceRepository(mongoStore)
 
 	moduleRegistry := module.NewRegistry()
-	resourceService := core.New(resourceRepository, moduleRegistry, time.Now)
-	return entropyserver.Serve(ctx, c.Service, loggerInstance, nr, resourceService)
+	resourceService := core.New(resourceRepository, moduleRegistry, time.Now, zapLog)
+
+	go func() {
+		if err := resourceService.RunSync(ctx); err != nil {
+			zapLog.Error("sync-loop exited with error", zap.Error(err))
+		}
+		zapLog.Info("sync-loop exited gracefully")
+	}()
+
+	return entropyserver.Serve(ctx, c.Service, zapLog, nr, resourceService)
 }

@@ -4,12 +4,14 @@ import (
 	"context"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-func New(resourceRepo resource.Repository, rootModule module.Module, clockFn func() time.Time) *Service {
+func New(resourceRepo resource.Repository, rootModule module.Module, clockFn func() time.Time, lg *zap.Logger) *Service {
 	if clockFn == nil {
 		clockFn = time.Now
 	}
@@ -21,6 +23,7 @@ func New(resourceRepo resource.Repository, rootModule module.Module, clockFn fun
 }
 
 type Service struct {
+	logger     *zap.Logger
 	clock      func() time.Time
 	repository resource.Repository
 	rootModule module.Module
@@ -173,31 +176,6 @@ func (s *Service) GetLog(ctx context.Context, urn string, filter map[string]stri
 	}
 
 	return moduleLogStream.Log(ctx, modSpec, filter)
-}
-
-func (s *Service) syncChange(ctx context.Context, res resource.Resource) error {
-	modSpec, err := s.generateModuleSpec(ctx, res)
-	if err != nil {
-		return err
-	}
-
-	oldState := res.State.Clone()
-	newState, err := s.rootModule.Sync(ctx, *modSpec)
-	if err != nil {
-		if errors.Is(err, errors.ErrInvalid) {
-			return err
-		}
-		return errors.ErrInternal.WithMsgf("sync() failed").WithCausef(err.Error())
-	}
-
-	if oldState.InDeletion() && newState.IsTerminal() {
-		// TODO: clarify on behaviour when resource schedule for deletion reaches error.
-		return s.repository.Delete(ctx, res.URN)
-	}
-
-	res.UpdatedAt = time.Now()
-	res.State = *newState
-	return s.repository.Update(ctx, res)
 }
 
 func (s *Service) planChange(ctx context.Context, res resource.Resource, act module.ActionRequest) (*resource.Resource, error) {

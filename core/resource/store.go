@@ -10,4 +10,8 @@ type Repository interface {
 	Create(ctx context.Context, r Resource) error
 	Update(ctx context.Context, r Resource) error
 	Delete(ctx context.Context, urn string) error
+
+	DoPending(ctx context.Context, fn PendingHandler) error
 }
+
+type PendingHandler func(ctx context.Context, res Resource) (updated *Resource, delete bool, err error)
