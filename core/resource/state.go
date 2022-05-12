@@ -11,9 +11,9 @@ const (
 )
 
 type State struct {
-	Status     string          `json:"status" bson:"status"`
-	Output     Output          `json:"output" bson:"output"`
-	ModuleData json.RawMessage `json:"module_data" bson:"module_data"`
+	Status     string          `json:"status"`
+	Output     Output          `json:"output"`
+	ModuleData json.RawMessage `json:"module_data,omitempty"`
 }
 
 // IsTerminal returns true if state is terminal. A terminal state is

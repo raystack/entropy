@@ -14,20 +14,20 @@ const urnSeparator = ":"
 var namingPattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]+$`)
 
 type Resource struct {
-	URN       string            `json:"urn" bson:"urn"`
-	Kind      string            `json:"kind" bson:"kind"`
-	Name      string            `json:"name" bson:"name"`
-	Project   string            `json:"project" bson:"project"`
-	Labels    map[string]string `json:"labels" bson:"labels"`
-	CreatedAt time.Time         `json:"created_at" bson:"created_at"`
-	UpdatedAt time.Time         `json:"updated_at" bson:"updated_at"`
-	Spec      Spec              `json:"spec" bson:"spec"`
-	State     State             `json:"state" bson:"state"`
+	URN       string            `json:"urn"`
+	Kind      string            `json:"kind"`
+	Name      string            `json:"name"`
+	Project   string            `json:"project"`
+	Labels    map[string]string `json:"labels"`
+	CreatedAt time.Time         `json:"created_at"`
+	UpdatedAt time.Time         `json:"updated_at"`
+	Spec      Spec              `json:"spec"`
+	State     State             `json:"state"`
 }
 
 type Spec struct {
-	Configs      map[string]interface{} `json:"configs" bson:"configs"`
-	Dependencies map[string]string      `json:"dependencies" bson:"dependencies"`
+	Configs      map[string]interface{} `json:"configs"`
+	Dependencies map[string]string      `json:"dependencies"`
 }
 
 type Repository interface {
