@@ -14,24 +14,7 @@ func (s *Service) CreateResource(ctx context.Context, res resource.Resource) (*r
 		Params: res.Spec.Configs,
 	}
 
-	plannedRes, err := s.planChange(ctx, res, act)
-	if err != nil {
-		return nil, err
-	}
-
-	plannedRes.CreatedAt = s.clock()
-	plannedRes.UpdatedAt = plannedRes.CreatedAt
-	if err := plannedRes.Validate(); err != nil {
-		return nil, err
-	}
-
-	if err := s.repository.Create(ctx, *plannedRes); err != nil {
-		if errors.Is(err, errors.ErrConflict) {
-			return nil, errors.ErrConflict.WithMsgf("resource with urn '%s' already exists", res.URN)
-		}
-		return nil, err
-	}
-	return plannedRes, nil
+	return s.upsertResource(ctx, res, act)
 }
 
 func (s *Service) UpdateResource(ctx context.Context, urn string, newSpec resource.Spec) (*resource.Resource, error) {
@@ -53,16 +36,7 @@ func (s *Service) UpdateResource(ctx context.Context, urn string, newSpec resour
 		Params: newSpec.Configs,
 	}
 
-	plannedRes, err := s.planChange(ctx, *res, act)
-	if err != nil {
-		return nil, err
-	}
-
-	plannedRes.UpdatedAt = s.clock()
-	if err := s.repository.Update(ctx, *plannedRes); err != nil {
-		return nil, errors.ErrInternal.WithCausef(err.Error())
-	}
-	return plannedRes, nil
+	return s.upsertResource(ctx, *res, act)
 }
 
 func (s *Service) DeleteResource(ctx context.Context, urn string) error {
@@ -78,10 +52,11 @@ func (s *Service) DeleteResource(ctx context.Context, urn string) error {
 	res.UpdatedAt = s.clock()
 	if err := s.repository.Update(ctx, *res); err != nil {
 		if errors.Is(err, errors.ErrNotFound) {
-			return nil
+			return nil // resource is already deleted.
 		}
 		return errors.ErrInternal.WithCausef(err.Error())
 	}
+
 	return nil
 }
 
@@ -93,16 +68,39 @@ func (s *Service) ApplyAction(ctx context.Context, urn string, action module.Act
 		return nil, errors.ErrInvalid.WithMsgf("resource must be in terminal state for applying actions")
 	}
 
-	plannedRes, err := s.planChange(ctx, *res, action)
+	return s.upsertResource(ctx, *res, action)
+}
+
+func (s *Service) upsertResource(ctx context.Context,
+	res resource.Resource, act module.ActionRequest) (*resource.Resource, error) {
+
+	plannedRes, err := s.planChange(ctx, res, act)
 	if err != nil {
+		return nil, err
+	} else if err := plannedRes.Validate(); err != nil {
 		return nil, err
 	}
 
-	plannedRes.CreatedAt = res.CreatedAt
-	plannedRes.UpdatedAt = s.clock()
-	if err := s.repository.Update(ctx, *plannedRes); err != nil {
-		return nil, errors.ErrInternal.WithCausef(err.Error())
+	if act.Name == module.CreateAction {
+		plannedRes.CreatedAt = s.clock()
+		plannedRes.UpdatedAt = plannedRes.CreatedAt
+		if err := s.repository.Create(ctx, *plannedRes); err != nil {
+			if errors.Is(err, errors.ErrConflict) {
+				return nil, errors.ErrConflict.WithMsgf("resource with urn '%s' already exists", res.URN)
+			}
+			return nil, err
+		}
+	} else {
+		plannedRes.CreatedAt = res.CreatedAt
+		plannedRes.UpdatedAt = s.clock()
+		if err := s.repository.Update(ctx, *plannedRes); err != nil {
+			if errors.Is(err, errors.ErrNotFound) {
+				return nil, errors.ErrNotFound.WithMsgf("resource with urn '%s' already exists", res.URN)
+			}
+			return nil, errors.ErrInternal.WithCausef(err.Error())
+		}
 	}
+
 	return plannedRes, nil
 }
 

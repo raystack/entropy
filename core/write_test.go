@@ -528,7 +528,7 @@ func TestService_ApplyAction(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-			assert.Equal(t, tt.want, got)
+			assert.Equalf(t, tt.want, got, cmp.Diff(tt.want, got))
 		})
 	}
 }

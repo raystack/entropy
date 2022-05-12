@@ -52,7 +52,7 @@ func (s *Service) syncChange(ctx context.Context,
 	// TODO: clarify on behaviour when resource schedule for deletion reaches error.
 	shouldDelete := oldState.InDeletion() && newState.IsTerminal()
 
-	res.UpdatedAt = time.Now()
+	res.UpdatedAt = s.clock()
 	res.State = *newState
 	return &res, shouldDelete, nil
 }
