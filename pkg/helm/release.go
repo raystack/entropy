@@ -47,8 +47,7 @@ type ReleaseConfig struct {
 	// Description - Add a custom description
 	Description string `json:"description" mapstructure:"description"`
 	// CreateNamespace - Create the namespace if it does not exist
-	CreateNamespace bool   `json:"create_namespace" mapstructure:"create_namespace" default:"false"`
-	State           string `json:"state" mapstructure:"state"`
+	CreateNamespace bool `json:"create_namespace" mapstructure:"create_namespace" default:"false"`
 }
 
 func DefaultReleaseConfig() *ReleaseConfig {
