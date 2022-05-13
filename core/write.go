@@ -9,12 +9,17 @@ import (
 )
 
 func (s *Service) CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error) {
+	if err := res.Validate(); err != nil {
+		return nil, err
+	}
+
 	act := module.ActionRequest{
 		Name:   module.CreateAction,
 		Params: res.Spec.Configs,
 	}
+	res.Spec.Configs = map[string]interface{}{}
 
-	return s.upsertResource(ctx, res, act)
+	return s.execAction(ctx, res, act)
 }
 
 func (s *Service) UpdateResource(ctx context.Context, urn string, newSpec resource.Spec) (*resource.Resource, error) {
@@ -31,7 +36,9 @@ func (s *Service) UpdateResource(ctx context.Context, urn string, newSpec resour
 }
 
 func (s *Service) DeleteResource(ctx context.Context, urn string) error {
-	_, actionErr := s.ApplyAction(ctx, urn, module.ActionRequest{Name: module.DeleteAction})
+	_, actionErr := s.ApplyAction(ctx, urn, module.ActionRequest{
+		Name: module.DeleteAction,
+	})
 	return actionErr
 }
 
@@ -44,16 +51,14 @@ func (s *Service) ApplyAction(ctx context.Context, urn string, act module.Action
 			WithMsgf("cannot perform '%s' on resource in '%s'", act.Name, res.State.Status)
 	}
 
-	return s.upsertResource(ctx, *res, act)
+	return s.execAction(ctx, *res, act)
 }
 
-func (s *Service) upsertResource(ctx context.Context,
+func (s *Service) execAction(ctx context.Context,
 	res resource.Resource, act module.ActionRequest) (*resource.Resource, error) {
 
 	plannedRes, err := s.planChange(ctx, res, act)
 	if err != nil {
-		return nil, err
-	} else if err := plannedRes.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -85,7 +90,6 @@ func (s *Service) planChange(ctx context.Context, res resource.Resource, act mod
 	if err != nil {
 		return nil, err
 	}
-	res.Spec.Configs = map[string]interface{}{}
 
 	plannedRes, err := s.rootModule.Plan(ctx, *modSpec, act)
 	if err != nil {
@@ -93,6 +97,8 @@ func (s *Service) planChange(ctx context.Context, res resource.Resource, act mod
 			return nil, err
 		}
 		return nil, errors.ErrInternal.WithMsgf("plan() failed").WithCausef(err.Error())
+	} else if err := plannedRes.Validate(); err != nil {
+		return nil, err
 	}
 
 	return plannedRes, nil
