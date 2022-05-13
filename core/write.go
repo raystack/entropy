@@ -24,51 +24,27 @@ func (s *Service) UpdateResource(ctx context.Context, urn string, newSpec resour
 		return nil, errors.ErrInvalid.WithMsgf("no config is being updated, nothing to do")
 	}
 
-	res, err := s.GetResource(ctx, urn)
-	if err != nil {
-		return nil, err
-	} else if !res.State.IsTerminal() {
-		return nil, errors.ErrInvalid.WithMsgf("resource must be in a terminal state to be updatable")
-	}
-
-	act := module.ActionRequest{
+	return s.ApplyAction(ctx, urn, module.ActionRequest{
 		Name:   module.UpdateAction,
 		Params: newSpec.Configs,
-	}
-
-	return s.upsertResource(ctx, *res, act)
+	})
 }
 
 func (s *Service) DeleteResource(ctx context.Context, urn string) error {
-	res, err := s.GetResource(ctx, urn)
-	if err != nil {
-		return err
-	} else if !res.State.IsTerminal() {
-		return errors.ErrInvalid.
-			WithMsgf("resource state '%s' is inappropriate for scheduling deletion", res.State.Status)
-	}
-
-	res.State.Status = resource.StatusDeleted
-	res.UpdatedAt = s.clock()
-	if err := s.repository.Update(ctx, *res); err != nil {
-		if errors.Is(err, errors.ErrNotFound) {
-			return nil // resource is already deleted.
-		}
-		return errors.ErrInternal.WithCausef(err.Error())
-	}
-
-	return nil
+	_, actionErr := s.ApplyAction(ctx, urn, module.ActionRequest{Name: module.DeleteAction})
+	return actionErr
 }
 
-func (s *Service) ApplyAction(ctx context.Context, urn string, action module.ActionRequest) (*resource.Resource, error) {
+func (s *Service) ApplyAction(ctx context.Context, urn string, act module.ActionRequest) (*resource.Resource, error) {
 	res, err := s.GetResource(ctx, urn)
 	if err != nil {
 		return nil, err
 	} else if !res.State.IsTerminal() {
-		return nil, errors.ErrInvalid.WithMsgf("resource must be in terminal state for applying actions")
+		return nil, errors.ErrInvalid.
+			WithMsgf("cannot perform '%s' on resource in '%s'", act.Name, res.State.Status)
 	}
 
-	return s.upsertResource(ctx, *res, action)
+	return s.upsertResource(ctx, *res, act)
 }
 
 func (s *Service) upsertResource(ctx context.Context,

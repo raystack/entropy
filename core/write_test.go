@@ -320,6 +320,19 @@ func TestService_DeleteResource(t *testing.T) {
 		{
 			name: "UpdateFailure",
 			setup: func(t *testing.T) *core.Service {
+				mod := &mocks.Module{}
+				mod.EXPECT().
+					Plan(mock.Anything, mock.Anything, mock.Anything).
+					Return(&resource.Resource{
+						URN:       "urn:odpf:entropy:mock:project:child",
+						Kind:      "mock",
+						Name:      "child",
+						Project:   "project",
+						State:     resource.State{Status: resource.StatusPending},
+						CreatedAt: frozenTime,
+						UpdatedAt: frozenTime,
+					}, nil).Once()
+
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
@@ -339,7 +352,7 @@ func TestService_DeleteResource(t *testing.T) {
 					Return(testErr).
 					Once()
 
-				return core.New(resourceRepo, nil, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:foo:bar",
 			wantErr: errors.ErrInternal,
@@ -347,6 +360,19 @@ func TestService_DeleteResource(t *testing.T) {
 		{
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
+				mod := &mocks.Module{}
+				mod.EXPECT().
+					Plan(mock.Anything, mock.Anything, mock.Anything).
+					Return(&resource.Resource{
+						URN:       "urn:odpf:entropy:mock:project:child",
+						Kind:      "mock",
+						Name:      "child",
+						Project:   "project",
+						State:     resource.State{Status: resource.StatusPending},
+						CreatedAt: frozenTime,
+						UpdatedAt: frozenTime,
+					}, nil).Once()
+
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
@@ -365,7 +391,7 @@ func TestService_DeleteResource(t *testing.T) {
 					Update(mock.Anything, mock.Anything).
 					Return(nil).
 					Once()
-				return core.New(resourceRepo, nil, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:foo:bar",
 			wantErr: nil,

@@ -11,6 +11,7 @@ import (
 const (
 	CreateAction = "create"
 	UpdateAction = "update"
+	DeleteAction = "delete"
 )
 
 // ActionRequest describes an invocation of action on module.

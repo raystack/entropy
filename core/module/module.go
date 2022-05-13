@@ -17,10 +17,12 @@ type Module interface {
 	// Plan SHOULD NOT have side effects on anything other than the resource.
 	Plan(ctx context.Context, spec Spec, act ActionRequest) (*resource.Resource, error)
 
-	// Sync is called repeatedly by Entropy core until the returned state has
-	// StatusCompleted. Module implementation is free to execute an action in
-	// a single Sync() call or split into multiple steps for better feedback
-	// to the end-user about the progress.
+	// Sync is called repeatedly by Entropy core until the returned state is
+	// a terminal status. Module implementation is free to execute an action
+	// in a single Sync() call or split into steps for better feedback to the
+	// end-user about the progress.
+	// Sync can return state in resource.StatusDeleted to indicate resource
+	// should be removed from the Entropy storage.
 	Sync(ctx context.Context, spec Spec) (*resource.State, error)
 }
 
