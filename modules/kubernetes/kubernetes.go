@@ -11,7 +11,7 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-var KubeModule = module.Descriptor{
+var Module = module.Descriptor{
 	Kind: "kubernetes",
 	Actions: []module.ActionDesc{
 		{

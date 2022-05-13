@@ -1,6 +1,8 @@
 package handlersv1
 
 import (
+	"encoding/json"
+
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -51,7 +53,12 @@ func resourceStateToProto(state resource.State) (*entropyv1beta1.ResourceState, 
 }
 
 func resourceSpecToProto(spec resource.Spec) *entropyv1beta1.ResourceSpec {
-	conf, err := structpb.NewValue([]byte(spec.Configs))
+	m := map[string]interface{}{}
+	if err := json.Unmarshal(spec.Configs, &m); err != nil {
+		return nil
+	}
+
+	conf, err := structpb.NewValue(m)
 	if err != nil {
 		return nil
 	}

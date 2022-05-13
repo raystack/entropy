@@ -14,6 +14,7 @@ import (
 	"github.com/odpf/entropy/core/module"
 	entropyserver "github.com/odpf/entropy/internal/server"
 	"github.com/odpf/entropy/internal/store/mongodb"
+	"github.com/odpf/entropy/modules/firehose"
 	"github.com/odpf/entropy/modules/kubernetes"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
@@ -50,13 +51,16 @@ func runServer(c Config) error {
 		return err
 	}
 
+	moduleRegistry := setupRegistry(zapLog,
+		kubernetes.Module,
+		firehose.Module,
+	)
+
 	mongoStore, err := mongodb.Connect(c.DB)
 	if err != nil {
 		return err
 	}
 	resourceRepository := mongodb.NewResourceRepository(mongoStore)
-
-	moduleRegistry := setupRegistry(zapLog, kubernetes.KubeModule)
 	resourceService := core.New(resourceRepository, moduleRegistry, time.Now, zapLog)
 
 	go func() {

@@ -85,7 +85,7 @@ func TestGetStreamingLogs(t *testing.T) {
 			client := NewClient(config)
 
 			ctx := new(context.Context)
-			_, err := client.StreamLogs(*ctx, tt.Namespace, filter, cfg)
+			_, err := client.StreamLogs(*ctx, tt.Namespace, filter)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 			} else {

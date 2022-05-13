@@ -2,18 +2,18 @@ package helm
 
 import (
 	"encoding/json"
-
 	"fmt"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/mcuadros/go-defaults"
-	"github.com/odpf/entropy/pkg/errors"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/release"
+
+	"github.com/odpf/entropy/pkg/errors"
 )
 
 var ErrReleaseNotFound = errors.New("release not found")
@@ -51,7 +51,7 @@ type ReleaseConfig struct {
 }
 
 func DefaultReleaseConfig() *ReleaseConfig {
-	defaultReleaseConfig := new(ReleaseConfig)
+	defaultReleaseConfig := &ReleaseConfig{}
 	defaults.SetDefaults(defaultReleaseConfig)
 	return defaultReleaseConfig
 }
@@ -301,7 +301,7 @@ func (p *Client) resourceReleaseExists(name string, namespace string) (bool, err
 }
 
 func (p *Client) getRelease(cfg *action.Configuration, name string) (*release.Release, error) {
-	//TODO: Add provider level lock to make sure no other operation is changing this release
+	// TODO: Add provider level lock to make sure no other operation is changing this release
 
 	get := action.NewGet(cfg)
 	res, err := get.Run(name)

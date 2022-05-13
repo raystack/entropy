@@ -4,27 +4,13 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
-	"github.com/mitchellh/mapstructure"
+
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/pkg/helm"
-	gjs "github.com/xeipuuv/gojsonschema"
+	"github.com/odpf/entropy/pkg/errors"
 )
 
 const (
-	releaseConfigString = "release_configs"
-	stateString         = "state"
-	replicaCountString  = "replicaCount"
-	releaseStateRunning = "RUNNING"
-	releaseStateStopped = "STOPPED"
-
-	providerKindKubernetes = "kubernetes"
-
-	defaultRepositoryString = "https://odpf.github.io/charts/"
-	defaultChartString      = "firehose"
-	defaultVersionString    = "0.1.1"
-	defaultNamespace        = "firehose"
-
 	ResetAction  = "reset"
 	StopAction   = "stop"
 	StartAction  = "start"
@@ -32,182 +18,95 @@ const (
 	DeleteAction = "delete"
 )
 
-//go:embed create_schema.json
-var createActionSchema string
-
-//go:embed create_schema.json
-var updateActionSchema string
-
-//go:embed scale_schema.json
-var scaleActionSchema string
-
-type Module struct {
-	schema *gjs.Schema
-}
-
-type moduleData struct {
-	PendingList []Pending
-}
-
-type Pending struct {
-	Name   string
-	Params map[string]interface{}
-}
-
-func (md moduleData) JSON() (json.RawMessage, error) {
-	bytes, err := json.Marshal(md)
-	return bytes, err
-}
-
-func (m *Module) Describe() module.Desc {
-	return module.Desc{
-		Kind: "firehose",
-		Actions: []module.ActionDesc{
-			{
-				Name:        "create",
-				Description: "creates firehose instance",
-				ParamSchema: createActionSchema,
-			},
-			{
-				Name:        "update",
-				Description: "updates firehose instance",
-				ParamSchema: updateActionSchema,
-			},
-			{
-				Name:        "scale",
-				Description: "scales firehose instance to given replicas",
-				ParamSchema: scaleActionSchema,
-			},
-			{
-				Name:        "start",
-				Description: "starts firehose instance",
-			},
-			{
-				Name:        "stop",
-				Description: "stops firehose instance",
-			},
+var Module = module.Descriptor{
+	Kind: "firehose",
+	Actions: []module.ActionDesc{
+		{
+			Name:        module.CreateAction,
+			Description: "creates firehose instance",
+			ParamSchema: createActionSchema,
 		},
-	}
+		{
+			Name:        ScaleAction,
+			Description: "creates firehose instance",
+			ParamSchema: scaleActionSchema,
+		},
+	},
+	Module: &firehoseModule{},
 }
 
-func (m *Module) Plan(ctx context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+type firehoseModule struct{}
+
+func (m *firehoseModule) Plan(ctx context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
 	r := spec.Resource
 
 	switch act.Name {
 	case module.CreateAction:
-		r.Spec.Configs = act.Params
+		return m.planCreate(ctx, spec, act)
 
-		moduleDataJson, err := moduleData{
-			PendingList: []Pending{
-				{Name: "helm_create"},
-			},
-		}.JSON()
-		if err != nil {
-			return nil, err
-		}
-
-		r.State = resource.State{
-			Status:     resource.StatusPending,
-			ModuleData: moduleDataJson,
-		}
-	case module.UpdateAction:
-		r.Spec.Configs = act.Params
-		moduleDataJson, err := moduleData{
-			PendingList: []Pending{
-				{Name: "helm_update"},
-			},
-		}.JSON()
-		if err != nil {
-			return nil, err
-		}
-
-		r.State = resource.State{
-			Status:     resource.StatusPending,
-			ModuleData: moduleDataJson,
-		}
-	case StopAction:
-		r.Spec.Configs[stateString] = releaseStateStopped
-		moduleDataJson, err := moduleData{
-			PendingList: []Pending{
-				{Name: "helm_update"},
-			},
-		}.JSON()
-		if err != nil {
-			return nil, err
-		}
-
-		r.State = resource.State{
-			Status:     resource.StatusPending,
-			ModuleData: moduleDataJson,
-		}
-	case StartAction:
-		r.Spec.Configs[stateString] = releaseStateRunning
-		moduleDataJson, err := moduleData{
-			PendingList: []Pending{
-				{Name: "helm_update"},
-			},
-		}.JSON()
-		if err != nil {
-			return nil, err
-		}
-
-		r.State = resource.State{
-			Status:     resource.StatusPending,
-			ModuleData: moduleDataJson,
-		}
 	case ScaleAction:
-		releaseConfig, err := getReleaseConfig(r)
-		if err != nil {
-			return nil, err
-		}
-		releaseConfig.Values[replicaCountString] = act.Params[replicaCountString]
-		moduleDataJson, err := moduleData{
-			PendingList: []Pending{
-				{Name: "helm_update"},
-			},
-		}.JSON()
-		if err != nil {
-			return nil, err
-		}
-
-		r.State = resource.State{
-			Status:     resource.StatusPending,
-			ModuleData: moduleDataJson,
-		}
-	case DeleteAction:
-		moduleDataJson, err := moduleData{
-			PendingList: []Pending{
-				{Name: "helm_delete"},
-			},
-		}.JSON()
-		if err != nil {
-			return nil, err
-		}
-
-		r.State = resource.State{
-			Status:     resource.StatusDeleted,
-			ModuleData: moduleDataJson,
-		}
+		return m.planScale(ctx, spec, act)
 	}
 
 	return &r, nil
 }
 
-func (m *Module) Sync(ctx context.Context, spec module.Spec) (*resource.Output, error) {
-	return &resource.Output{"foo": "bar"}, nil
+func (m *firehoseModule) Sync(ctx context.Context, spec module.Spec) (*resource.State, error) {
+	return &resource.State{
+		Status:     resource.StatusCompleted,
+		Output:     map[string]interface{}{"foo": "bar"},
+		ModuleData: nil,
+	}, nil
 }
 
-func getReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
-	releaseConfig := helm.DefaultReleaseConfig()
-	releaseConfig.Repository = defaultRepositoryString
-	releaseConfig.Chart = defaultChartString
-	releaseConfig.Version = defaultVersionString
-	releaseConfig.Namespace = defaultNamespace
-	releaseConfig.Name = r.URN
-	err := mapstructure.Decode(r.Spec.Configs[releaseConfigString], &releaseConfig)
-	if err != nil {
-		return releaseConfig, err
+func (m *firehoseModule) planCreate(ctx context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+	r := spec.Resource
+
+	var conf moduleConfig
+	if err := json.Unmarshal(act.Params, &conf); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
+	} else if err := conf.sanitiseAndValidate(); err != nil {
+		return nil, err
 	}
 
-	return releaseConfig, nil
+	r.Spec.Configs = conf.JSON()
+	r.State = resource.State{
+		Status: resource.StatusPending,
+		ModuleData: moduleData{
+			PendingSteps: []string{"helm_create"},
+		}.JSON(),
+	}
+
+	return &r, nil
+}
+
+func (m *firehoseModule) planScale(ctx context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+	var scaleParams struct {
+		Replicas int `json:"replicas"`
+	}
+	if err := json.Unmarshal(act.Params, &scaleParams); err != nil {
+		return nil, err
+	}
+
+	r := spec.Resource
+
+	var conf moduleConfig
+	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
+	}
+
+	conf.Replicas = scaleParams.Replicas
+	if err := conf.sanitiseAndValidate(); err != nil {
+		return nil, err
+	}
+
+	r.Spec.Configs = conf.JSON()
+	r.State = resource.State{
+		Status: resource.StatusPending,
+		ModuleData: moduleData{
+			PendingSteps: []string{"helm_update"},
+		}.JSON(),
+	}
+
+	return &r, nil
 }
