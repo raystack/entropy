@@ -48,7 +48,7 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 		return nil, generateRPCErr(err)
 	}
 
-	responseResource, err := resourceToProto(result)
+	responseResource, err := resourceToProto(*result)
 	if err != nil {
 		return nil, generateRPCErr(err)
 	}
@@ -69,7 +69,7 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 		return nil, generateRPCErr(err)
 	}
 
-	responseResource, err := resourceToProto(res)
+	responseResource, err := resourceToProto(*res)
 	if err != nil {
 		return nil, generateRPCErr(err)
 	}
@@ -85,7 +85,7 @@ func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1
 		return nil, generateRPCErr(err)
 	}
 
-	responseResource, err := resourceToProto(res)
+	responseResource, err := resourceToProto(*res)
 	if err != nil {
 		return nil, generateRPCErr(err)
 	}
@@ -103,7 +103,7 @@ func (server APIServer) ListResources(ctx context.Context, request *entropyv1bet
 
 	var responseResources []*entropyv1beta1.Resource
 	for _, res := range resources {
-		responseResource, err := resourceToProto(&res)
+		responseResource, err := resourceToProto(res)
 		if err != nil {
 			return nil, generateRPCErr(err)
 		}
@@ -135,7 +135,7 @@ func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1
 		return nil, generateRPCErr(err)
 	}
 
-	responseResource, err := resourceToProto(updatedRes)
+	responseResource, err := resourceToProto(*updatedRes)
 	if err != nil {
 		return nil, generateRPCErr(err)
 	}

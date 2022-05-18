@@ -9,7 +9,7 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-func resourceToProto(res *resource.Resource) (*entropyv1beta1.Resource, error) {
+func resourceToProto(res resource.Resource) (*entropyv1beta1.Resource, error) {
 	protoState, err := resourceStateToProto(res.State)
 	if err != nil {
 		return nil, err
