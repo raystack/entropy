@@ -8,7 +8,6 @@ linters:
     - cyclop
     - exhaustive
     - exhaustivestruct
-    - execinquery
     - funlen
     - gochecknoglobals
     - gocognit
