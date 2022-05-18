@@ -60,10 +60,13 @@ func runServer(c Config) error {
 	resourceService := core.New(resourceRepository, moduleRegistry, time.Now, zapLog)
 
 	go func() {
+		defer cancel()
+
 		if err := resourceService.RunSync(ctx); err != nil {
 			zapLog.Error("sync-loop exited with error", zap.Error(err))
+		} else {
+			zapLog.Info("sync-loop exited gracefully")
 		}
-		zapLog.Info("sync-loop exited gracefully")
 	}()
 
 	return entropyserver.Serve(ctx, c.Service, zapLog, nr, resourceService)
