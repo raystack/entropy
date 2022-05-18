@@ -1,5 +1,5 @@
 run:
-  timeout: 5m
+  timeout: 10m
 output:
   format: colored-line-number
 linters:
@@ -8,24 +8,25 @@ linters:
     - cyclop
     - exhaustive
     - exhaustivestruct
+    - exhaustruct
     - funlen
     - gochecknoglobals
-    - gocognit
     - gocyclo
     - godox
+    - gofumpt
     - golint
     - interfacer
     - lll
     - maintidx
     - ireturn
     - maligned
+    - nlreturn
     - nolintlint
     - prealloc
     - promlinter
     - scopelint
     - tagliatelle
     - testpackage
-    - paralleltest
     - varnamelen
     - wrapcheck
     - wsl
@@ -43,9 +44,6 @@ linters-settings:
     threshold: 100
   errcheck: # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
     check-type-assertions: true
-  exhaustruct:
-    exclude:
-      - 'cobra\.Command$'
   goconst:   
     min-len: 2 # Minimal length of string constant.
     min-occurrences: 2 # Minimum occurrences of constant string count to trigger issue.
@@ -54,9 +52,6 @@ linters-settings:
     numbers: true # Search also for duplicated numbers.
     min: 2 # Minimum value, only works with goconst.numbers
     max: 2 # Maximum value, only works with goconst.numbers
-  gofumpt:
-    lang-version: "1.17"
-    extra-rules: true
   revive:
     ignore-generated-header: true
     severity: warning
@@ -97,8 +92,6 @@ linters-settings:
       - '0o765'
       - '0o777'
     ignored-functions:
-      - 'survey.MinLength'
-      - 'survey.MaxLength'
       - 'args.Error'
       - 'strconv.ParseInt'
   gosimple:
@@ -135,7 +128,5 @@ issues:
     - path: _test\.go
       linters:
         - gocritic
-        - exhaustruct
-        - 
 severity:
   default-severity: error
