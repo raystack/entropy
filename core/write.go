@@ -17,7 +17,7 @@ func (s *Service) CreateResource(ctx context.Context, res resource.Resource) (*r
 		Name:   module.CreateAction,
 		Params: res.Spec.Configs,
 	}
-	res.Spec.Configs = map[string]interface{}{}
+	res.Spec.Configs = nil
 
 	return s.execAction(ctx, res, act)
 }

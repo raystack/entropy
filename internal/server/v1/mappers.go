@@ -51,7 +51,7 @@ func resourceStateToProto(state resource.State) (*entropyv1beta1.ResourceState, 
 }
 
 func resourceSpecToProto(spec resource.Spec) *entropyv1beta1.ResourceSpec {
-	conf, err := structpb.NewValue(spec.Configs)
+	conf, err := structpb.NewValue([]byte(spec.Configs))
 	if err != nil {
 		return nil
 	}
@@ -101,8 +101,13 @@ func resourceSpecFromProto(spec *entropyv1beta1.ResourceSpec) (*resource.Spec, e
 		deps[key] = value
 	}
 
+	confJSON, err := spec.GetConfigs().MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+
 	return &resource.Spec{
-		Configs:      spec.GetConfigs().GetStructValue().AsMap(),
+		Configs:      confJSON,
 		Dependencies: deps,
 	}, nil
 }

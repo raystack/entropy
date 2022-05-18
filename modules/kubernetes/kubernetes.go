@@ -2,19 +2,14 @@ package kubernetes
 
 import (
 	"context"
-	_ "embed"
-	"time"
+	"encoding/json"
 
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
 )
-
-//go:embed config_schema.json
-var configSchema string
 
 var KubeModule = module.Descriptor{
 	Kind: "kubernetes",
@@ -36,17 +31,12 @@ type kubeModule struct{}
 func (k *kubeModule) Plan(_ context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
 	res := spec.Resource
 
-	cfg := &rest.Config{
-		Host: act.Params["host"].(string),
-		TLSClientConfig: rest.TLSClientConfig{
-			CAData:   []byte(act.Params["ca_cert"].(string)),
-			KeyData:  []byte(act.Params["client_key"].(string)),
-			CertData: []byte(act.Params["client_cert"].(string)),
-		},
-		Timeout: time.Duration(act.Params["client_timeout"].(float64)) * time.Millisecond,
+	var conf moduleConf
+	if err := json.Unmarshal(act.Params, &conf); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid json config value").WithCausef(err.Error())
 	}
 
-	clientSet, err := kubernetes.NewForConfig(cfg)
+	clientSet, err := kubernetes.NewForConfig(conf.toRESTConfig())
 	if err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("failed to create client: %v", err)
 	}
@@ -62,18 +52,20 @@ func (k *kubeModule) Plan(_ context.Context, spec module.Spec, act module.Action
 	}
 	res.State = resource.State{
 		Status: resource.StatusCompleted,
-		Output: mergeMap(
-			act.Params,
-			map[string]interface{}{
-				"server_info": map[string]interface{}{
-					"platform":    info.Platform,
-					"major":       info.Major,
-					"minor":       info.Minor,
-					"git_version": info.GitVersion,
-					"git_commit":  info.GitCommit,
-				},
+		Output: map[string]interface{}{
+			"host":           conf.Host,
+			"ca_data":        conf.CertData,
+			"key_data":       conf.KeyData,
+			"cert_data":      conf.CertData,
+			"client_timeout": conf.ClientTimeout,
+			"server_info": map[string]interface{}{
+				"platform":    info.Platform,
+				"major":       info.Major,
+				"minor":       info.Minor,
+				"git_version": info.GitVersion,
+				"git_commit":  info.GitCommit,
 			},
-		),
+		},
 	}
 	return &res, nil
 }
@@ -84,15 +76,4 @@ func (k *kubeModule) Sync(_ context.Context, spec module.Spec) (*resource.State,
 		Output:     spec.Resource.State.Output,
 		ModuleData: nil,
 	}, nil
-}
-
-func mergeMap(m1, m2 map[string]interface{}) map[string]interface{} {
-	m := map[string]interface{}{}
-	for k, v := range m1 {
-		m[k] = v
-	}
-	for k, v := range m2 {
-		m[k] = v
-	}
-	return m
 }

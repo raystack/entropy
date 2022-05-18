@@ -125,9 +125,14 @@ func (server APIServer) DeleteResource(ctx context.Context, request *entropyv1be
 }
 
 func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1.ApplyActionRequest) (*entropyv1beta1.ApplyActionResponse, error) {
+	paramsJSON, err := request.GetParams().GetStructValue().MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+
 	action := module.ActionRequest{
 		Name:   request.GetAction(),
-		Params: request.GetParams().GetStructValue().AsMap(),
+		Params: paramsJSON,
 	}
 
 	updatedRes, err := server.resourceService.ApplyAction(ctx, request.GetUrn(), action)

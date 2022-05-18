@@ -6,13 +6,13 @@
     "host": {
       "type": "string"
     },
-    "client_key": {
+    "key_data": {
       "type": "string"
     },
-    "client_cert": {
+    "cert_data": {
       "type": "string"
     },
-    "ca_cert": {
+    "ca_data": {
       "type": "string"
     },
     "client_timeout": {
@@ -22,8 +22,8 @@
   },
   "required": [
     "host",
-    "ca_cert",
-    "client_cert",
-    "client_key"
+    "ca_data",
+    "cert_data",
+    "key_data"
   ]
 }

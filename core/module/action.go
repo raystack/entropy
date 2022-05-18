@@ -1,6 +1,7 @@
 package module
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/xeipuuv/gojsonschema"
@@ -16,8 +17,8 @@ const (
 
 // ActionRequest describes an invocation of action on module.
 type ActionRequest struct {
-	Name   string                 `json:"name"`
-	Params map[string]interface{} `json:"params"`
+	Name   string          `json:"name"`
+	Params json.RawMessage `json:"params"`
 }
 
 // ActionDesc is a descriptor for an action supported by a module.
@@ -30,7 +31,7 @@ type ActionDesc struct {
 }
 
 func (ad ActionDesc) validateReq(req ActionRequest) error {
-	result, err := ad.schema.Validate(gojsonschema.NewGoLoader(req.Params))
+	result, err := ad.schema.Validate(gojsonschema.NewBytesLoader(req.Params))
 	if err != nil {
 		return errors.ErrInternal.WithCausef(err.Error())
 	} else if !result.Valid() {
