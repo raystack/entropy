@@ -8,7 +8,7 @@ EXE=entropy
 
 .PHONY: all build clean
 
-all: clean test build
+all: clean test build format
 
 build:
 	mkdir -p ${BUILD_DIR}
@@ -29,3 +29,6 @@ test-coverage: test
 
 generate:
 	go generate ./...
+
+format:
+	gofumpt -l -w .
