@@ -179,7 +179,7 @@ func TestService_UpdateResource(t *testing.T) {
 				return core.New(resourceRepo, nil, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:project:child",
-			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
+			newSpec: resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
 			want:    nil,
 			wantErr: errors.ErrNotFound,
 		},
@@ -200,7 +200,7 @@ func TestService_UpdateResource(t *testing.T) {
 				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:project:child",
-			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
+			newSpec: resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
 			want:    nil,
 			wantErr: errors.ErrInvalid,
 		},
@@ -225,7 +225,7 @@ func TestService_UpdateResource(t *testing.T) {
 				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:project:child",
-			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
+			newSpec: resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
 			want:    nil,
 			wantErr: testErr,
 		},
@@ -241,7 +241,7 @@ func TestService_UpdateResource(t *testing.T) {
 						Name:    "child",
 						Project: "project",
 						Spec: resource.Spec{
-							Configs: map[string]interface{}{"foo": "bar"},
+							Configs: []byte(`{"foo": "bar"}`),
 						},
 						State:     resource.State{Status: resource.StatusPending},
 						CreatedAt: frozenTime,
@@ -259,7 +259,7 @@ func TestService_UpdateResource(t *testing.T) {
 				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:     "urn:odpf:entropy:mock:project:child",
-			newSpec: resource.Spec{Configs: map[string]interface{}{"foo": "bar"}},
+			newSpec: resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
 			want: &resource.Resource{
 				URN:       "urn:odpf:entropy:mock:project:child",
 				Kind:      "mock",
@@ -269,7 +269,7 @@ func TestService_UpdateResource(t *testing.T) {
 				UpdatedAt: frozenTime,
 				State:     resource.State{Status: resource.StatusPending},
 				Spec: resource.Spec{
-					Configs: map[string]interface{}{"foo": "bar"},
+					Configs: []byte(`{"foo": "bar"}`),
 				},
 			},
 			wantErr: nil,
@@ -418,7 +418,7 @@ func TestService_ApplyAction(t *testing.T) {
 
 	sampleAction := module.ActionRequest{
 		Name:   "scale",
-		Params: map[string]interface{}{"replicas": 8},
+		Params: []byte(`{"replicas": 8}`),
 	}
 
 	tests := []struct {

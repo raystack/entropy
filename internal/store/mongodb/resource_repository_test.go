@@ -45,7 +45,7 @@ func TestResourceRepository_Create(t *testing.T) {
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
 					Spec: resource.Spec{
-						Configs: map[string]interface{}{},
+						Configs: []byte("{}"),
 					},
 					State: resource.State{
 						Status: resource.StatusPending,
@@ -76,7 +76,7 @@ func TestResourceRepository_Create(t *testing.T) {
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
 					Spec: resource.Spec{
-						Configs: map[string]interface{}{},
+						Configs: []byte("{}"),
 					},
 					State: resource.State{
 						Status: resource.StatusPending,

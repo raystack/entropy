@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -24,9 +25,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 	t.Parallel()
 
 	createdAt := time.Now()
-	configsStructValue, _ := structpb.NewValue(map[string]interface{}{
-		"replicas": "10",
-	})
+	configsStructValue, _ := structpb.NewValue([]byte(`{"replicas": "10"}`))
 
 	tests := []struct {
 		name    string
@@ -97,9 +96,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 						CreatedAt: createdAt,
 						UpdatedAt: createdAt,
 						Spec: resource.Spec{
-							Configs: map[string]interface{}{
-								"replicas": "10",
-							},
+							Configs: []byte(`{"replicas": "10"}`),
 						},
 						State: resource.State{
 							Status: resource.StatusPending,
@@ -162,9 +159,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 
 	createdAt := time.Now()
 	updatedAt := createdAt.Add(1 * time.Minute)
-	configsStructValue, _ := structpb.NewValue(map[string]interface{}{
-		"replicas": "10",
-	})
+	configsStructValue, _ := structpb.NewValue([]byte(`{"replicas": "10"}`))
 
 	tests := []struct {
 		name    string
@@ -224,9 +219,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 						CreatedAt: createdAt,
 						UpdatedAt: updatedAt,
 						Spec: resource.Spec{
-							Configs: map[string]interface{}{
-								"replicas": "10",
-							},
+							Configs: []byte(`{"replicas": "10"}`),
 						},
 						State: resource.State{
 							Status: resource.StatusPending,
@@ -284,9 +277,9 @@ func TestAPIServer_GetResource(t *testing.T) {
 
 	createdAt := time.Now()
 	updatedAt := createdAt.Add(1 * time.Minute)
-	configsStructValue, _ := structpb.NewValue(map[string]interface{}{
-		"replicas": "10",
-	})
+
+	configsStructValue, err := structpb.NewValue([]byte(`{"replicas": "10"}`))
+	require.NoError(t, err)
 
 	tests := []struct {
 		name    string
@@ -325,9 +318,7 @@ func TestAPIServer_GetResource(t *testing.T) {
 						CreatedAt: createdAt,
 						UpdatedAt: updatedAt,
 						Spec: resource.Spec{
-							Configs: map[string]interface{}{
-								"replicas": "10",
-							},
+							Configs: []byte(`{"replicas": "10"}`),
 						},
 						State: resource.State{
 							Status: resource.StatusPending,
@@ -382,9 +373,7 @@ func TestAPIServer_ListResources(t *testing.T) {
 
 	createdAt := time.Now()
 	updatedAt := createdAt.Add(1 * time.Minute)
-	configsStructValue, _ := structpb.NewValue(map[string]interface{}{
-		"replicas": "10",
-	})
+	configsStructValue, _ := structpb.NewValue([]byte(`{"replicas": "10"}`))
 
 	tests := []struct {
 		name    string
@@ -426,9 +415,7 @@ func TestAPIServer_ListResources(t *testing.T) {
 							CreatedAt: createdAt,
 							UpdatedAt: updatedAt,
 							Spec: resource.Spec{
-								Configs: map[string]interface{}{
-									"replicas": "10",
-								},
+								Configs: []byte(`{"replicas": "10"}`),
 							},
 							State: resource.State{
 								Status: resource.StatusPending,
@@ -547,9 +534,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 
 	createdAt := time.Now()
 	updatedAt := createdAt.Add(1 * time.Minute)
-	configsStructValue, _ := structpb.NewValue(map[string]interface{}{
-		"replicas": "10",
-	})
+	configsStructValue, _ := structpb.NewValue([]byte(`{"replicas": "10"}`))
 
 	tests := []struct {
 		name    string
@@ -589,9 +574,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 						CreatedAt: createdAt,
 						UpdatedAt: updatedAt,
 						Spec: resource.Spec{
-							Configs: map[string]interface{}{
-								"replicas": "10",
-							},
+							Configs: []byte(`{"replicas": "10"}`),
 						},
 						State: resource.State{
 							Status: resource.StatusPending,

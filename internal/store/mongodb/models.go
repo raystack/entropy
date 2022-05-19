@@ -19,8 +19,8 @@ type resourceModel struct {
 }
 
 type specModel struct {
-	Configs      map[string]interface{} `bson:"configs"`
-	Dependencies map[string]string      `bson:"dependencies"`
+	Configs      []byte            `bson:"configs"`
+	Dependencies map[string]string `bson:"dependencies"`
 }
 
 type stateModel struct {

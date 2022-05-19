@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"encoding/json"
 	"regexp"
 	"strings"
 	"time"
@@ -26,8 +27,8 @@ type Resource struct {
 }
 
 type Spec struct {
-	Configs      map[string]interface{} `json:"configs"`
-	Dependencies map[string]string      `json:"dependencies"`
+	Configs      json.RawMessage   `json:"configs"`
+	Dependencies map[string]string `json:"dependencies"`
 }
 
 type Repository interface {
