@@ -3,20 +3,20 @@ package cli
 import (
 	"context"
 	"os/signal"
+	"reflect"
 	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
-	"github.com/odpf/entropy/core/provider"
-	"github.com/odpf/entropy/core/resource"
+	"github.com/odpf/entropy/core"
+	"github.com/odpf/entropy/core/module"
 	entropyserver "github.com/odpf/entropy/internal/server"
-	"github.com/odpf/entropy/internal/store/inmemory"
 	"github.com/odpf/entropy/internal/store/mongodb"
+	"github.com/odpf/entropy/modules/kubernetes"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
-	"github.com/odpf/entropy/plugins/modules/firehose"
-	"github.com/odpf/entropy/plugins/modules/log"
 )
 
 func cmdServe() *cobra.Command {
@@ -45,7 +45,7 @@ func runServer(c Config) error {
 		return err
 	}
 
-	loggerInstance, err := logger.New(&c.Log)
+	zapLog, err := logger.New(&c.Log)
 	if err != nil {
 		return err
 	}
@@ -54,23 +54,34 @@ func runServer(c Config) error {
 	if err != nil {
 		return err
 	}
-
 	resourceRepository := mongodb.NewResourceRepository(mongoStore)
-	providerRepository := mongodb.NewProviderRepository(mongoStore)
-	moduleRepository := inmemory.NewModuleRepository()
 
-	resourceService := resource.NewService(resourceRepository, moduleRepository, time.Now)
-	providerService := provider.NewService(providerRepository, time.Now)
+	moduleRegistry := setupRegistry(zapLog, kubernetes.KubeModule)
+	resourceService := core.New(resourceRepository, moduleRegistry, time.Now, zapLog)
 
-	err = moduleRepository.Register(log.New(loggerInstance))
-	if err != nil {
-		return err
+	go func() {
+		defer cancel()
+
+		if err := resourceService.RunSync(ctx); err != nil {
+			zapLog.Error("sync-loop exited with error", zap.Error(err))
+		} else {
+			zapLog.Info("sync-loop exited gracefully")
+		}
+	}()
+
+	return entropyserver.Serve(ctx, c.Service, zapLog, nr, resourceService)
+}
+
+func setupRegistry(logger *zap.Logger, modules ...module.Descriptor) *module.Registry {
+	moduleRegistry := module.NewRegistry()
+	for _, desc := range modules {
+		if err := moduleRegistry.Register(desc); err != nil {
+			logger.Fatal("failed to register module",
+				zap.String("module_kind", desc.Kind),
+				zap.String("go_type", reflect.TypeOf(desc.Module).String()),
+				zap.Error(err),
+			)
+		}
 	}
-
-	err = moduleRepository.Register(firehose.New(providerService))
-	if err != nil {
-		return err
-	}
-
-	return entropyserver.Serve(ctx, c.Service, loggerInstance, nr, resourceService, providerService)
+	return moduleRegistry
 }

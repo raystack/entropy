@@ -42,10 +42,5 @@ func runMigrations(ctx context.Context, cfg mongodb.Config) error {
 		return err
 	}
 
-	providerRepository := mongodb.NewProviderRepository(mongoStore)
-	if err = providerRepository.Migrate(ctx); err != nil {
-		return err
-	}
-
 	return nil
 }

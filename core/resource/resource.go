@@ -1,81 +1,65 @@
 package resource
 
-//go:generate mockery --name=Repository -r --case underscore --with-expecter --structname ResourceRepository --filename=resource_repository.go --output=./mocks
-
 import (
 	"context"
+	"encoding/json"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-const (
-	StatusUnspecified Status = "STATUS_UNSPECIFIED"
-	StatusPending     Status = "STATUS_PENDING"
-	StatusError       Status = "STATUS_ERROR"
-	StatusRunning     Status = "STATUS_RUNNING"
-	StatusStopped     Status = "STATUS_STOPPED"
-	StatusCompleted   Status = "STATUS_COMPLETED"
-)
+const urnSeparator = ":"
+
+var namingPattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]+$`)
+
+type Resource struct {
+	URN       string            `json:"urn"`
+	Kind      string            `json:"kind"`
+	Name      string            `json:"name"`
+	Project   string            `json:"project"`
+	Labels    map[string]string `json:"labels"`
+	CreatedAt time.Time         `json:"created_at"`
+	UpdatedAt time.Time         `json:"updated_at"`
+	Spec      Spec              `json:"spec"`
+	State     State             `json:"state"`
+}
+
+type Spec struct {
+	Configs      json.RawMessage   `json:"configs"`
+	Dependencies map[string]string `json:"dependencies"`
+}
 
 type Repository interface {
-	Migrate(ctx context.Context) error
-
 	GetByURN(ctx context.Context, urn string) (*Resource, error)
 	List(ctx context.Context, filter map[string]string) ([]*Resource, error)
 	Create(ctx context.Context, r Resource) error
 	Update(ctx context.Context, r Resource) error
 	Delete(ctx context.Context, urn string) error
+
+	DoPending(ctx context.Context, fn PendingHandler) error
 }
 
-type Resource struct {
-	URN       string                 `bson:"urn"`
-	Kind      string                 `bson:"kind"`
-	Name      string                 `bson:"name"`
-	Parent    string                 `bson:"parent"`
-	Status    Status                 `bson:"status"`
-	Labels    map[string]string      `bson:"labels"`
-	Configs   map[string]interface{} `bson:"configs"`
-	Providers []ProviderSelector     `bson:"providers"`
-	CreatedAt time.Time              `bson:"created_at"`
-	UpdatedAt time.Time              `bson:"updated_at"`
-}
-
-type Action struct {
-	Name   string
-	Params map[string]interface{}
-}
-
-type Status string
-
-type Updates struct {
-	Configs map[string]interface{}
-}
-
-type ProviderSelector struct {
-	URN    string `bson:"urn"`
-	Target string `bson:"target"`
-}
+type PendingHandler func(ctx context.Context, res Resource) (updated *Resource, delete bool, err error)
 
 func (res *Resource) Validate() error {
 	res.Kind = strings.TrimSpace(res.Kind)
 	res.Name = strings.TrimSpace(res.Name)
-	res.Parent = strings.TrimSpace(res.Parent)
-	res.Status = Status(strings.TrimSpace(string(res.Status)))
+	res.Project = strings.TrimSpace(res.Project)
 
-	if res.Kind == "" {
-		return errors.ErrInvalid.WithMsgf("resource must have a kind")
+	if !namingPattern.MatchString(res.Kind) {
+		return errors.ErrInvalid.WithMsgf("kind must match pattern '%s'", namingPattern)
 	}
-	if res.Name == "" {
-		return errors.ErrInvalid.WithMsgf("resource must have a name")
+	if !namingPattern.MatchString(res.Name) {
+		return errors.ErrInvalid.WithMsgf("name must match pattern '%s'", namingPattern)
 	}
-	if res.Parent == "" {
-		return errors.ErrInvalid.WithMsgf("resource must have a parent")
+	if !namingPattern.MatchString(res.Project) {
+		return errors.ErrInvalid.WithMsgf("project must match pattern '%s'", namingPattern)
 	}
 
-	if res.Status == "" {
-		res.Status = StatusUnspecified
+	if res.State.Status == "" {
+		res.State.Status = StatusUnspecified
 	}
 
 	res.URN = generateURN(*res)
@@ -83,13 +67,6 @@ func (res *Resource) Validate() error {
 }
 
 func generateURN(res Resource) string {
-	return strings.Join([]string{
-		sanitizeString(res.Parent),
-		sanitizeString(res.Name),
-		sanitizeString(res.Kind),
-	}, "-")
-}
-
-func sanitizeString(s string) string {
-	return strings.ReplaceAll(s, " ", "_")
+	var parts = []string{"urn", "odpf", "entropy", res.Kind, res.Project, res.Name}
+	return strings.Join(parts, urnSeparator)
 }

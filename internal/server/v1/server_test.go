@@ -5,11 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -22,9 +25,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 	t.Parallel()
 
 	createdAt := time.Now()
-	configsStructValue, _ := structpb.NewValue(map[string]interface{}{
-		"replicas": "10",
-	})
+	configsStructValue, _ := structpb.NewValue([]byte(`{"replicas": "10"}`))
 
 	tests := []struct {
 		name    string
@@ -40,15 +41,17 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				resourceService.EXPECT().
 					CreateResource(mock.Anything, mock.Anything).
 					Return(nil, errors.ErrConflict).Once()
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.CreateResourceRequest{
 				Resource: &entropyv1beta1.Resource{
 					Name:    "testname",
-					Parent:  "p-testdata-gl",
+					Project: "p-testdata-gl",
 					Kind:    "log",
-					Configs: configsStructValue,
-					Labels:  nil,
+					Spec: &entropyv1beta1.ResourceSpec{
+						Configs: configsStructValue,
+					},
+					Labels: nil,
 				},
 			},
 			want:    nil,
@@ -62,15 +65,17 @@ func TestAPIServer_CreateResource(t *testing.T) {
 					CreateResource(mock.Anything, mock.Anything).
 					Return(nil, errors.ErrInvalid).Once()
 
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.CreateResourceRequest{
 				Resource: &entropyv1beta1.Resource{
 					Name:    "testname",
-					Parent:  "p-testdata-gl",
+					Project: "p-testdata-gl",
 					Kind:    "log",
-					Configs: configsStructValue,
-					Labels:  nil,
+					Spec: &entropyv1beta1.ResourceSpec{
+						Configs: configsStructValue,
+					},
+					Labels: nil,
 				},
 			},
 			want:    nil,
@@ -83,41 +88,49 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				resourceService.EXPECT().
 					CreateResource(mock.Anything, mock.Anything).
 					Return(&resource.Resource{
-						URN:    "p-testdata-gl-testname-log",
-						Name:   "testname",
-						Parent: "p-testdata-gl",
-						Kind:   "log",
-						Configs: map[string]interface{}{
-							"replicas": "10",
-						},
+						URN:       "p-testdata-gl-testname-log",
+						Kind:      "log",
+						Name:      "testname",
+						Project:   "p-testdata-gl",
 						Labels:    nil,
-						Status:    resource.StatusPending,
 						CreatedAt: createdAt,
 						UpdatedAt: createdAt,
+						Spec: resource.Spec{
+							Configs: []byte(`{"replicas": "10"}`),
+						},
+						State: resource.State{
+							Status: resource.StatusPending,
+						},
 					}, nil).Once()
 
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.CreateResourceRequest{
 				Resource: &entropyv1beta1.Resource{
 					Name:    "testname",
-					Parent:  "p-testdata-gl",
+					Project: "p-testdata-gl",
 					Kind:    "log",
-					Configs: configsStructValue,
-					Labels:  nil,
+					Spec: &entropyv1beta1.ResourceSpec{
+						Configs: configsStructValue,
+					},
+					Labels: nil,
 				},
 			},
 			want: &entropyv1beta1.CreateResourceResponse{
 				Resource: &entropyv1beta1.Resource{
 					Urn:       "p-testdata-gl-testname-log",
-					Name:      "testname",
-					Parent:    "p-testdata-gl",
 					Kind:      "log",
-					Configs:   configsStructValue,
+					Name:      "testname",
 					Labels:    nil,
-					Status:    entropyv1beta1.Resource_STATUS_PENDING,
+					Project:   "p-testdata-gl",
 					CreatedAt: timestamppb.New(createdAt),
 					UpdatedAt: timestamppb.New(createdAt),
+					Spec: &entropyv1beta1.ResourceSpec{
+						Configs: configsStructValue,
+					},
+					State: &entropyv1beta1.ResourceState{
+						Status: entropyv1beta1.ResourceState_STATUS_PENDING,
+					},
 				},
 			},
 		},
@@ -131,8 +144,12 @@ func TestAPIServer_CreateResource(t *testing.T) {
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.Truef(t, errors.Is(err, tt.wantErr), "'%s' != '%s'", tt.wantErr, err)
+			} else {
+				assert.NoError(t, err)
+				if diff := cmp.Diff(tt.want, got, protocmp.Transform()); diff != "" {
+					t.Errorf("mismatch (-want +got):\n%s", diff)
+				}
 			}
-			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }
@@ -142,9 +159,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 
 	createdAt := time.Now()
 	updatedAt := createdAt.Add(1 * time.Minute)
-	configsStructValue, _ := structpb.NewValue(map[string]interface{}{
-		"replicas": "10",
-	})
+	configsStructValue, _ := structpb.NewValue([]byte(`{"replicas": "10"}`))
 
 	tests := []struct {
 		name    string
@@ -160,11 +175,13 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				resourceService.EXPECT().
 					UpdateResource(mock.Anything, "p-testdata-gl-testname-log", mock.Anything).
 					Return(nil, errors.ErrNotFound).Once()
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.UpdateResourceRequest{
-				Urn:     "p-testdata-gl-testname-log",
-				Configs: configsStructValue,
+				Urn: "p-testdata-gl-testname-log",
+				NewSpec: &entropyv1beta1.ResourceSpec{
+					Configs: configsStructValue,
+				},
 			},
 			want:    nil,
 			wantErr: status.Error(codes.NotFound, "requested entity not found"),
@@ -176,11 +193,13 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				resourceService.EXPECT().
 					UpdateResource(mock.Anything, "p-testdata-gl-testname-log", mock.Anything).
 					Return(nil, errors.ErrInvalid).Once()
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.UpdateResourceRequest{
-				Urn:     "p-testdata-gl-testname-log",
-				Configs: configsStructValue,
+				Urn: "p-testdata-gl-testname-log",
+				NewSpec: &entropyv1beta1.ResourceSpec{
+					Configs: configsStructValue,
+				},
 			},
 			want:    nil,
 			wantErr: status.Errorf(codes.InvalidArgument, "request is not valid"),
@@ -192,36 +211,44 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				resourceService.EXPECT().
 					UpdateResource(mock.Anything, "p-testdata-gl-testname-log", mock.Anything).
 					Return(&resource.Resource{
-						URN:    "p-testdata-gl-testname-log",
-						Name:   "testname",
-						Parent: "p-testdata-gl",
-						Kind:   "log",
-						Configs: map[string]interface{}{
-							"replicas": "10",
-						},
+						URN:       "p-testdata-gl-testname-log",
+						Kind:      "log",
+						Name:      "testname",
+						Project:   "p-testdata-gl",
 						Labels:    nil,
-						Status:    resource.StatusPending,
 						CreatedAt: createdAt,
 						UpdatedAt: updatedAt,
+						Spec: resource.Spec{
+							Configs: []byte(`{"replicas": "10"}`),
+						},
+						State: resource.State{
+							Status: resource.StatusPending,
+						},
 					}, nil).Once()
 
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.UpdateResourceRequest{
-				Urn:     "p-testdata-gl-testname-log",
-				Configs: configsStructValue,
+				Urn: "p-testdata-gl-testname-log",
+				NewSpec: &entropyv1beta1.ResourceSpec{
+					Configs: configsStructValue,
+				},
 			},
 			want: &entropyv1beta1.UpdateResourceResponse{
 				Resource: &entropyv1beta1.Resource{
 					Urn:       "p-testdata-gl-testname-log",
-					Name:      "testname",
-					Parent:    "p-testdata-gl",
 					Kind:      "log",
-					Configs:   configsStructValue,
+					Name:      "testname",
 					Labels:    nil,
-					Status:    entropyv1beta1.Resource_STATUS_PENDING,
+					Project:   "p-testdata-gl",
 					CreatedAt: timestamppb.New(createdAt),
 					UpdatedAt: timestamppb.New(updatedAt),
+					Spec: &entropyv1beta1.ResourceSpec{
+						Configs: configsStructValue,
+					},
+					State: &entropyv1beta1.ResourceState{
+						Status: entropyv1beta1.ResourceState_STATUS_PENDING,
+					},
 				},
 			},
 		},
@@ -235,8 +262,12 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))
+			} else {
+				assert.NoError(t, err)
+				if diff := cmp.Diff(tt.want, got, protocmp.Transform()); diff != "" {
+					t.Errorf("mismatch (-want +got):\n%s", diff)
+				}
 			}
-			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }
@@ -246,9 +277,9 @@ func TestAPIServer_GetResource(t *testing.T) {
 
 	createdAt := time.Now()
 	updatedAt := createdAt.Add(1 * time.Minute)
-	configsStructValue, _ := structpb.NewValue(map[string]interface{}{
-		"replicas": "10",
-	})
+
+	configsStructValue, err := structpb.NewValue([]byte(`{"replicas": "10"}`))
+	require.NoError(t, err)
 
 	tests := []struct {
 		name    string
@@ -264,7 +295,7 @@ func TestAPIServer_GetResource(t *testing.T) {
 				resourceService.EXPECT().
 					GetResource(mock.Anything, "p-testdata-gl-testname-log").
 					Return(nil, errors.ErrNotFound).Once()
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.GetResourceRequest{
 				Urn: "p-testdata-gl-testname-log",
@@ -279,20 +310,22 @@ func TestAPIServer_GetResource(t *testing.T) {
 				resourceService.EXPECT().
 					GetResource(mock.Anything, "p-testdata-gl-testname-log").
 					Return(&resource.Resource{
-						URN:    "p-testdata-gl-testname-log",
-						Name:   "testname",
-						Parent: "p-testdata-gl",
-						Kind:   "log",
-						Configs: map[string]interface{}{
-							"replicas": "10",
-						},
+						URN:       "p-testdata-gl-testname-log",
+						Kind:      "log",
+						Name:      "testname",
+						Project:   "p-testdata-gl",
 						Labels:    nil,
-						Status:    resource.StatusPending,
 						CreatedAt: createdAt,
 						UpdatedAt: updatedAt,
+						Spec: resource.Spec{
+							Configs: []byte(`{"replicas": "10"}`),
+						},
+						State: resource.State{
+							Status: resource.StatusPending,
+						},
 					}, nil).Once()
 
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.GetResourceRequest{
 				Urn: "p-testdata-gl-testname-log",
@@ -300,14 +333,18 @@ func TestAPIServer_GetResource(t *testing.T) {
 			want: &entropyv1beta1.GetResourceResponse{
 				Resource: &entropyv1beta1.Resource{
 					Urn:       "p-testdata-gl-testname-log",
-					Name:      "testname",
-					Parent:    "p-testdata-gl",
 					Kind:      "log",
-					Configs:   configsStructValue,
+					Name:      "testname",
 					Labels:    nil,
-					Status:    entropyv1beta1.Resource_STATUS_PENDING,
+					Project:   "p-testdata-gl",
 					CreatedAt: timestamppb.New(createdAt),
 					UpdatedAt: timestamppb.New(updatedAt),
+					Spec: &entropyv1beta1.ResourceSpec{
+						Configs: configsStructValue,
+					},
+					State: &entropyv1beta1.ResourceState{
+						Status: entropyv1beta1.ResourceState_STATUS_PENDING,
+					},
 				},
 			},
 		},
@@ -321,8 +358,12 @@ func TestAPIServer_GetResource(t *testing.T) {
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))
+			} else {
+				assert.NoError(t, err)
+				if diff := cmp.Diff(tt.want, got, protocmp.Transform()); diff != "" {
+					t.Errorf("mismatch (-want +got):\n%s", diff)
+				}
 			}
-			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }
@@ -332,9 +373,7 @@ func TestAPIServer_ListResources(t *testing.T) {
 
 	createdAt := time.Now()
 	updatedAt := createdAt.Add(1 * time.Minute)
-	configsStructValue, _ := structpb.NewValue(map[string]interface{}{
-		"replicas": "10",
-	})
+	configsStructValue, _ := structpb.NewValue([]byte(`{"replicas": "10"}`))
 
 	tests := []struct {
 		name    string
@@ -351,11 +390,11 @@ func TestAPIServer_ListResources(t *testing.T) {
 					ListResources(mock.Anything, mock.Anything, mock.Anything).
 					Return(nil, errors.New("failed")).Once()
 
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.ListResourcesRequest{
-				Parent: "p-testdata-gl",
-				Kind:   "log",
+				Project: "p-testdata-gl",
+				Kind:    "log",
 			},
 			want:    nil,
 			wantErr: status.Error(codes.Internal, "some unexpected error occurred"),
@@ -368,38 +407,44 @@ func TestAPIServer_ListResources(t *testing.T) {
 					ListResources(mock.Anything, mock.Anything, mock.Anything).
 					Return([]resource.Resource{
 						{
-							URN:    "p-testdata-gl-testname-log",
-							Name:   "testname",
-							Parent: "p-testdata-gl",
-							Kind:   "log",
-							Configs: map[string]interface{}{
-								"replicas": "10",
-							},
+							URN:       "p-testdata-gl-testname-log",
+							Kind:      "log",
+							Name:      "testname",
+							Project:   "p-testdata-gl",
 							Labels:    nil,
-							Status:    resource.StatusPending,
 							CreatedAt: createdAt,
 							UpdatedAt: updatedAt,
+							Spec: resource.Spec{
+								Configs: []byte(`{"replicas": "10"}`),
+							},
+							State: resource.State{
+								Status: resource.StatusPending,
+							},
 						},
 					}, nil).Once()
 
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.ListResourcesRequest{
-				Parent: "p-testdata-gl",
-				Kind:   "log",
+				Project: "p-testdata-gl",
+				Kind:    "log",
 			},
 			want: &entropyv1beta1.ListResourcesResponse{
 				Resources: []*entropyv1beta1.Resource{
 					{
 						Urn:       "p-testdata-gl-testname-log",
-						Name:      "testname",
-						Parent:    "p-testdata-gl",
 						Kind:      "log",
-						Configs:   configsStructValue,
+						Name:      "testname",
 						Labels:    nil,
-						Status:    entropyv1beta1.Resource_STATUS_PENDING,
+						Project:   "p-testdata-gl",
 						CreatedAt: timestamppb.New(createdAt),
 						UpdatedAt: timestamppb.New(updatedAt),
+						Spec: &entropyv1beta1.ResourceSpec{
+							Configs: configsStructValue,
+						},
+						State: &entropyv1beta1.ResourceState{
+							Status: entropyv1beta1.ResourceState_STATUS_PENDING,
+						},
 					},
 				},
 			},
@@ -414,8 +459,12 @@ func TestAPIServer_ListResources(t *testing.T) {
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.Truef(t, errors.Is(err, tt.wantErr), "'%s' != '%s'", tt.wantErr, err)
+			} else {
+				assert.NoError(t, err)
+				if diff := cmp.Diff(tt.want, got, protocmp.Transform()); diff != "" {
+					t.Errorf("mismatch (-want +got):\n%s", diff)
+				}
 			}
-			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }
@@ -437,7 +486,7 @@ func TestAPIServer_DeleteResource(t *testing.T) {
 				resourceService.EXPECT().
 					DeleteResource(mock.Anything, "p-testdata-gl-testname-log").
 					Return(errors.ErrNotFound).Once()
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.DeleteResourceRequest{
 				Urn: "p-testdata-gl-testname-log",
@@ -453,7 +502,7 @@ func TestAPIServer_DeleteResource(t *testing.T) {
 					DeleteResource(mock.Anything, "p-testdata-gl-testname-log").
 					Return(nil).Once()
 
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.DeleteResourceRequest{
 				Urn: "p-testdata-gl-testname-log",
@@ -470,8 +519,12 @@ func TestAPIServer_DeleteResource(t *testing.T) {
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.Truef(t, errors.Is(err, tt.wantErr), "'%s' != '%s'", tt.wantErr, err)
+			} else {
+				assert.NoError(t, err)
+				if diff := cmp.Diff(tt.want, got, protocmp.Transform()); diff != "" {
+					t.Errorf("mismatch (-want +got):\n%s", diff)
+				}
 			}
-			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }
@@ -481,9 +534,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 
 	createdAt := time.Now()
 	updatedAt := createdAt.Add(1 * time.Minute)
-	configsStructValue, _ := structpb.NewValue(map[string]interface{}{
-		"replicas": "10",
-	})
+	configsStructValue, _ := structpb.NewValue([]byte(`{"replicas": "10"}`))
 
 	tests := []struct {
 		name    string
@@ -499,7 +550,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 				resourceService.EXPECT().
 					ApplyAction(mock.Anything, "p-testdata-gl-testname-log", mock.Anything).
 					Return(nil, errors.ErrNotFound).Once()
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.ApplyActionRequest{
 				Urn:    "p-testdata-gl-testname-log",
@@ -515,20 +566,22 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 				resourceService.EXPECT().
 					ApplyAction(mock.Anything, "p-testdata-gl-testname-log", mock.Anything).
 					Return(&resource.Resource{
-						URN:    "p-testdata-gl-testname-log",
-						Name:   "testname",
-						Parent: "p-testdata-gl",
-						Kind:   "log",
-						Configs: map[string]interface{}{
-							"replicas": "10",
-						},
+						URN:       "p-testdata-gl-testname-log",
+						Kind:      "log",
+						Name:      "testname",
+						Project:   "p-testdata-gl",
 						Labels:    nil,
-						Status:    resource.StatusPending,
 						CreatedAt: createdAt,
 						UpdatedAt: updatedAt,
+						Spec: resource.Spec{
+							Configs: []byte(`{"replicas": "10"}`),
+						},
+						State: resource.State{
+							Status: resource.StatusPending,
+						},
 					}, nil).Once()
 
-				return NewApiServer(resourceService, nil)
+				return NewApiServer(resourceService)
 			},
 			request: &entropyv1beta1.ApplyActionRequest{
 				Urn:    "p-testdata-gl-testname-log",
@@ -538,14 +591,18 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 			want: &entropyv1beta1.ApplyActionResponse{
 				Resource: &entropyv1beta1.Resource{
 					Urn:       "p-testdata-gl-testname-log",
-					Name:      "testname",
-					Parent:    "p-testdata-gl",
 					Kind:      "log",
-					Configs:   configsStructValue,
+					Name:      "testname",
 					Labels:    nil,
-					Status:    entropyv1beta1.Resource_STATUS_PENDING,
+					Project:   "p-testdata-gl",
 					CreatedAt: timestamppb.New(createdAt),
 					UpdatedAt: timestamppb.New(updatedAt),
+					Spec: &entropyv1beta1.ResourceSpec{
+						Configs: configsStructValue,
+					},
+					State: &entropyv1beta1.ResourceState{
+						Status: entropyv1beta1.ResourceState_STATUS_PENDING,
+					},
 				},
 			},
 		},
@@ -559,8 +616,12 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))
+			} else {
+				assert.NoError(t, err)
+				if diff := cmp.Diff(tt.want, got, protocmp.Transform()); diff != "" {
+					t.Errorf("mismatch (-want +got):\n%s", diff)
+				}
 			}
-			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }

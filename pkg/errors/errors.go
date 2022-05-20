@@ -81,6 +81,16 @@ func Errorf(format string, args ...interface{}) error {
 // This function is a convenience shortcut for the errors.Is().
 func Is(err, target error) bool { return errors.Is(err, target) }
 
+// OneOf checks if the error is one of the 'others'.
+func OneOf(err error, others ...error) bool {
+	for _, other := range others {
+		if errors.Is(err, other) {
+			return true
+		}
+	}
+	return false
+}
+
 // New returns a new error equivalent to ErrInternal.
 // This function is a convenience shortcut for the errors.New().
 func New(msg string) error { return errors.New(msg) }

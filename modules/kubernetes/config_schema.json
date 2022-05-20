@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "host": {
+      "type": "string"
+    },
+    "key_data": {
+      "type": "string"
+    },
+    "cert_data": {
+      "type": "string"
+    },
+    "ca_data": {
+      "type": "string"
+    },
+    "client_timeout": {
+      "type": "number",
+      "default": 5000
+    }
+  },
+  "required": [
+    "host",
+    "ca_data",
+    "cert_data",
+    "key_data"
+  ]
+}

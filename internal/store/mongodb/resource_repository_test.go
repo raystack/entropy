@@ -38,14 +38,18 @@ func TestResourceRepository_Create(t *testing.T) {
 			args: func(mt *mtest.T) args {
 				return args{resource.Resource{
 					URN:       "p-testdata-gl-testname-log",
-					Name:      "testname",
-					Parent:    "p-testdata-gl",
 					Kind:      "log",
-					Configs:   map[string]interface{}{},
+					Name:      "testname",
+					Project:   "p-testdata-gl",
 					Labels:    map[string]string{},
-					Status:    resource.StatusPending,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
+					Spec: resource.Spec{
+						Configs: []byte("{}"),
+					},
+					State: resource.State{
+						Status: resource.StatusPending,
+					},
 				}}
 			},
 			wantErr: nil,
@@ -66,13 +70,17 @@ func TestResourceRepository_Create(t *testing.T) {
 				return args{resource.Resource{
 					URN:       "p-testdata-gl-testname-log",
 					Name:      "testname",
-					Parent:    "p-testdata-gl",
 					Kind:      "log",
-					Configs:   map[string]interface{}{},
+					Project:   "p-testdata-gl",
 					Labels:    map[string]string{},
-					Status:    resource.StatusPending,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
+					Spec: resource.Spec{
+						Configs: []byte("{}"),
+					},
+					State: resource.State{
+						Status: resource.StatusPending,
+					},
 				}}
 			},
 			wantErr: errors.ErrConflict,
