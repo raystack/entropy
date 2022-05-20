@@ -2,14 +2,20 @@ package kubernetes
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 
+	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
+	"github.com/odpf/entropy/pkg/kube"
 )
+
+//go:embed config_schema.json
+var configSchema string
 
 var Module = module.Descriptor{
 	Kind: "kubernetes",
@@ -31,12 +37,12 @@ type kubeModule struct{}
 func (k *kubeModule) Plan(_ context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
 	res := spec.Resource
 
-	var conf moduleConf
+	var conf kube.Config
 	if err := json.Unmarshal(act.Params, &conf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid json config value").WithCausef(err.Error())
 	}
 
-	clientSet, err := kubernetes.NewForConfig(conf.toRESTConfig())
+	clientSet, err := kubernetes.NewForConfig(conf.RESTConfig())
 	if err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("failed to create client: %v", err)
 	}
@@ -52,20 +58,10 @@ func (k *kubeModule) Plan(_ context.Context, spec module.Spec, act module.Action
 	}
 	res.State = resource.State{
 		Status: resource.StatusCompleted,
-		Output: map[string]interface{}{
-			"host":           conf.Host,
-			"ca_data":        conf.CertData,
-			"key_data":       conf.KeyData,
-			"cert_data":      conf.CertData,
-			"client_timeout": conf.ClientTimeout,
-			"server_info": map[string]interface{}{
-				"platform":    info.Platform,
-				"major":       info.Major,
-				"minor":       info.Minor,
-				"git_version": info.GitVersion,
-				"git_commit":  info.GitCommit,
-			},
-		},
+		Output: Output{
+			Configs:    conf,
+			ServerInfo: *info,
+		}.JSON(),
 	}
 	return &res, nil
 }
@@ -76,4 +72,17 @@ func (k *kubeModule) Sync(_ context.Context, spec module.Spec) (*resource.State,
 		Output:     spec.Resource.State.Output,
 		ModuleData: nil,
 	}, nil
+}
+
+type Output struct {
+	Configs    kube.Config  `json:"configs"`
+	ServerInfo version.Info `json:"server_info"`
+}
+
+func (out Output) JSON() []byte {
+	b, err := json.Marshal(out)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }

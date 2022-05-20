@@ -6,24 +6,29 @@
     "host": {
       "type": "string"
     },
-    "key_data": {
+    "insecure": {
+      "type": "boolean",
+      "default": false
+    },
+    "token": {
+      "type": "string",
+      "default": ""
+    },
+    "client_key": {
       "type": "string"
     },
-    "cert_data": {
+    "client_certificate": {
       "type": "string"
     },
-    "ca_data": {
+    "cluster_ca_certificate": {
       "type": "string"
     },
-    "client_timeout": {
+    "timeout": {
       "type": "number",
       "default": 5000
     }
   },
   "required": [
-    "host",
-    "ca_data",
-    "cert_data",
-    "key_data"
+    "host"
   ]
 }

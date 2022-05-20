@@ -6,6 +6,7 @@ import (
 	"context"
 
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -184,6 +185,7 @@ func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream ent
 
 func generateRPCErr(e error) error {
 	err := errors.E(e)
+	zap.L().Error("failed", zap.Error(err))
 
 	var code codes.Code
 	switch {

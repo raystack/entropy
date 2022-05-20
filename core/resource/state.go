@@ -12,7 +12,7 @@ const (
 
 type State struct {
 	Status     string          `json:"status"`
-	Output     Output          `json:"output"`
+	Output     json.RawMessage `json:"output"`
 	ModuleData json.RawMessage `json:"module_data,omitempty"`
 }
 
@@ -27,9 +27,12 @@ func (s State) IsTerminal() bool {
 func (s State) InDeletion() bool { return s.Status == StatusDeleted }
 
 func (s State) Clone() State {
+	output := make([]byte, len(s.Output))
+	copy(output, s.Output)
+
 	newState := State{
 		Status:     s.Status,
-		Output:     map[string]interface{}{},
+		Output:     output,
 		ModuleData: make([]byte, len(s.ModuleData)),
 	}
 	copy(newState.ModuleData, s.ModuleData)

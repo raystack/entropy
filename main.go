@@ -1,7 +1,16 @@
 package main
 
-import "github.com/odpf/entropy/cli"
+import (
+	"context"
+	"os/signal"
+	"syscall"
+
+	"github.com/odpf/entropy/cli"
+)
 
 func main() {
-	cli.Execute()
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	cli.Execute(ctx)
 }

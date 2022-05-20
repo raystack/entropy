@@ -7,7 +7,9 @@ import (
 
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
+	"github.com/odpf/entropy/modules/kubernetes"
 	"github.com/odpf/entropy/pkg/errors"
+	"github.com/odpf/entropy/pkg/helm"
 )
 
 const (
@@ -18,8 +20,16 @@ const (
 	DeleteAction = "delete"
 )
 
+const (
+	helmCreate = "helm_create"
+	helmUpdate = "helm_update"
+)
+
 var Module = module.Descriptor{
 	Kind: "firehose",
+	Dependencies: map[string]string{
+		"kube_cluster": "kubernetes",
+	},
 	Actions: []module.ActionDesc{
 		{
 			Name:        module.CreateAction,
@@ -27,8 +37,13 @@ var Module = module.Descriptor{
 			ParamSchema: createActionSchema,
 		},
 		{
+			Name:        module.UpdateAction,
+			Description: "Updates an existing firehose instance",
+			ParamSchema: createActionSchema,
+		},
+		{
 			Name:        ScaleAction,
-			Description: "creates firehose instance",
+			Description: "Scales existing firehose instance up/down",
 			ParamSchema: scaleActionSchema,
 		},
 	},
@@ -44,6 +59,9 @@ func (m *firehoseModule) Plan(ctx context.Context, spec module.Spec, act module.
 	case module.CreateAction:
 		return m.planCreate(ctx, spec, act)
 
+	case module.UpdateAction:
+		return m.planUpdate(ctx, spec, act)
+
 	case ScaleAction:
 		return m.planScale(ctx, spec, act)
 	}
@@ -52,31 +70,103 @@ func (m *firehoseModule) Plan(ctx context.Context, spec module.Spec, act module.
 }
 
 func (m *firehoseModule) Sync(ctx context.Context, spec module.Spec) (*resource.State, error) {
+	r := spec.Resource
+
+	var conf moduleConfig
+	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
+	}
+
+	var data moduleData
+	if err := json.Unmarshal(r.State.ModuleData, &data); err != nil {
+		return nil, err
+	}
+
+	if len(data.PendingSteps) == 0 {
+		return &resource.State{
+			Status:     resource.StatusCompleted,
+			Output:     r.State.Output,
+			ModuleData: r.State.ModuleData,
+		}, nil
+	}
+
+	pendingStep := data.PendingSteps[0]
+	data.PendingSteps = data.PendingSteps[1:]
+
+	var kubeOut kubernetes.Output
+	if err := json.Unmarshal(spec.Dependencies["kube_cluster"].Output, &kubeOut); err != nil {
+		return nil, err
+	}
+
+	helmCl := helm.NewClient(&helm.Config{
+		Kubernetes: kubeOut.Configs,
+	})
+
+	var helmErr error
+	if pendingStep == helmCreate {
+		_, helmErr = helmCl.Create(&conf.ReleaseConfigs)
+	} else if pendingStep == helmUpdate {
+		_, helmErr = helmCl.Update(&conf.ReleaseConfigs)
+	}
+
+	if helmErr != nil {
+		return nil, helmErr
+	}
+
 	return &resource.State{
-		Status:     resource.StatusCompleted,
-		Output:     map[string]interface{}{"foo": "bar"},
-		ModuleData: nil,
+		Status: resource.StatusCompleted,
+		Output: Output{
+			// TODO: populate the outputs as required.
+		}.JSON(),
+		ModuleData: data.JSON(),
 	}, nil
 }
 
 func (m *firehoseModule) planCreate(ctx context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
 	r := spec.Resource
 
-	var conf moduleConfig
-	if err := json.Unmarshal(act.Params, &conf); err != nil {
+	var reqConf moduleConfig
+	if err := json.Unmarshal(act.Params, &reqConf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
-	} else if err := conf.sanitiseAndValidate(); err != nil {
+	} else if err := reqConf.sanitiseAndValidate(r); err != nil {
 		return nil, err
 	}
 
-	r.Spec.Configs = conf.JSON()
+	r.Spec.Configs = reqConf.JSON()
 	r.State = resource.State{
 		Status: resource.StatusPending,
 		ModuleData: moduleData{
-			PendingSteps: []string{"helm_create"},
+			PendingSteps: []string{helmCreate},
 		}.JSON(),
 	}
+	return &r, nil
+}
 
+func (m *firehoseModule) planUpdate(ctx context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+	r := spec.Resource
+
+	var reqConf moduleConfig
+	if err := json.Unmarshal(act.Params, &reqConf); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
+	}
+
+	var curConf moduleConfig
+	if err := json.Unmarshal(r.Spec.Configs, &curConf); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
+	}
+
+	curConf.merge(reqConf)
+	if err := curConf.sanitiseAndValidate(r); err != nil {
+		return nil, err
+	}
+
+	r.Spec.Configs = curConf.JSON()
+	r.State = resource.State{
+		Status: resource.StatusPending,
+		ModuleData: moduleData{
+			PendingSteps: []string{helmUpdate},
+		}.JSON(),
+	}
 	return &r, nil
 }
 
@@ -85,7 +175,7 @@ func (m *firehoseModule) planScale(ctx context.Context, spec module.Spec, act mo
 		Replicas int `json:"replicas"`
 	}
 	if err := json.Unmarshal(act.Params, &scaleParams); err != nil {
-		return nil, err
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 	}
 
 	r := spec.Resource
@@ -95,8 +185,8 @@ func (m *firehoseModule) planScale(ctx context.Context, spec module.Spec, act mo
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 	}
 
-	conf.Replicas = scaleParams.Replicas
-	if err := conf.sanitiseAndValidate(); err != nil {
+	conf.ReleaseConfigs.Values["replicaCount"] = scaleParams.Replicas
+	if err := conf.sanitiseAndValidate(r); err != nil {
 		return nil, err
 	}
 
@@ -104,7 +194,7 @@ func (m *firehoseModule) planScale(ctx context.Context, spec module.Spec, act mo
 	r.State = resource.State{
 		Status: resource.StatusPending,
 		ModuleData: moduleData{
-			PendingSteps: []string{"helm_update"},
+			PendingSteps: []string{helmUpdate},
 		}.JSON(),
 	}
 

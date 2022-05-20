@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"context"
+
 	"github.com/odpf/salt/cmdx"
 	"github.com/spf13/cobra"
 )
@@ -12,11 +14,11 @@ and improve modern cloud applications and infrastructure using
 familiar languages, tools, and engineering practices.`,
 }
 
-func Execute() {
+func Execute(ctx context.Context) {
 	rootCmd.PersistentFlags().StringP(configFlag, "c", "", "Override config file")
 	rootCmd.AddCommand(
-		cmdServe(),
-		cmdMigrate(),
+		cmdServe(ctx),
+		cmdMigrate(ctx),
 		cmdVersion(),
 		cmdShowConfigs(),
 	)

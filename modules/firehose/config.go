@@ -3,6 +3,7 @@ package firehose
 import (
 	_ "embed"
 	"encoding/json"
+	"fmt"
 
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/helm"
@@ -30,34 +31,20 @@ var (
 )
 
 type moduleConfig struct {
-	Version         string `json:"version"`
-	Replicas        int    `json:"replicas"`
-	Namespace       string `json:"namespace"`
-	CreateNamespace bool   `json:"create_namespace"`
+	ReleaseConfigs helm.ReleaseConfig `json:"release_configs"`
 }
 
-func (mc *moduleConfig) sanitiseAndValidate() error {
-	return nil
-}
-
-func (mc moduleConfig) helmReleaseConfig(r resource.Resource) *helm.ReleaseConfig {
-	rc := helm.DefaultReleaseConfig()
-	rc.Name = r.URN
+func (mc *moduleConfig) sanitiseAndValidate(r resource.Resource) error {
+	rc := mc.ReleaseConfigs
+	rc.Name = fmt.Sprintf("%s-%s-firehose", r.Project, r.Name)
 	rc.Repository = defaultRepositoryString
 	rc.Chart = defaultChartString
 	rc.Version = defaultVersionString
 	rc.Namespace = defaultNamespace
+	rc.ForceUpdate = true
 
-	if mc.Version != "" {
-		rc.Version = mc.Version
-	}
-
-	if mc.Namespace != "" {
-		rc.Namespace = mc.Namespace
-	}
-	rc.CreateNamespace = mc.CreateNamespace
-
-	return rc
+	mc.ReleaseConfigs = rc
+	return nil
 }
 
 func (mc moduleConfig) JSON() []byte {
@@ -66,4 +53,8 @@ func (mc moduleConfig) JSON() []byte {
 		panic(err)
 	}
 	return b
+}
+
+func (mc *moduleConfig) merge(overrides moduleConfig) {
+
 }

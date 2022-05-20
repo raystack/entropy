@@ -2,24 +2,19 @@ package cli
 
 import (
 	"context"
-	"os/signal"
-	"syscall"
 
 	"github.com/spf13/cobra"
 
 	"github.com/odpf/entropy/internal/store/mongodb"
 )
 
-func cmdMigrate() *cobra.Command {
+func cmdMigrate(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "migrate",
 		Short: "Run DB migrations",
 	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-		defer cancel()
-
 		cfg, err := loadConfig(cmd)
 		if err != nil {
 			return err

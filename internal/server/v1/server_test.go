@@ -2,6 +2,7 @@ package handlersv1
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -25,7 +26,9 @@ func TestAPIServer_CreateResource(t *testing.T) {
 	t.Parallel()
 
 	createdAt := time.Now()
-	configsStructValue, _ := structpb.NewValue([]byte(`{"replicas": "10"}`))
+
+	configsStructValue := &structpb.Value{}
+	require.NoError(t, json.Unmarshal([]byte(`{"replicas": "10"}`), &configsStructValue))
 
 	tests := []struct {
 		name    string
@@ -159,7 +162,9 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 
 	createdAt := time.Now()
 	updatedAt := createdAt.Add(1 * time.Minute)
-	configsStructValue, _ := structpb.NewValue([]byte(`{"replicas": "10"}`))
+
+	configsStructValue := &structpb.Value{}
+	require.NoError(t, json.Unmarshal([]byte(`{"replicas": "10"}`), &configsStructValue))
 
 	tests := []struct {
 		name    string
@@ -278,8 +283,8 @@ func TestAPIServer_GetResource(t *testing.T) {
 	createdAt := time.Now()
 	updatedAt := createdAt.Add(1 * time.Minute)
 
-	configsStructValue, err := structpb.NewValue([]byte(`{"replicas": "10"}`))
-	require.NoError(t, err)
+	configsStructValue := &structpb.Value{}
+	require.NoError(t, json.Unmarshal([]byte(`{"replicas": "10"}`), &configsStructValue))
 
 	tests := []struct {
 		name    string
@@ -373,7 +378,9 @@ func TestAPIServer_ListResources(t *testing.T) {
 
 	createdAt := time.Now()
 	updatedAt := createdAt.Add(1 * time.Minute)
-	configsStructValue, _ := structpb.NewValue([]byte(`{"replicas": "10"}`))
+
+	configsStructValue := &structpb.Value{}
+	require.NoError(t, json.Unmarshal([]byte(`{"replicas": "10"}`), &configsStructValue))
 
 	tests := []struct {
 		name    string
@@ -534,7 +541,9 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 
 	createdAt := time.Now()
 	updatedAt := createdAt.Add(1 * time.Minute)
-	configsStructValue, _ := structpb.NewValue([]byte(`{"replicas": "10"}`))
+
+	configsStructValue := &structpb.Value{}
+	require.NoError(t, json.Unmarshal([]byte(`{"replicas": "10"}`), &configsStructValue))
 
 	tests := []struct {
 		name    string

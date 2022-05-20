@@ -17,6 +17,11 @@ func resourceToProto(res resource.Resource) (*entropyv1beta1.Resource, error) {
 		return nil, err
 	}
 
+	spec, err := resourceSpecToProto(res.Spec)
+	if err != nil {
+		return nil, err
+	}
+
 	return &entropyv1beta1.Resource{
 		Urn:       res.URN,
 		Kind:      res.Kind,
@@ -25,7 +30,7 @@ func resourceToProto(res resource.Resource) (*entropyv1beta1.Resource, error) {
 		Labels:    res.Labels,
 		CreatedAt: timestamppb.New(res.CreatedAt),
 		UpdatedAt: timestamppb.New(res.UpdatedAt),
-		Spec:      resourceSpecToProto(res.Spec),
+		Spec:      spec,
 		State:     protoState,
 	}, nil
 }
@@ -33,11 +38,10 @@ func resourceToProto(res resource.Resource) (*entropyv1beta1.Resource, error) {
 func resourceStateToProto(state resource.State) (*entropyv1beta1.ResourceState, error) {
 	var outputVal *structpb.Value
 	if len(state.Output) > 0 {
-		out, err := structpb.NewValue(map[string]interface{}(state.Output))
-		if err != nil {
+		outputVal = &structpb.Value{}
+		if err := json.Unmarshal(state.Output, outputVal); err != nil {
 			return nil, err
 		}
-		outputVal = out
 	}
 
 	var protoStatus = entropyv1beta1.ResourceState_STATUS_UNSPECIFIED
@@ -52,15 +56,10 @@ func resourceStateToProto(state resource.State) (*entropyv1beta1.ResourceState, 
 	}, nil
 }
 
-func resourceSpecToProto(spec resource.Spec) *entropyv1beta1.ResourceSpec {
-	m := map[string]interface{}{}
-	if err := json.Unmarshal(spec.Configs, &m); err != nil {
-		return nil
-	}
-
-	conf, err := structpb.NewValue(m)
-	if err != nil {
-		return nil
+func resourceSpecToProto(spec resource.Spec) (*entropyv1beta1.ResourceSpec, error) {
+	conf := structpb.Value{}
+	if err := json.Unmarshal(spec.Configs, &conf); err != nil {
+		return nil, err
 	}
 
 	var deps []*entropyv1beta1.ResourceDependency
@@ -71,11 +70,19 @@ func resourceSpecToProto(spec resource.Spec) *entropyv1beta1.ResourceSpec {
 		})
 	}
 
-	return &entropyv1beta1.ResourceSpec{Configs: conf, Dependencies: deps}
+	return &entropyv1beta1.ResourceSpec{
+		Configs:      &conf,
+		Dependencies: deps,
+	}, nil
 }
 
 func resourceFromProto(res *entropyv1beta1.Resource) (*resource.Resource, error) {
 	spec, err := resourceSpecFromProto(res.Spec)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonData, err := res.State.GetOutput().GetStructValue().MarshalJSON()
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +98,7 @@ func resourceFromProto(res *entropyv1beta1.Resource) (*resource.Resource, error)
 		Spec:      *spec,
 		State: resource.State{
 			Status:     res.State.GetStatus().String(),
-			Output:     res.State.GetOutput().GetStructValue().AsMap(),
+			Output:     jsonData,
 			ModuleData: res.State.GetModuleData(),
 		},
 	}, nil

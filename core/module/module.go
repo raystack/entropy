@@ -4,6 +4,7 @@ package module
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
@@ -34,7 +35,7 @@ type Spec struct {
 
 type ResolvedDependency struct {
 	Kind   string          `json:"kind"`
-	Output resource.Output `json:"output"`
+	Output json.RawMessage `json:"output"`
 }
 
 // Descriptor is a module descriptor that represents supported actions, resource-kind
@@ -47,14 +48,14 @@ type Descriptor struct {
 }
 
 func (desc Descriptor) validateDependencies(dependencies map[string]ResolvedDependency) error {
-	for key, resolvedDep := range dependencies {
-		wantKind, found := desc.Dependencies[key]
+	for key, wantKind := range desc.Dependencies {
+		resolvedDep, found := dependencies[key]
 		if !found {
 			return errors.ErrInvalid.
-				WithMsgf("unwanted dependency '%s' (kind '%s')", key, resolvedDep.Kind)
+				WithMsgf("kind '%s' needs resource of kind '%s' at key '%s'", desc.Kind, wantKind, key)
 		} else if wantKind != resolvedDep.Kind {
 			return errors.ErrInvalid.
-				WithMsgf("value for '%s' must be from kind '%s', not '%s'", key, wantKind, resolvedDep.Kind)
+				WithMsgf("value for '%s' must be of kind '%s', not '%s'", key, wantKind, resolvedDep.Kind)
 		}
 	}
 	return nil
