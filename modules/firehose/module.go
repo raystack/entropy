@@ -102,29 +102,15 @@ func (m *firehoseModule) Sync(_ context.Context, spec module.Spec) (*resource.St
 		return nil, err
 	}
 
-	helmCl := helm.NewClient(&helm.Config{
-		Kubernetes: kubeOut.Configs,
-	})
-
-	if conf.State == stateStopped {
-		conf.ReleaseConfigs.Values[keyReplicaCount] = 0
-	}
-
-	var helmErr error
-	if pendingStep == helmCreate {
-		_, helmErr = helmCl.Create(&conf.ReleaseConfigs)
-	} else if pendingStep == helmUpdate {
-		_, helmErr = helmCl.Update(&conf.ReleaseConfigs)
-	}
-
-	if helmErr != nil {
-		return nil, helmErr
+	if err := m.helmSync(pendingStep == helmCreate, conf, kubeOut); err != nil {
+		return nil, err
 	}
 
 	return &resource.State{
 		Status: resource.StatusCompleted,
 		Output: Output{
-			// TODO: populate the outputs as required.
+			Namespace:   conf.ReleaseConfigs.Namespace,
+			ReleaseName: conf.ReleaseConfigs.Name,
 		}.JSON(),
 		ModuleData: data.JSON(),
 	}, nil
@@ -193,4 +179,21 @@ func (m *firehoseModule) planChange(spec module.Spec, act module.ActionRequest) 
 		}.JSON(),
 	}
 	return &r, nil
+}
+
+func (m *firehoseModule) helmSync(isCreate bool, conf moduleConfig, kube kubernetes.Output) error {
+	helmCl := helm.NewClient(&helm.Config{Kubernetes: kube.Configs})
+
+	if conf.State == stateStopped {
+		conf.ReleaseConfigs.Values[keyReplicaCount] = 0
+	}
+
+	var helmErr error
+	if isCreate {
+		_, helmErr = helmCl.Create(&conf.ReleaseConfigs)
+	} else {
+		_, helmErr = helmCl.Update(&conf.ReleaseConfigs)
+	}
+
+	return helmErr
 }
