@@ -66,7 +66,7 @@ var Module = module.Descriptor{
 
 type firehoseModule struct{}
 
-func (m *firehoseModule) Plan(ctx context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+func (m *firehoseModule) Plan(_ context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
 	if act.Name == module.CreateAction {
 		return m.planCreate(spec, act)
 	}
