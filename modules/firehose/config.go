@@ -16,21 +16,16 @@ const (
 	defaultRepositoryString = "https://odpf.github.io/charts/"
 )
 
-const (
-	stateString         = "state"
-	releaseStateRunning = "RUNNING"
-	releaseStateStopped = "STOPPED"
-)
-
 var (
-	//go:embed create_schema.json
-	createActionSchema string
+	//go:embed schema/config.json
+	completeConfigSchema string
 
-	//go:embed scale_schema.json
+	//go:embed schema/scale.json
 	scaleActionSchema string
 )
 
 type moduleConfig struct {
+	State          string             `json:"state"`
 	ReleaseConfigs helm.ReleaseConfig `json:"release_configs"`
 }
 
@@ -53,8 +48,4 @@ func (mc moduleConfig) JSON() []byte {
 		panic(err)
 	}
 	return b
-}
-
-func (mc *moduleConfig) merge(overrides moduleConfig) {
-
 }

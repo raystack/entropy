@@ -23,28 +23,44 @@ const (
 const (
 	helmCreate = "helm_create"
 	helmUpdate = "helm_update"
+
+	stateRunning = "RUNNING"
+	stateStopped = "STOPPED"
+)
+
+const (
+	keyReplicaCount   = "replicaCount"
+	keyKubeDependency = "kube_cluster"
 )
 
 var Module = module.Descriptor{
 	Kind: "firehose",
 	Dependencies: map[string]string{
-		"kube_cluster": "kubernetes",
+		keyKubeDependency: kubernetes.Module.Kind,
 	},
 	Actions: []module.ActionDesc{
 		{
 			Name:        module.CreateAction,
-			Description: "creates firehose instance",
-			ParamSchema: createActionSchema,
+			Description: "Creates firehose instance.",
+			ParamSchema: completeConfigSchema,
 		},
 		{
 			Name:        module.UpdateAction,
-			Description: "Updates an existing firehose instance",
-			ParamSchema: createActionSchema,
+			Description: "Updates an existing firehose instance.",
+			ParamSchema: completeConfigSchema,
 		},
 		{
 			Name:        ScaleAction,
-			Description: "Scales existing firehose instance up/down",
+			Description: "Scale-up or scale-down an existing firehose instance.",
 			ParamSchema: scaleActionSchema,
+		},
+		{
+			Name:        StopAction,
+			Description: "Stop firehose and all its components.",
+		},
+		{
+			Name:        StartAction,
+			Description: "Start firehose and all its components.",
 		},
 	},
 	Module: &firehoseModule{},
@@ -64,18 +80,19 @@ func (m *firehoseModule) Plan(ctx context.Context, spec module.Spec, act module.
 
 	case ScaleAction:
 		return m.planScale(ctx, spec, act)
+
+	case StartAction:
+		return m.planStart(ctx, spec, act)
+
+	case StopAction:
+		return m.planStop(ctx, spec, act)
 	}
 
 	return &r, nil
 }
 
-func (m *firehoseModule) Sync(ctx context.Context, spec module.Spec) (*resource.State, error) {
+func (m *firehoseModule) Sync(_ context.Context, spec module.Spec) (*resource.State, error) {
 	r := spec.Resource
-
-	var conf moduleConfig
-	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
-		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
-	}
 
 	var data moduleData
 	if err := json.Unmarshal(r.State.ModuleData, &data); err != nil {
@@ -93,14 +110,23 @@ func (m *firehoseModule) Sync(ctx context.Context, spec module.Spec) (*resource.
 	pendingStep := data.PendingSteps[0]
 	data.PendingSteps = data.PendingSteps[1:]
 
+	var conf moduleConfig
+	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
+	}
+
 	var kubeOut kubernetes.Output
-	if err := json.Unmarshal(spec.Dependencies["kube_cluster"].Output, &kubeOut); err != nil {
+	if err := json.Unmarshal(spec.Dependencies[keyKubeDependency].Output, &kubeOut); err != nil {
 		return nil, err
 	}
 
 	helmCl := helm.NewClient(&helm.Config{
 		Kubernetes: kubeOut.Configs,
 	})
+
+	if conf.State == stateStopped {
+		conf.ReleaseConfigs.Values[keyReplicaCount] = 0
+	}
 
 	var helmErr error
 	if pendingStep == helmCreate {
@@ -150,17 +176,11 @@ func (m *firehoseModule) planUpdate(ctx context.Context, spec module.Spec, act m
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 	}
 
-	var curConf moduleConfig
-	if err := json.Unmarshal(r.Spec.Configs, &curConf); err != nil {
-		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
-	}
-
-	curConf.merge(reqConf)
-	if err := curConf.sanitiseAndValidate(r); err != nil {
+	if err := reqConf.sanitiseAndValidate(r); err != nil {
 		return nil, err
 	}
 
-	r.Spec.Configs = curConf.JSON()
+	r.Spec.Configs = reqConf.JSON()
 	r.State = resource.State{
 		Status: resource.StatusPending,
 		ModuleData: moduleData{
@@ -185,7 +205,7 @@ func (m *firehoseModule) planScale(ctx context.Context, spec module.Spec, act mo
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 	}
 
-	conf.ReleaseConfigs.Values["replicaCount"] = scaleParams.Replicas
+	conf.ReleaseConfigs.Values[keyReplicaCount] = scaleParams.Replicas
 	if err := conf.sanitiseAndValidate(r); err != nil {
 		return nil, err
 	}
@@ -197,6 +217,55 @@ func (m *firehoseModule) planScale(ctx context.Context, spec module.Spec, act mo
 			PendingSteps: []string{helmUpdate},
 		}.JSON(),
 	}
+	return &r, nil
+}
 
+func (m *firehoseModule) planStart(ctx context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+	r := spec.Resource
+
+	var data moduleData
+	if err := json.Unmarshal(r.State.ModuleData, &data); err != nil {
+		return nil, err
+	}
+
+	var curConf moduleConfig
+	if err := json.Unmarshal(r.Spec.Configs, &curConf); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
+	}
+
+	curConf.State = stateRunning
+
+	r.Spec.Configs = curConf.JSON()
+	r.State = resource.State{
+		Status: resource.StatusPending,
+		ModuleData: moduleData{
+			PendingSteps: []string{helmUpdate},
+		}.JSON(),
+	}
+	return &r, nil
+}
+
+func (m *firehoseModule) planStop(_ context.Context, spec module.Spec, _ module.ActionRequest) (*resource.Resource, error) {
+	r := spec.Resource
+
+	var data moduleData
+	if err := json.Unmarshal(r.State.ModuleData, &data); err != nil {
+		return nil, err
+	}
+
+	var curConf moduleConfig
+	if err := json.Unmarshal(r.Spec.Configs, &curConf); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
+	}
+
+	curConf.State = stateStopped
+
+	r.Spec.Configs = curConf.JSON()
+	r.State = resource.State{
+		Status: resource.StatusPending,
+		ModuleData: moduleData{
+			PendingSteps: []string{helmUpdate},
+		}.JSON(),
+	}
 	return &r, nil
 }

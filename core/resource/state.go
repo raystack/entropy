@@ -1,6 +1,8 @@
 package resource
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 const (
 	StatusUnspecified = "STATUS_UNSPECIFIED" // unknown

@@ -31,6 +31,10 @@ type ActionDesc struct {
 }
 
 func (ad ActionDesc) validateReq(req ActionRequest) error {
+	if ad.schema == nil {
+		return nil
+	}
+
 	result, err := ad.schema.Validate(gojsonschema.NewBytesLoader(req.Params))
 	if err != nil {
 		return errors.ErrInternal.WithCausef(err.Error())

@@ -29,6 +29,10 @@ func (mr *Registry) Register(desc Descriptor) error {
 	}
 
 	for i, action := range desc.Actions {
+		if action.ParamSchema == "" {
+			continue
+		}
+
 		loader := gojsonschema.NewStringLoader(action.ParamSchema)
 
 		schema, err := gojsonschema.NewSchema(loader)
