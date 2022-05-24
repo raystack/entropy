@@ -11,6 +11,13 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
+type Service struct {
+	logger     *zap.Logger
+	clock      func() time.Time
+	repository resource.Repository
+	rootModule module.Module
+}
+
 func New(repo resource.Repository, rootModule module.Module, clockFn func() time.Time, lg *zap.Logger) *Service {
 	if clockFn == nil {
 		clockFn = time.Now
@@ -21,13 +28,6 @@ func New(repo resource.Repository, rootModule module.Module, clockFn func() time
 		repository: repo,
 		rootModule: rootModule,
 	}
-}
-
-type Service struct {
-	logger     *zap.Logger
-	clock      func() time.Time
-	repository resource.Repository
-	rootModule module.Module
 }
 
 func (s *Service) generateModuleSpec(ctx context.Context, res resource.Resource) (*module.Spec, error) {

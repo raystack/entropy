@@ -10,15 +10,15 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
+// Registry maintains a list of supported/enabled modules.
+type Registry struct {
+	collection map[string]Descriptor
+}
+
 func NewRegistry() *Registry {
 	return &Registry{
 		collection: map[string]Descriptor{},
 	}
-}
-
-// Registry maintains a list of supported/enabled modules.
-type Registry struct {
-	collection map[string]Descriptor
 }
 
 // Register adds a module to the registry.

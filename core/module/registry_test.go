@@ -11,9 +11,11 @@ import (
 )
 
 func TestRegistry_Register(t *testing.T) {
+	t.Parallel()
 	reg := module.NewRegistry()
 
 	t.Run("FirstRegistration_NoError", func(t *testing.T) {
+		t.Parallel()
 		desc := module.Descriptor{
 			Kind:   "foo",
 			Module: &mocks.Module{},
@@ -22,6 +24,7 @@ func TestRegistry_Register(t *testing.T) {
 	})
 
 	t.Run("SecondRegistration_Conflict", func(t *testing.T) {
+		t.Parallel()
 		desc := module.Descriptor{
 			Kind:   "foo",
 			Module: &mocks.Module{},

@@ -6,6 +6,14 @@ import (
 	"strings"
 )
 
+// Error represents any error returned by the Entropy components along with any
+// relevant context.
+type Error struct {
+	Code    string `json:"code"`
+	Cause   string `json:"cause,omitempty"`
+	Message string `json:"message"`
+}
+
 // Common timer domain errors. Use `ErrX.WithCausef()` to clone and add context.
 var (
 	ErrInvalid     = Error{Code: "bad_request", Message: "Request is not valid"}
@@ -18,18 +26,10 @@ var (
 // E converts any given error to the Error type. Unknown are converted
 // to ErrInternal.
 func E(err error) Error {
-	if e, ok := err.(Error); ok {
+	if e, ok := err.(Error); ok { //nolint
 		return e
 	}
 	return ErrInternal.WithCausef(err.Error())
-}
-
-// Error represents any error returned by the Entropy components along with any
-// relevant context.
-type Error struct {
-	Code    string `json:"code"`
-	Cause   string `json:"cause,omitempty"`
-	Message string `json:"message"`
 }
 
 // WithCausef returns clone of err with the cause added. Use this when
@@ -55,7 +55,7 @@ func (err Error) WithMsgf(format string, args ...interface{}) Error {
 // Is checks if 'other' is of type Error and has the same code.
 // See https://blog.golang.org/go1.13-errors.
 func (err Error) Is(other error) bool {
-	if oe, ok := other.(Error); ok {
+	if oe, ok := other.(Error); ok { //nolint
 		return oe.Code == err.Code
 	}
 
@@ -93,4 +93,4 @@ func OneOf(err error, others ...error) bool {
 
 // New returns a new error equivalent to ErrInternal.
 // This function is a convenience shortcut for the errors.New().
-func New(msg string) error { return errors.New(msg) }
+func New(msg string) error { return errors.New(msg) } //nolint

@@ -38,6 +38,7 @@ func (s *Service) RunSync(ctx context.Context) error {
 						zap.Error(e),
 						zap.String("cause", e.Cause),
 					)
+					return e
 				}
 			} else {
 				pollTicker.Reset(pollInterval)
@@ -46,9 +47,7 @@ func (s *Service) RunSync(ctx context.Context) error {
 	}
 }
 
-func (s *Service) syncChange(ctx context.Context,
-	res resource.Resource) (updated *resource.Resource, delete bool, err error) {
-
+func (s *Service) syncChange(ctx context.Context, res resource.Resource) (*resource.Resource, bool, error) {
 	modSpec, err := s.generateModuleSpec(ctx, res)
 	if err != nil {
 		return nil, false, err

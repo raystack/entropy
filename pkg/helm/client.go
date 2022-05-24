@@ -2,13 +2,14 @@ package helm
 
 import (
 	"github.com/mcuadros/go-defaults"
-	"github.com/odpf/entropy/pkg/kube"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
 	apimachineryschema "k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
+
+	"github.com/odpf/entropy/pkg/kube"
 )
 
 type Config struct {

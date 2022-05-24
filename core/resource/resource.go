@@ -41,7 +41,7 @@ type Repository interface {
 	DoPending(ctx context.Context, fn PendingHandler) error
 }
 
-type PendingHandler func(ctx context.Context, res Resource) (updated *Resource, delete bool, err error)
+type PendingHandler func(ctx context.Context, res Resource) (*Resource, bool, error)
 
 func (res *Resource) Validate() error {
 	res.Kind = strings.TrimSpace(res.Kind)
@@ -67,6 +67,6 @@ func (res *Resource) Validate() error {
 }
 
 func generateURN(res Resource) string {
-	var parts = []string{"urn", "odpf", "entropy", res.Kind, res.Project, res.Name}
+	parts := []string{"urn", "odpf", "entropy", res.Kind, res.Project, res.Name}
 	return strings.Join(parts, urnSeparator)
 }

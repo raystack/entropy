@@ -24,6 +24,7 @@ var (
 )
 
 func TestNew(t *testing.T) {
+	t.Parallel()
 	s := core.New(&mocks.ResourceRepository{}, &mocks.Module{}, deadClock, nil)
 	assert.NotNil(t, s)
 }

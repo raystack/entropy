@@ -12,13 +12,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var envClusterCACert = os.Getenv("TEST_K8S_CLUSTER_CA_CERT")
-var envClientKey = os.Getenv("TEST_K8S_CLIENT_KEY")
-var envClientCert = os.Getenv("TEST_K8S_CLIENT_CERT")
-var envHost = os.Getenv("TEST_K8S_HOST")
-var envNamespace = os.Getenv("TEST_K8S_NAMESPACE")
-var envPod = os.Getenv("TEST_K8S_POD")
-var envContainer = os.Getenv("TEST_K8S_CONTAINER")
+var (
+	envClusterCACert = os.Getenv("TEST_K8S_CLUSTER_CA_CERT")
+	envClientKey     = os.Getenv("TEST_K8S_CLIENT_KEY")
+	envClientCert    = os.Getenv("TEST_K8S_CLIENT_CERT")
+	envHost          = os.Getenv("TEST_K8S_HOST")
+	envNamespace     = os.Getenv("TEST_K8S_NAMESPACE")
+	envPod           = os.Getenv("TEST_K8S_POD")
+	envContainer     = os.Getenv("TEST_K8S_CONTAINER")
+)
 
 func TestGetStreamingLogs(t *testing.T) {
 	t.Parallel()
@@ -71,7 +73,6 @@ func TestGetStreamingLogs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-
 			filter := make(map[string]string)
 			filter["pod"] = tt.Pod
 			filter["container"] = tt.Container

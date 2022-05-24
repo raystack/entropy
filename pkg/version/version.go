@@ -33,6 +33,6 @@ func GetVersionAndBuildInfo() *commonv1.Version {
 }
 
 func Print() error {
-	_, err := fmt.Println(protojson.Format(GetVersionAndBuildInfo()))
+	_, err := fmt.Println(protojson.Format(GetVersionAndBuildInfo())) //nolint
 	return err
 }

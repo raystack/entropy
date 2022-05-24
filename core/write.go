@@ -54,15 +54,13 @@ func (s *Service) ApplyAction(ctx context.Context, urn string, act module.Action
 	return s.execAction(ctx, *res, act)
 }
 
-func (s *Service) execAction(ctx context.Context,
-	res resource.Resource, act module.ActionRequest) (*resource.Resource, error) {
-
+func (s *Service) execAction(ctx context.Context, res resource.Resource, act module.ActionRequest) (*resource.Resource, error) {
 	plannedRes, err := s.planChange(ctx, res, act)
 	if err != nil {
 		return nil, err
 	}
 
-	if act.Name == module.CreateAction {
+	if act.Name == module.CreateAction { //nolint
 		plannedRes.CreatedAt = s.clock()
 		plannedRes.UpdatedAt = plannedRes.CreatedAt
 		if err := s.repository.Create(ctx, *plannedRes); err != nil {

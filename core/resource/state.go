@@ -18,6 +18,8 @@ type State struct {
 	ModuleData json.RawMessage `json:"module_data,omitempty"`
 }
 
+type Output map[string]interface{}
+
 // IsTerminal returns true if state is terminal. A terminal state is
 // one where resource needs no further sync.
 func (s State) IsTerminal() bool {
@@ -38,10 +40,6 @@ func (s State) Clone() State {
 		ModuleData: make([]byte, len(s.ModuleData)),
 	}
 	copy(newState.ModuleData, s.ModuleData)
-	for k, v := range s.Output {
-		newState.Output[k] = v
-	}
+	copy(newState.Output, s.Output)
 	return newState
 }
-
-type Output map[string]interface{}

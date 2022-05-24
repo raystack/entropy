@@ -19,13 +19,13 @@ type KubeConfig struct {
 	sync.Mutex
 }
 
-// ToRESTConfig implemented interface method
+// ToRESTConfig implemented interface method.
 func (k *KubeConfig) ToRESTConfig() (*rest.Config, error) {
 	config, err := k.ToRawKubeConfigLoader().ClientConfig()
 	return config, err
 }
 
-// ToDiscoveryClient implemented interface method
+// ToDiscoveryClient implemented interface method.
 func (k *KubeConfig) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
 	config, err := k.ToRESTConfig()
 	if err != nil {
@@ -40,7 +40,7 @@ func (k *KubeConfig) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, er
 	return memcached.NewMemCacheClient(discovery.NewDiscoveryClientForConfigOrDie(config)), nil
 }
 
-// ToRESTMapper implemented interface method
+// ToRESTMapper implemented interface method.
 func (k *KubeConfig) ToRESTMapper() (meta.RESTMapper, error) {
 	discoveryClient, err := k.ToDiscoveryClient()
 	if err != nil {
@@ -52,7 +52,7 @@ func (k *KubeConfig) ToRESTMapper() (meta.RESTMapper, error) {
 	return expander, nil
 }
 
-// ToRawKubeConfigLoader implemented interface method
+// ToRawKubeConfigLoader implemented interface method.
 func (k *KubeConfig) ToRawKubeConfigLoader() clientcmd.ClientConfig {
 	return k.ClientConfig
 }

@@ -16,8 +16,11 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-var ErrReleaseNotFound = errors.New("release not found")
-var ErrChartNotApplication = errors.New("helm chart is not an application chart")
+var (
+	typeApplication        = "application"
+	ErrReleaseNotFound     = errors.New("release not found")
+	ErrChartNotApplication = errors.New("helm chart is not an application chart")
+)
 
 type ReleaseConfig struct {
 	// Name - Release Name
@@ -50,12 +53,6 @@ type ReleaseConfig struct {
 	CreateNamespace bool `json:"create_namespace" mapstructure:"create_namespace" default:"false"`
 }
 
-func DefaultReleaseConfig() *ReleaseConfig {
-	defaultReleaseConfig := &ReleaseConfig{}
-	defaults.SetDefaults(defaultReleaseConfig)
-	return defaultReleaseConfig
-}
-
 type Release struct {
 	Config *ReleaseConfig
 	Output ReleaseOutput
@@ -68,7 +65,13 @@ type ReleaseOutput struct {
 	Release string
 }
 
-// Create - creates a helm release with its configs
+func DefaultReleaseConfig() *ReleaseConfig {
+	defaultReleaseConfig := &ReleaseConfig{}
+	defaults.SetDefaults(defaultReleaseConfig)
+	return defaultReleaseConfig
+}
+
+// Create - creates a helm release with its configs.
 func (p *Client) Create(config *ReleaseConfig) (*Release, error) {
 	actionConfig, err := p.getActionConfiguration(config.Namespace)
 	if err != nil {
@@ -77,14 +80,14 @@ func (p *Client) Create(config *ReleaseConfig) (*Release, error) {
 
 	chartPathOptions, chartName := p.chartPathOptions(config)
 
-	fetchedChart, _, err := p.getChart(config, chartName, chartPathOptions)
+	fetchedChart, err := p.getChart(chartName, chartPathOptions)
 	if err != nil {
 		return nil, errors.ErrInternal.WithMsgf("error while getting chart: %s", err)
 	}
 
 	// TODO: check if chart has dependencies and load those dependencies
 
-	if fetchedChart.Metadata.Type != "application" {
+	if fetchedChart.Metadata.Type != typeApplication {
 		return nil, ErrChartNotApplication
 	}
 
@@ -120,7 +123,7 @@ func (p *Client) Create(config *ReleaseConfig) (*Release, error) {
 			return nil, errors.ErrNotFound.WithMsgf("release doesn't exists: %s", err)
 		}
 
-		releaseJson, err := json.Marshal(rel)
+		releaseJSON, err := json.Marshal(rel)
 		if err != nil {
 			return nil, errors.ErrInternal.WithMsgf("error while json marshalling release: %s", err)
 		}
@@ -129,12 +132,12 @@ func (p *Client) Create(config *ReleaseConfig) (*Release, error) {
 			Config: config,
 			Output: ReleaseOutput{
 				Status:  mapReleaseStatus(rel.Info.Status),
-				Release: string(releaseJson),
+				Release: string(releaseJSON),
 			},
 		}, errors.ErrInternal.WithMsgf("helm release created with failure: %s", err)
 	}
 
-	releaseJson, err := json.Marshal(rel)
+	releaseJSON, err := json.Marshal(rel)
 	if err != nil {
 		return nil, errors.ErrInternal.WithMsgf("error while json marshalling release: %s", err)
 	}
@@ -143,12 +146,12 @@ func (p *Client) Create(config *ReleaseConfig) (*Release, error) {
 		Config: config,
 		Output: ReleaseOutput{
 			Status:  mapReleaseStatus(rel.Info.Status),
-			Release: string(releaseJson),
+			Release: string(releaseJSON),
 		},
 	}, nil
 }
 
-// Update - updates a helm release with its configs
+// Update - updates a helm release with its configs.
 func (p *Client) Update(config *ReleaseConfig) (*Release, error) {
 	var rel *release.Release
 
@@ -159,14 +162,14 @@ func (p *Client) Update(config *ReleaseConfig) (*Release, error) {
 
 	chartPathOptions, chartName := p.chartPathOptions(config)
 
-	fetchedChart, _, err := p.getChart(config, chartName, chartPathOptions)
+	fetchedChart, err := p.getChart(chartName, chartPathOptions)
 	if err != nil {
 		return nil, errors.ErrInternal.WithMsgf("error while getting fetchedChart : %s", err)
 	}
 
 	// TODO: check if fetchedChart has dependencies and load those dependencies
 
-	if fetchedChart.Metadata.Type != "application" {
+	if fetchedChart.Metadata.Type != typeApplication {
 		return nil, ErrChartNotApplication
 	}
 
@@ -191,7 +194,7 @@ func (p *Client) Update(config *ReleaseConfig) (*Release, error) {
 			return nil, errors.ErrNotFound.WithMsgf("release doesn't exists: %s", err)
 		}
 
-		releaseJson, jsonErr := json.Marshal(rel)
+		releaseJSON, jsonErr := json.Marshal(rel)
 		if jsonErr != nil {
 			return nil, errors.ErrInternal.WithMsgf("error while json marshalling release: %s", err)
 		}
@@ -200,12 +203,12 @@ func (p *Client) Update(config *ReleaseConfig) (*Release, error) {
 			Config: config,
 			Output: ReleaseOutput{
 				Status:  mapReleaseStatus(rel.Info.Status),
-				Release: string(releaseJson),
+				Release: string(releaseJSON),
 			},
 		}, errors.ErrInternal.WithMsgf("helm release updated with failure: %s", err)
 	}
 
-	releaseJson, err := json.Marshal(rel)
+	releaseJSON, err := json.Marshal(rel)
 	if err != nil {
 		return nil, errors.ErrInternal.WithMsgf("error while json marshalling release: %s", err)
 	}
@@ -214,7 +217,7 @@ func (p *Client) Update(config *ReleaseConfig) (*Release, error) {
 		Config: config,
 		Output: ReleaseOutput{
 			Status:  mapReleaseStatus(rel.Info.Status),
-			Release: string(releaseJson),
+			Release: string(releaseJSON),
 		},
 	}, nil
 }
@@ -234,7 +237,7 @@ func (p *Client) Delete(config *ReleaseConfig) error {
 	}
 }
 
-func (p *Client) chartPathOptions(config *ReleaseConfig) (*action.ChartPathOptions, string) {
+func (*Client) chartPathOptions(config *ReleaseConfig) (*action.ChartPathOptions, string) {
 	repositoryURL, chartName := resolveChartName(config.Repository, strings.TrimSpace(config.Chart))
 
 	version := getVersion(config.Version)
@@ -265,20 +268,20 @@ func getVersion(version string) string {
 	return strings.TrimSpace(version)
 }
 
-func (p *Client) getChart(config *ReleaseConfig, name string, cpo *action.ChartPathOptions) (*chart.Chart, string, error) {
+func (p *Client) getChart(name string, cpo *action.ChartPathOptions) (*chart.Chart, error) {
 	// TODO: Add a lock as Load function blows up if accessed concurrently
 
 	path, err := cpo.LocateChart(name, p.cliSettings)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	c, err := loader.Load(path)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	return c, path, nil
+	return c, nil
 }
 
 func (p *Client) resourceReleaseExists(name string, namespace string) (bool, error) {
@@ -293,14 +296,14 @@ func (p *Client) resourceReleaseExists(name string, namespace string) (bool, err
 		return true, nil
 	}
 
-	if err == ErrReleaseNotFound {
+	if errors.Is(err, ErrReleaseNotFound) {
 		return false, nil
 	}
 
 	return false, err
 }
 
-func (p *Client) getRelease(cfg *action.Configuration, name string) (*release.Release, error) {
+func (*Client) getRelease(cfg *action.Configuration, name string) (*release.Release, error) {
 	// TODO: Add provider level lock to make sure no other operation is changing this release
 
 	get := action.NewGet(cfg)

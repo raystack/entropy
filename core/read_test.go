@@ -26,6 +26,7 @@ func TestService_GetResource(t *testing.T) {
 		{
 			name: "NotFound",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				repo := &mocks.ResourceRepository{}
 				repo.EXPECT().
 					GetByURN(mock.Anything, mock.Anything).
@@ -39,6 +40,7 @@ func TestService_GetResource(t *testing.T) {
 		{
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				repo := &mocks.ResourceRepository{}
 				repo.EXPECT().
 					GetByURN(mock.Anything, mock.Anything).
@@ -53,7 +55,9 @@ func TestService_GetResource(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			svc := tt.setup(t)
 
 			got, err := svc.GetResource(context.Background(), tt.urn)
@@ -84,6 +88,7 @@ func TestService_ListResources(t *testing.T) {
 		{
 			name: "EmptyResult",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				repo := &mocks.ResourceRepository{}
 				repo.EXPECT().
 					List(mock.Anything, mock.Anything).
@@ -97,6 +102,7 @@ func TestService_ListResources(t *testing.T) {
 		{
 			name: "RepositoryError",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				repo := &mocks.ResourceRepository{}
 				repo.EXPECT().
 					List(mock.Anything, mock.Anything).
@@ -110,6 +116,7 @@ func TestService_ListResources(t *testing.T) {
 		{
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				repo := &mocks.ResourceRepository{}
 				repo.EXPECT().
 					List(mock.Anything, mock.Anything).
@@ -123,7 +130,9 @@ func TestService_ListResources(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			svc := tt.setup(t)
 
 			got, err := svc.ListResources(context.Background(), tt.project, tt.kind)

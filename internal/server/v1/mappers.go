@@ -44,7 +44,7 @@ func resourceStateToProto(state resource.State) (*entropyv1beta1.ResourceState, 
 		}
 	}
 
-	var protoStatus = entropyv1beta1.ResourceState_STATUS_UNSPECIFIED
+	protoStatus := entropyv1beta1.ResourceState_STATUS_UNSPECIFIED
 	if resourceStatus, ok := entropyv1beta1.ResourceState_Status_value[state.Status]; ok {
 		protoStatus = entropyv1beta1.ResourceState_Status(resourceStatus)
 	}

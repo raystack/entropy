@@ -30,6 +30,7 @@ func TestService_CreateResource(t *testing.T) {
 		{
 			name: "ModuleValidationError",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
@@ -48,6 +49,7 @@ func TestService_CreateResource(t *testing.T) {
 		{
 			name: "CreateResourceFailure",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
@@ -73,6 +75,7 @@ func TestService_CreateResource(t *testing.T) {
 		{
 			name: "AlreadyExists",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
@@ -98,6 +101,7 @@ func TestService_CreateResource(t *testing.T) {
 		{
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
@@ -132,7 +136,9 @@ func TestService_CreateResource(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			svc := tt.setup(t)
 
 			got, err := svc.CreateResource(context.Background(), tt.res)
@@ -170,6 +176,7 @@ func TestService_UpdateResource(t *testing.T) {
 		{
 			name: "ResourceNotFound",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:project:child").
@@ -186,6 +193,7 @@ func TestService_UpdateResource(t *testing.T) {
 		{
 			name: "ModuleValidationError",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
@@ -207,6 +215,7 @@ func TestService_UpdateResource(t *testing.T) {
 		{
 			name: "UpdateFailure",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
@@ -232,6 +241,7 @@ func TestService_UpdateResource(t *testing.T) {
 		{
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
@@ -277,7 +287,9 @@ func TestService_UpdateResource(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			svc := tt.setup(t)
 
 			got, err := svc.UpdateResource(context.Background(), tt.urn, tt.newSpec)
@@ -306,6 +318,7 @@ func TestService_DeleteResource(t *testing.T) {
 		{
 			name: "ResourceNotFound",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
@@ -320,6 +333,7 @@ func TestService_DeleteResource(t *testing.T) {
 		{
 			name: "UpdateFailure",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
@@ -360,6 +374,7 @@ func TestService_DeleteResource(t *testing.T) {
 		{
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
@@ -399,7 +414,9 @@ func TestService_DeleteResource(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			svc := tt.setup(t)
 
 			err := svc.DeleteResource(context.Background(), tt.urn)
@@ -432,6 +449,7 @@ func TestService_ApplyAction(t *testing.T) {
 		{
 			name: "NotFound",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
@@ -448,6 +466,7 @@ func TestService_ApplyAction(t *testing.T) {
 		{
 			name: "ModuleResolutionFailure",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				resourceRepo := &mocks.ResourceRepository{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
@@ -469,6 +488,7 @@ func TestService_ApplyAction(t *testing.T) {
 		{
 			name: "PlanFailure",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, sampleAction).
@@ -497,6 +517,7 @@ func TestService_ApplyAction(t *testing.T) {
 		{
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
+				t.Helper()
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, sampleAction).
@@ -544,7 +565,9 @@ func TestService_ApplyAction(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			svc := tt.setup(t)
 
 			got, err := svc.ApplyAction(context.Background(), tt.urn, tt.action)

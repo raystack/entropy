@@ -1,4 +1,5 @@
 run:
+  go: '1.17'
   timeout: 10m
 output:
   format: colored-line-number
@@ -8,7 +9,6 @@ linters:
     - cyclop
     - exhaustive
     - exhaustivestruct
-    - exhaustruct
     - funlen
     - gochecknoglobals
     - gocyclo
@@ -128,5 +128,6 @@ issues:
     - path: _test\.go
       linters:
         - gocritic
+        - dupl
 severity:
   default-severity: error

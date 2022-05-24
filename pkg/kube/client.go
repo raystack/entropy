@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/mcuadros/go-defaults"
-
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -20,8 +19,10 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-const bufferSize = 4096
-const sleepTime = 500
+const (
+	bufferSize = 4096
+	sleepTime  = 500
+)
 
 type Config struct {
 	// Host - The hostname (in form of URI) of Kubernetes master.
@@ -45,6 +46,15 @@ type Config struct {
 	ClusterCACertificate string `json:"cluster_ca_certificate"`
 }
 
+type Client struct {
+	restConfig rest.Config
+}
+
+type LogChunk struct {
+	Data   []byte
+	Labels map[string]string
+}
+
 func (conf Config) RESTConfig() *rest.Config {
 	rc := &rest.Config{
 		Host:    conf.Host,
@@ -61,15 +71,6 @@ func (conf Config) RESTConfig() *rest.Config {
 	}
 
 	return rc
-}
-
-type Client struct {
-	restConfig rest.Config
-}
-
-type LogChunk struct {
-	Data   []byte
-	Labels map[string]string
 }
 
 func DefaultClientConfig() *Config {
@@ -186,7 +187,7 @@ func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- L
 	for {
 		numBytes, err := podLogs.Read(buf)
 		if err != nil {
-			if err == io.EOF || errors.Is(err, context.Canceled) {
+			if errors.Is(err, io.EOF) || errors.Is(err, context.Canceled) {
 				return nil
 			}
 			return err

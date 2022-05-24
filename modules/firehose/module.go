@@ -116,14 +116,14 @@ func (m *firehoseModule) Sync(_ context.Context, spec module.Spec) (*resource.St
 	}, nil
 }
 
-func (m *firehoseModule) planCreate(spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+func (*firehoseModule) planCreate(spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
 	r := spec.Resource
 
 	var reqConf moduleConfig
 	if err := json.Unmarshal(act.Params, &reqConf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
-	} else if err := reqConf.sanitiseAndValidate(r); err != nil {
-		return nil, err
+	} else {
+		reqConf.sanitiseAndValidate(r)
 	}
 
 	r.Spec.Configs = reqConf.JSON()
@@ -136,7 +136,7 @@ func (m *firehoseModule) planCreate(spec module.Spec, act module.ActionRequest) 
 	return &r, nil
 }
 
-func (m *firehoseModule) planChange(spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+func (*firehoseModule) planChange(spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
 	r := spec.Resource
 
 	var conf moduleConfig
@@ -168,9 +168,7 @@ func (m *firehoseModule) planChange(spec module.Spec, act module.ActionRequest) 
 		conf.State = stateStopped
 	}
 
-	if err := conf.sanitiseAndValidate(r); err != nil {
-		return nil, err
-	}
+	conf.sanitiseAndValidate(r)
 	r.Spec.Configs = conf.JSON()
 	r.State = resource.State{
 		Status: resource.StatusPending,
@@ -181,7 +179,7 @@ func (m *firehoseModule) planChange(spec module.Spec, act module.ActionRequest) 
 	return &r, nil
 }
 
-func (m *firehoseModule) helmSync(isCreate bool, conf moduleConfig, kube kubernetes.Output) error {
+func (*firehoseModule) helmSync(isCreate bool, conf moduleConfig, kube kubernetes.Output) error {
 	helmCl := helm.NewClient(&helm.Config{Kubernetes: kube.Configs})
 
 	if conf.State == stateStopped {
