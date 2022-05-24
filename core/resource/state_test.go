@@ -26,21 +26,20 @@ func TestState_InDeletion(t *testing.T) {
 
 func TestState_Clone(t *testing.T) {
 	originalState := resource.State{
-		Status: resource.StatusPending,
-		Output: map[string]interface{}{
-			"foo": "bar",
-		},
-		ModuleData: []byte("hello world"),
+		Status:     resource.StatusPending,
+		Output:     []byte(`{"foo": "bar"}`),
+		ModuleData: []byte(`{"msg": "Hello!"}`),
 	}
 	clonedState := originalState.Clone()
 
 	assert.EqualValues(t, originalState, clonedState)
 
 	// mutation should not reflect back in original state.
-	clonedState.Output["foo"] = "modified-value"
-	assert.Equal(t, originalState.Output["foo"], "bar")
+	clonedState.Output[0] = '['
+	assert.Equal(t, string(clonedState.Output), `["foo": "bar"}`)
+	assert.Equal(t, string(originalState.Output), `{"foo": "bar"}`)
 
 	clonedState.ModuleData[0] = '#'
-	assert.Equal(t, string(originalState.ModuleData), "hello world")
-	assert.Equal(t, string(clonedState.ModuleData), "#ello world")
+	assert.Equal(t, string(originalState.ModuleData), `{"msg": "Hello!"}`)
+	assert.Equal(t, string(clonedState.ModuleData), `#"msg": "Hello!"}`)
 }

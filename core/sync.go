@@ -33,7 +33,11 @@ func (s *Service) RunSync(ctx context.Context) error {
 					// backOff to reduce polling pressure.
 					pollTicker.Reset(backOff * pollInterval)
 				} else {
-					s.logger.Error("failed to handle pending item", zap.Error(err))
+					e := errors.E(err)
+					s.logger.Error("failed to handle pending item",
+						zap.Error(e),
+						zap.String("cause", e.Cause),
+					)
 				}
 			} else {
 				pollTicker.Reset(pollInterval)

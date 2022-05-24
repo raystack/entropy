@@ -24,9 +24,9 @@ type specModel struct {
 }
 
 type stateModel struct {
-	Status     string                 `bson:"status"`
-	Output     map[string]interface{} `bson:"output"`
-	ModuleData []byte                 `bson:"module_data"`
+	Status     string `bson:"status"`
+	Output     []byte `bson:"output"`
+	ModuleData []byte `bson:"module_data"`
 }
 
 func modelFromResource(res resource.Resource) resourceModel {

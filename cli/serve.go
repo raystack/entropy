@@ -2,9 +2,7 @@ package cli
 
 import (
 	"context"
-	"os/signal"
 	"reflect"
-	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -14,30 +12,42 @@ import (
 	"github.com/odpf/entropy/core/module"
 	entropyserver "github.com/odpf/entropy/internal/server"
 	"github.com/odpf/entropy/internal/store/mongodb"
+	"github.com/odpf/entropy/modules/firehose"
 	"github.com/odpf/entropy/modules/kubernetes"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
 )
 
-func cmdServe() *cobra.Command {
+func cmdServe(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "serve",
 		Short:   "Start gRPC & HTTP servers",
 		Aliases: []string{"server", "start"},
 	}
 
+	var migrate, noSync bool
+	cmd.Flags().BoolVar(&migrate, "migrate", false, "Run migrations before starting")
+	cmd.Flags().BoolVar(&noSync, "no-sync", false, "Disable sync-loop")
+
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cfg, err := loadConfig(cmd)
 		if err != nil {
 			return err
 		}
-		return runServer(cfg)
+
+		if migrate {
+			if migrateErr := runMigrations(ctx, cfg.DB); migrateErr != nil {
+				return migrateErr
+			}
+		}
+
+		return runServer(ctx, cfg, noSync)
 	}
 	return cmd
 }
 
-func runServer(c Config) error {
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+func runServer(baseCtx context.Context, c Config, disableSync bool) error {
+	ctx, cancel := context.WithCancel(baseCtx)
 	defer cancel()
 
 	nr, err := metric.New(&c.NewRelic)
@@ -50,24 +60,29 @@ func runServer(c Config) error {
 		return err
 	}
 
+	moduleRegistry := setupRegistry(zapLog,
+		kubernetes.Module,
+		firehose.Module,
+	)
+
 	mongoStore, err := mongodb.Connect(c.DB)
 	if err != nil {
 		return err
 	}
 	resourceRepository := mongodb.NewResourceRepository(mongoStore)
-
-	moduleRegistry := setupRegistry(zapLog, kubernetes.KubeModule)
 	resourceService := core.New(resourceRepository, moduleRegistry, time.Now, zapLog)
 
-	go func() {
-		defer cancel()
+	if !disableSync {
+		go func() {
+			defer cancel()
 
-		if err := resourceService.RunSync(ctx); err != nil {
-			zapLog.Error("sync-loop exited with error", zap.Error(err))
-		} else {
-			zapLog.Info("sync-loop exited gracefully")
-		}
-	}()
+			if err := resourceService.RunSync(ctx); err != nil {
+				zapLog.Error("sync-loop exited with error", zap.Error(err))
+			} else {
+				zapLog.Info("sync-loop exited gracefully")
+			}
+		}()
+	}
 
 	return entropyserver.Serve(ctx, c.Service, zapLog, nr, resourceService)
 }
