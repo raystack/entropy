@@ -139,16 +139,15 @@ func (*firehoseModule) Log(ctx context.Context, spec module.Spec, filter map[str
 	logs, err := kubeCl.StreamLogs(ctx, defaultNamespace, filter)
 	mappedLogs := make(chan module.LogChunk)
 	go func() {
+		defer close(mappedLogs)
 		for {
 			select {
 			case log, ok := <-logs:
 				if !ok {
-					close(mappedLogs)
 					return
 				}
 				mappedLogs <- module.LogChunk{Data: log.Data, Labels: log.Labels}
 			case <-ctx.Done():
-				close(mappedLogs)
 				return
 			}
 		}
