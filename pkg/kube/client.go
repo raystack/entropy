@@ -24,30 +24,9 @@ const (
 	sleepTime  = 500
 )
 
-type Config struct {
-	// Host - The hostname (in form of URI) of Kubernetes master.
-	Host string `json:"host"`
-
-	Timeout time.Duration `json:"timeout" default:"100ms"`
-
-	// Token - Token to authenticate a service account
-	Token string `json:"token"`
-
-	// Insecure - Whether server should be accessed without verifying the TLS certificate.
-	Insecure bool `json:"insecure" default:"false"`
-
-	// ClientKey - PEM-encoded client key for TLS authentication.
-	ClientKey string `json:"client_key"`
-
-	// ClientCertificate - PEM-encoded client certificate for TLS authentication.
-	ClientCertificate string `json:"client_certificate"`
-
-	// ClusterCACertificate - PEM-encoded root certificates bundle for TLS authentication.
-	ClusterCACertificate string `json:"cluster_ca_certificate"`
-}
-
 type Client struct {
-	restConfig rest.Config
+	restConfig      rest.Config
+	streamingConfig rest.Config
 }
 
 type LogChunk struct {
@@ -55,33 +34,17 @@ type LogChunk struct {
 	Labels map[string]string
 }
 
-func (conf Config) RESTConfig() *rest.Config {
-	rc := &rest.Config{
-		Host:    conf.Host,
-		Timeout: conf.Timeout,
-		TLSClientConfig: rest.TLSClientConfig{
-			CAData:   []byte(conf.ClusterCACertificate),
-			KeyData:  []byte(conf.ClientKey),
-			CertData: []byte(conf.ClientCertificate),
-		},
-	}
-
-	if conf.Token != "" {
-		rc.BearerToken = conf.Token
-	}
-
-	return rc
-}
-
-func DefaultClientConfig() *Config {
-	defaultProviderConfig := new(Config)
-	defaults.SetDefaults(defaultProviderConfig)
+func DefaultClientConfig() Config {
+	var defaultProviderConfig Config
+	defaults.SetDefaults(&defaultProviderConfig)
 	return defaultProviderConfig
 }
 
-func NewClient(config *Config) *Client {
-	clientConf := config.RESTConfig()
-	return &Client{restConfig: *clientConf}
+func NewClient(config Config) *Client {
+	return &Client{
+		restConfig:      *config.RESTConfig(),
+		streamingConfig: *config.StreamingConfig(),
+	}
 }
 
 func (c Client) StreamLogs(ctx context.Context, namespace string, filter map[string]string) (<-chan LogChunk, error) {
@@ -89,11 +52,6 @@ func (c Client) StreamLogs(ctx context.Context, namespace string, filter map[str
 	var podName, containerName, labelSelector, filedSelector string
 	var sinceSeconds, tailLines int64
 	var opts metav1.ListOptions
-
-	clientSet, err := kubernetes.NewForConfig(&c.restConfig)
-	if err != nil {
-		return nil, err
-	}
 
 	for k, v := range filter {
 		switch k {
@@ -127,11 +85,21 @@ func (c Client) StreamLogs(ctx context.Context, namespace string, filter map[str
 		opts = metav1.ListOptions{FieldSelector: filedSelector}
 	}
 
-	return streamFromPods(ctx, clientSet, namespace, containerName, opts, tailLines, sinceSeconds, filter)
+	return c.streamFromPods(ctx, namespace, containerName, opts, tailLines, sinceSeconds, filter)
 }
 
-func streamFromPods(ctx context.Context, clientSet *kubernetes.Clientset, namespace, containerName string, opts metav1.ListOptions, tailLines, sinceSeconds int64, filter map[string]string) (<-chan LogChunk, error) {
+func (c Client) streamFromPods(ctx context.Context, namespace, containerName string, opts metav1.ListOptions, tailLines, sinceSeconds int64, filter map[string]string) (<-chan LogChunk, error) {
+	clientSet, err := kubernetes.NewForConfig(&c.restConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	pods, err := clientSet.CoreV1().Pods(namespace).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	streamingClientSet, err := kubernetes.NewForConfig(&c.streamingConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +115,7 @@ func streamFromPods(ctx context.Context, clientSet *kubernetes.Clientset, namesp
 			wg.Add(1)
 			go func(podName string, c v1.Container) {
 				defer wg.Done()
-				if err := streamContainerLogs(ctx, namespace, podName, logCh, clientSet, c, tailLines, sinceSeconds, filter); err != nil {
+				if err := streamContainerLogs(ctx, namespace, podName, logCh, streamingClientSet, c, tailLines, sinceSeconds, filter); err != nil {
 					log.Printf("[WARN] failed to stream from container '%s':%s", c.Name, err)
 				}
 			}(pod.Name, container)

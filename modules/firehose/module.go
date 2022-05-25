@@ -10,6 +10,7 @@ import (
 	"github.com/odpf/entropy/modules/kubernetes"
 	"github.com/odpf/entropy/pkg/errors"
 	"github.com/odpf/entropy/pkg/helm"
+	"github.com/odpf/entropy/pkg/kube"
 )
 
 const (
@@ -114,6 +115,46 @@ func (m *firehoseModule) Sync(_ context.Context, spec module.Spec) (*resource.St
 		}.JSON(),
 		ModuleData: data.JSON(),
 	}, nil
+}
+
+func (*firehoseModule) Log(ctx context.Context, spec module.Spec, filter map[string]string) (<-chan module.LogChunk, error) {
+	r := spec.Resource
+
+	var conf moduleConfig
+	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
+	}
+
+	var kubeOut kubernetes.Output
+	if err := json.Unmarshal(spec.Dependencies[keyKubeDependency].Output, &kubeOut); err != nil {
+		return nil, err
+	}
+
+	if filter == nil {
+		filter = make(map[string]string)
+	}
+	filter["app"] = conf.ReleaseConfigs.Name
+
+	kubeCl := kube.NewClient(kubeOut.Configs)
+	logs, err := kubeCl.StreamLogs(ctx, defaultNamespace, filter)
+	mappedLogs := make(chan module.LogChunk)
+	go func() {
+		for {
+			select {
+			case log, ok := <-logs:
+				if !ok {
+					close(mappedLogs)
+					return
+				}
+				mappedLogs <- module.LogChunk{Data: log.Data, Labels: log.Labels}
+			case <-ctx.Done():
+				close(mappedLogs)
+				return
+			}
+		}
+	}()
+
+	return mappedLogs, err
 }
 
 func (*firehoseModule) planCreate(spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
