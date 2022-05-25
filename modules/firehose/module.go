@@ -137,6 +137,10 @@ func (*firehoseModule) Log(ctx context.Context, spec module.Spec, filter map[str
 
 	kubeCl := kube.NewClient(kubeOut.Configs)
 	logs, err := kubeCl.StreamLogs(ctx, defaultNamespace, filter)
+	if err != nil {
+		return nil, err
+	}
+
 	mappedLogs := make(chan module.LogChunk)
 	go func() {
 		defer close(mappedLogs)
