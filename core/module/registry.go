@@ -13,7 +13,7 @@ import (
 
 // Registry maintains a list of supported/enabled modules.
 type Registry struct {
-	sync.Mutex
+	mu         sync.RWMutex
 	collection map[string]Descriptor
 }
 
@@ -25,8 +25,8 @@ func NewRegistry() *Registry {
 
 // Register adds a module to the registry.
 func (mr *Registry) Register(desc Descriptor) error {
-	mr.Lock()
-	defer mr.Unlock()
+	mr.mu.Lock()
+	defer mr.mu.Unlock()
 	if v, exists := mr.collection[desc.Kind]; exists {
 		return errors.ErrConflict.
 			WithMsgf("module '%s' is already registered for kind '%s'", reflect.TypeOf(v), desc.Kind)
@@ -52,16 +52,14 @@ func (mr *Registry) Register(desc Descriptor) error {
 	return nil
 }
 
-func (mr Registry) get(kind string) (Descriptor, bool) {
-	mr.Lock()
-	defer mr.Unlock()
+func (mr *Registry) get(kind string) (Descriptor, bool) {
+	mr.mu.RLock()
+	defer mr.mu.RUnlock()
 	desc, found := mr.collection[kind]
 	return desc, found
 }
 
 func (mr *Registry) Plan(ctx context.Context, spec Spec, act ActionRequest) (*resource.Resource, error) {
-	mr.Lock()
-	defer mr.Unlock()
 	kind := spec.Resource.Kind
 
 	desc, found := mr.get(kind)
@@ -77,8 +75,6 @@ func (mr *Registry) Plan(ctx context.Context, spec Spec, act ActionRequest) (*re
 }
 
 func (mr *Registry) Sync(ctx context.Context, spec Spec) (*resource.State, error) {
-	mr.Lock()
-	defer mr.Unlock()
 	kind := spec.Resource.Kind
 
 	desc, found := mr.get(kind)

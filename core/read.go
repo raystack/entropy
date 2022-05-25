@@ -52,6 +52,9 @@ func (s *Service) GetLog(ctx context.Context, urn string, filter map[string]stri
 	}
 
 	modSpec, err := s.generateModuleSpec(ctx, *res)
+	if err != nil {
+		return nil, err
+	}
 
 	return moduleLogStream.Log(ctx, *modSpec, filter)
 }
