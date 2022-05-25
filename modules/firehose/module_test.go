@@ -96,7 +96,9 @@ func TestFirehoseModule_Plan(t *testing.T) {
 	}
 
 	for _, tt := range table {
+		tt := tt
 		t.Run(tt.title, func(t *testing.T) {
+			t.Parallel()
 			m := firehoseModule{}
 
 			got, err := m.Plan(context.Background(), tt.spec, tt.act)

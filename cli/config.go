@@ -16,6 +16,14 @@ import (
 
 const configFlag = "config"
 
+// Config contains the application configuration.
+type Config struct {
+	DB       mongodb.Config        `mapstructure:"db"`
+	Log      logger.LogConfig      `mapstructure:"log"`
+	Service  server.Config         `mapstructure:"service"`
+	NewRelic metric.NewRelicConfig `mapstructure:"newrelic"`
+}
+
 func cmdShowConfigs() *cobra.Command {
 	return &cobra.Command{
 		Use:   "configs",
@@ -23,20 +31,12 @@ func cmdShowConfigs() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			cfg, err := loadConfig(cmd)
 			if err != nil {
-				fmt.Printf("failed to read configs: %v\n", err)
+				fmt.Printf("failed to read configs: %v\n", err) //nolint
 				os.Exit(1)
 			}
 			_ = yaml.NewEncoder(os.Stdout).Encode(cfg)
 		},
 	}
-}
-
-// Config contains the application configuration
-type Config struct {
-	DB       mongodb.Config        `mapstructure:"db"`
-	Log      logger.LogConfig      `mapstructure:"log"`
-	Service  server.Config         `mapstructure:"service"`
-	NewRelic metric.NewRelicConfig `mapstructure:"newrelic"`
 }
 
 func loadConfig(cmd *cobra.Command) (Config, error) {

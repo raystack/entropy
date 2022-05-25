@@ -30,7 +30,9 @@ func TestError_Error(t *testing.T) {
 	}
 
 	for _, tt := range table {
+		tt := tt
 		t.Run(tt.title, func(t *testing.T) {
+			t.Parallel()
 			got := tt.err.Error()
 			assert.Equal(t, tt.want, got)
 		})
@@ -55,7 +57,7 @@ func TestError_Is(t *testing.T) {
 		{
 			title: "NonEntropyErr",
 			err:   errors.ErrInternal,
-			other: goerrors.New("foo"),
+			other: goerrors.New("foo"), //nolint
 			want:  true,
 		},
 		{
@@ -67,7 +69,9 @@ func TestError_Is(t *testing.T) {
 	}
 
 	for _, tt := range table {
+		tt := tt
 		t.Run(tt.title, func(t *testing.T) {
+			t.Parallel()
 			got := goerrors.Is(tt.err, tt.other)
 			assert.Equal(t, tt.want, got)
 		})
@@ -103,7 +107,9 @@ func TestError_WithCausef(t *testing.T) {
 	}
 
 	for _, tt := range table {
+		tt := tt
 		t.Run(tt.title, func(t *testing.T) {
+			t.Parallel()
 			assert.Equal(t, tt.want, tt.err)
 		})
 	}
@@ -136,13 +142,16 @@ func TestError_WithMsgf(t *testing.T) {
 	}
 
 	for _, tt := range table {
+		tt := tt
 		t.Run(tt.title, func(t *testing.T) {
+			t.Parallel()
 			assert.Equal(t, tt.want, tt.err)
 		})
 	}
 }
 
 func Test_Errorf(t *testing.T) {
+	t.Parallel()
 	e := errors.Errorf("failed: %d", 100)
 	assert.Error(t, e)
 	assert.EqualError(t, e, "failed: 100")

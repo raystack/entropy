@@ -9,6 +9,7 @@ import (
 )
 
 func TestState_IsTerminal(t *testing.T) {
+	t.Parallel()
 	state := resource.State{Status: resource.StatusPending}
 	assert.False(t, state.IsTerminal())
 
@@ -17,6 +18,7 @@ func TestState_IsTerminal(t *testing.T) {
 }
 
 func TestState_InDeletion(t *testing.T) {
+	t.Parallel()
 	state := resource.State{Status: resource.StatusPending}
 	assert.False(t, state.InDeletion())
 
@@ -25,6 +27,7 @@ func TestState_InDeletion(t *testing.T) {
 }
 
 func TestState_Clone(t *testing.T) {
+	t.Parallel()
 	originalState := resource.State{
 		Status:     resource.StatusPending,
 		Output:     []byte(`{"foo": "bar"}`),

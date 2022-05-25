@@ -14,20 +14,20 @@ import (
 
 const resourceRepoName = "resources"
 
+type ResourceRepository struct{ coll *mongo.Collection }
+
 func NewResourceRepository(db *mongo.Database) *ResourceRepository {
 	return &ResourceRepository{
 		coll: db.Collection(resourceRepoName),
 	}
 }
 
-type ResourceRepository struct{ coll *mongo.Collection }
-
 func (rc *ResourceRepository) GetByURN(ctx context.Context, urn string) (*resource.Resource, error) {
 	var rm resourceModel
 
 	filter := map[string]interface{}{"urn": urn}
 	if err := rc.coll.FindOne(ctx, filter).Decode(&rm); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, errors.ErrNotFound
 		}
 		return nil, err
@@ -43,7 +43,7 @@ func (rc *ResourceRepository) List(ctx context.Context, filter map[string]string
 	}
 
 	var records []resourceModel
-	if err = cur.All(ctx, &records); err != nil && err != mongo.ErrNoDocuments {
+	if err = cur.All(ctx, &records); err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, err
 	}
 
@@ -77,7 +77,7 @@ func (rc *ResourceRepository) Update(ctx context.Context, res resource.Resource)
 
 	_, err := rc.coll.UpdateOne(ctx, filter, updates)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return errors.ErrNotFound
 		}
 		return err
@@ -89,7 +89,7 @@ func (rc *ResourceRepository) Update(ctx context.Context, res resource.Resource)
 func (rc *ResourceRepository) Delete(ctx context.Context, urn string) error {
 	_, err := rc.coll.DeleteOne(ctx, map[string]interface{}{"urn": urn})
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return errors.ErrNotFound
 		}
 		return err
@@ -102,7 +102,7 @@ func (rc *ResourceRepository) DoPending(ctx context.Context, fn resource.Pending
 
 	var rec resourceModel
 	if err := rc.coll.FindOne(ctx, filter).Decode(&rec); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return errors.ErrNotFound // no pending item is available.
 		}
 		return err
@@ -116,7 +116,7 @@ func (rc *ResourceRepository) DoPending(ctx context.Context, fn resource.Pending
 
 	if shouldDelete {
 		_, err := rc.coll.DeleteOne(ctx, map[string]interface{}{"urn": res.URN})
-		if err != nil && err != mongo.ErrNoDocuments {
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			return err
 		}
 		return nil

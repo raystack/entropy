@@ -57,7 +57,9 @@ func TestResource_Validate(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := tt.res.Validate()
 			assert.Truef(t, errors.Is(got, tt.want), "want=%v, got=%v", tt.want, got)
 		})

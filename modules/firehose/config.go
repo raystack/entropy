@@ -29,7 +29,7 @@ type moduleConfig struct {
 	ReleaseConfigs helm.ReleaseConfig `json:"release_configs"`
 }
 
-func (mc *moduleConfig) sanitiseAndValidate(r resource.Resource) error {
+func (mc *moduleConfig) sanitiseAndValidate(r resource.Resource) {
 	rc := mc.ReleaseConfigs
 	rc.Name = fmt.Sprintf("%s-%s-firehose", r.Project, r.Name)
 	rc.Repository = defaultRepositoryString
@@ -39,7 +39,6 @@ func (mc *moduleConfig) sanitiseAndValidate(r resource.Resource) error {
 	rc.ForceUpdate = true
 
 	mc.ReleaseConfigs = rc
-	return nil
 }
 
 func (mc moduleConfig) JSON() []byte {

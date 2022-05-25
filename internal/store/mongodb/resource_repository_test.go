@@ -15,6 +15,7 @@ import (
 )
 
 func TestResourceRepository_Create(t *testing.T) {
+	t.Parallel()
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
 
@@ -98,6 +99,7 @@ func TestResourceRepository_Create(t *testing.T) {
 }
 
 func TestResourceRepository_GetByURN(t *testing.T) {
+	t.Parallel()
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
 	type fields struct {

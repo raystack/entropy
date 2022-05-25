@@ -32,7 +32,7 @@ type APIServer struct {
 	resourceService ResourceService
 }
 
-func NewApiServer(resourceService ResourceService) *APIServer {
+func NewAPIServer(resourceService ResourceService) *APIServer {
 	return &APIServer{
 		resourceService: resourceService,
 	}

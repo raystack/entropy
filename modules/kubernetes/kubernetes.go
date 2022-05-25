@@ -34,7 +34,12 @@ var Module = module.Descriptor{
 
 type kubeModule struct{}
 
-func (k *kubeModule) Plan(_ context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+type Output struct {
+	Configs    kube.Config  `json:"configs"`
+	ServerInfo version.Info `json:"server_info"`
+}
+
+func (*kubeModule) Plan(_ context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
 	res := spec.Resource
 
 	var conf kube.Config
@@ -66,17 +71,12 @@ func (k *kubeModule) Plan(_ context.Context, spec module.Spec, act module.Action
 	return &res, nil
 }
 
-func (k *kubeModule) Sync(_ context.Context, spec module.Spec) (*resource.State, error) {
+func (*kubeModule) Sync(_ context.Context, spec module.Spec) (*resource.State, error) {
 	return &resource.State{
 		Status:     resource.StatusCompleted,
 		Output:     spec.Resource.State.Output,
 		ModuleData: nil,
 	}, nil
-}
-
-type Output struct {
-	Configs    kube.Config  `json:"configs"`
-	ServerInfo version.Info `json:"server_info"`
 }
 
 func (out Output) JSON() []byte {

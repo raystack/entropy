@@ -21,7 +21,7 @@ type Config struct {
 	PingTimeout time.Duration `mapstructure:"ping_timeout" default:"3s"`
 }
 
-// Connect returns the database instance
+// Connect returns the database instance.
 func Connect(cfg Config) (*mongo.Database, error) {
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(cfg.URI))
 	if err != nil {

@@ -8,7 +8,7 @@ EXE=entropy
 
 .PHONY: all build clean
 
-all: clean test build
+all: clean test build format lint
 
 build:
 	mkdir -p ${BUILD_DIR}
@@ -29,3 +29,9 @@ test-coverage: test
 
 generate:
 	go generate ./...
+
+format:
+	gofumpt -l -w .
+
+lint:
+	golangci-lint run

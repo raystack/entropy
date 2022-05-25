@@ -31,7 +31,8 @@ type Config struct {
 func (cfg Config) addr() string { return fmt.Sprintf("%s:%d", cfg.Host, cfg.Port) }
 
 func Serve(ctx context.Context, cfg Config, logger *zap.Logger, nr *newrelic.Application,
-	resourceSvc handlersv1.ResourceService) error {
+	resourceSvc handlersv1.ResourceService,
+) error {
 	serverCfg := server.Config{
 		Host: cfg.Host,
 		Port: cfg.Port,
@@ -73,7 +74,7 @@ func Serve(ctx context.Context, cfg Config, logger *zap.Logger, nr *newrelic.App
 		common.New(version.GetVersionAndBuildInfo()),
 	)
 
-	v1Handler := handlersv1.NewApiServer(resourceSvc)
+	v1Handler := handlersv1.NewAPIServer(resourceSvc)
 
 	muxServer.RegisterService(
 		&entropyv1beta1.ResourceService_ServiceDesc,
@@ -96,7 +97,7 @@ func gracefulServe(ctx context.Context, mux *server.MuxServer) error {
 	case <-ctx.Done():
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), gracefulTimeout)
 		defer shutdownCancel()
-		mux.Shutdown(shutdownCtx)
+		mux.Shutdown(shutdownCtx) //nolint
 		return nil
 
 	case serverError := <-serverErrorChan:
