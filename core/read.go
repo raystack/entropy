@@ -51,10 +51,10 @@ func (s *Service) GetLog(ctx context.Context, urn string, filter map[string]stri
 		return nil, errors.ErrUnsupported.WithMsgf("log streaming not supported for kind '%s'", res.Kind)
 	}
 
-	modSpec := module.Spec{
-		Resource:     *res,
-		Dependencies: map[string]module.ResolvedDependency{},
+	modSpec, err := s.generateModuleSpec(ctx, *res)
+	if err != nil {
+		return nil, err
 	}
 
-	return moduleLogStream.Log(ctx, modSpec, filter)
+	return moduleLogStream.Log(ctx, *modSpec, filter)
 }

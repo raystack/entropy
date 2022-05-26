@@ -42,7 +42,7 @@ type Output struct {
 func (*kubeModule) Plan(_ context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
 	res := spec.Resource
 
-	var conf kube.Config
+	conf := kube.DefaultClientConfig()
 	if err := json.Unmarshal(act.Params, &conf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid json config value").WithCausef(err.Error())
 	}
