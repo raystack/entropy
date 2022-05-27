@@ -68,8 +68,13 @@ func createResourceCmd(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			server := GetServer(ctx, cmd)
-			res, err := server.CreateResource(ctx, &reqBody)
+			client, cancel, err := createClient(ctx, cmd)
+			if err != nil {
+				return err
+			}
+			defer cancel()
+
+			res, err := client.CreateResource(ctx, &reqBody)
 			if err != nil {
 				return err
 			}
@@ -105,8 +110,13 @@ func listAllResourcesCommand(ctx context.Context) *cobra.Command {
 			reqBody.Kind = kind
 			reqBody.Project = project
 
-			server := GetServer(ctx, cmd)
-			res, err := server.ListResources(ctx, &reqBody)
+			client, cancel, err := createClient(ctx, cmd)
+			if err != nil {
+				return err
+			}
+			defer cancel()
+
+			res, err := client.ListResources(ctx, &reqBody)
 			if err != nil {
 				return err
 			}
@@ -157,8 +167,12 @@ func viewResourceCommand(ctx context.Context) *cobra.Command {
 			var reqBody entropyv1beta1.GetResourceRequest
 			reqBody.Urn = urn
 
-			server := GetServer(ctx, cmd)
-			res, err := server.GetResource(ctx, &reqBody)
+			client, cancel, err := createClient(ctx, cmd)
+			if err != nil {
+				return err
+			}
+			defer cancel()
+			res, err := client.GetResource(ctx, &reqBody)
 			if err != nil {
 				return err
 			}
@@ -219,8 +233,13 @@ func editResourceCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			server := GetServer(ctx, cmd)
-			_, err = server.UpdateResource(ctx, &reqBody)
+			client, cancel, err := createClient(ctx, cmd)
+			if err != nil {
+				return err
+			}
+			defer cancel()
+
+			_, err = client.UpdateResource(ctx, &reqBody)
 			if err != nil {
 				return err
 			}
@@ -256,8 +275,13 @@ func deleteResourceCommand(ctx context.Context) *cobra.Command {
 			var reqBody entropyv1beta1.DeleteResourceRequest
 			reqBody.Urn = urn
 
-			server := GetServer(ctx, cmd)
-			_, err := server.DeleteResource(ctx, &reqBody)
+			client, cancel, err := createClient(ctx, cmd)
+			if err != nil {
+				return err
+			}
+			defer cancel()
+
+			_, err = client.DeleteResource(ctx, &reqBody)
 			if err != nil {
 				return err
 			}
