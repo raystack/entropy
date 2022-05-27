@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log"
 	"strings"
@@ -33,7 +34,7 @@ func cmdLogs(ctx context.Context) *cobra.Command {
 			defer spinner.Stop()
 			cs := term.NewColorScheme()
 
-			client, cancel, err := createClient(ctx, cmd)
+			client, cancel, err := createClient(cmd)
 			if err != nil {
 				return err
 			}
@@ -64,14 +65,14 @@ func cmdLogs(ctx context.Context) *cobra.Command {
 			go func() {
 				for {
 					resp, err := stream.Recv()
-					if err == io.EOF {
-						done <- true //means stream is finished
+					if errors.Is(err, io.EOF) {
+						done <- true
 						return
 					}
 					if err != nil {
 						log.Fatalf("cannot receive %v", err)
 					}
-					log.Printf(cs.Bluef("%s", resp.GetChunk().GetData()))
+					log.Printf(cs.Bluef("%s", resp.GetChunk().GetData())) //nolint
 				}
 			}()
 

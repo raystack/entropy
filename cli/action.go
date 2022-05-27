@@ -47,7 +47,7 @@ func cmdAction(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			client, cancel, err := createClient(ctx, cmd)
+			client, cancel, err := createClient(cmd)
 			if err != nil {
 				return err
 			}

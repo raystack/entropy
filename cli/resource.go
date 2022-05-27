@@ -68,7 +68,7 @@ func createResourceCmd(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			client, cancel, err := createClient(ctx, cmd)
+			client, cancel, err := createClient(cmd)
 			if err != nil {
 				return err
 			}
@@ -110,7 +110,7 @@ func listAllResourcesCommand(ctx context.Context) *cobra.Command {
 			reqBody.Kind = kind
 			reqBody.Project = project
 
-			client, cancel, err := createClient(ctx, cmd)
+			client, cancel, err := createClient(cmd)
 			if err != nil {
 				return err
 			}
@@ -167,7 +167,7 @@ func viewResourceCommand(ctx context.Context) *cobra.Command {
 			var reqBody entropyv1beta1.GetResourceRequest
 			reqBody.Urn = urn
 
-			client, cancel, err := createClient(ctx, cmd)
+			client, cancel, err := createClient(cmd)
 			if err != nil {
 				return err
 			}
@@ -233,7 +233,7 @@ func editResourceCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			client, cancel, err := createClient(ctx, cmd)
+			client, cancel, err := createClient(cmd)
 			if err != nil {
 				return err
 			}
@@ -275,7 +275,7 @@ func deleteResourceCommand(ctx context.Context) *cobra.Command {
 			var reqBody entropyv1beta1.DeleteResourceRequest
 			reqBody.Urn = urn
 
-			client, cancel, err := createClient(ctx, cmd)
+			client, cancel, err := createClient(cmd)
 			if err != nil {
 				return err
 			}
