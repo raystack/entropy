@@ -129,5 +129,8 @@ issues:
       linters:
         - gocritic
         - dupl
+    - path: cli
+      linters:
+        - forbidigo
 severity:
   default-severity: error
