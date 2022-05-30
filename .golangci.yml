@@ -9,6 +9,7 @@ linters:
     - cyclop
     - exhaustive
     - exhaustivestruct
+    - exhaustruct
     - funlen
     - gochecknoglobals
     - gocyclo
