@@ -6,6 +6,7 @@ output:
 linters:
   enable-all: true
   disable:
+    - exhaustruct
     - cyclop
     - exhaustive
     - exhaustivestruct
