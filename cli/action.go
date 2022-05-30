@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/odpf/salt/term" //nolint
@@ -13,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func cmdAction(ctx context.Context) *cobra.Command {
+func cmdAction() *cobra.Command {
 	var urn, action, filePath string
 	var params *structpb.Value
 	cmd := &cobra.Command{
@@ -53,7 +52,7 @@ func cmdAction(ctx context.Context) *cobra.Command {
 			}
 			defer cancel()
 
-			res, err := client.ApplyAction(ctx, &reqBody)
+			res, err := client.ApplyAction(cmd.Context(), &reqBody)
 			if err != nil {
 				return err
 			}

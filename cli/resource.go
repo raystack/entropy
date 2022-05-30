@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -15,7 +14,7 @@ import (
 
 const outputJSON = "json"
 
-func cmdResource(ctx context.Context) *cobra.Command {
+func cmdResource() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "resource",
 		Aliases: []string{"resources"},
@@ -33,17 +32,17 @@ func cmdResource(ctx context.Context) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		createResourceCmd(ctx),
-		listAllResourcesCommand(ctx),
-		viewResourceCommand(ctx),
-		editResourceCommand(ctx),
-		deleteResourceCommand(ctx),
+		createResourceCommand(),
+		listAllResourcesCommand(),
+		viewResourceCommand(),
+		editResourceCommand(),
+		deleteResourceCommand(),
 	)
 
 	return cmd
 }
 
-func createResourceCmd(ctx context.Context) *cobra.Command {
+func createResourceCommand() *cobra.Command {
 	var filePath string
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -74,7 +73,7 @@ func createResourceCmd(ctx context.Context) *cobra.Command {
 			}
 			defer cancel()
 
-			res, err := client.CreateResource(ctx, &reqBody)
+			res, err := client.CreateResource(cmd.Context(), &reqBody)
 			if err != nil {
 				return err
 			}
@@ -90,7 +89,7 @@ func createResourceCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func listAllResourcesCommand(ctx context.Context) *cobra.Command {
+func listAllResourcesCommand() *cobra.Command {
 	var output, kind, project string
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -116,7 +115,7 @@ func listAllResourcesCommand(ctx context.Context) *cobra.Command {
 			}
 			defer cancel()
 
-			res, err := client.ListResources(ctx, &reqBody)
+			res, err := client.ListResources(cmd.Context(), &reqBody)
 			if err != nil {
 				return err
 			}
@@ -148,7 +147,7 @@ func listAllResourcesCommand(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func viewResourceCommand(ctx context.Context) *cobra.Command {
+func viewResourceCommand() *cobra.Command {
 	var output, urn string
 	cmd := &cobra.Command{
 		Use:   "view",
@@ -172,7 +171,7 @@ func viewResourceCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 			defer cancel()
-			res, err := client.GetResource(ctx, &reqBody)
+			res, err := client.GetResource(cmd.Context(), &reqBody)
 			if err != nil {
 				return err
 			}
@@ -200,7 +199,7 @@ func viewResourceCommand(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func editResourceCommand(ctx context.Context) *cobra.Command {
+func editResourceCommand() *cobra.Command {
 	var filePath, urn string
 	cmd := &cobra.Command{
 		Use:   "edit",
@@ -239,7 +238,7 @@ func editResourceCommand(ctx context.Context) *cobra.Command {
 			}
 			defer cancel()
 
-			_, err = client.UpdateResource(ctx, &reqBody)
+			_, err = client.UpdateResource(cmd.Context(), &reqBody)
 			if err != nil {
 				return err
 			}
@@ -256,7 +255,7 @@ func editResourceCommand(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func deleteResourceCommand(ctx context.Context) *cobra.Command {
+func deleteResourceCommand() *cobra.Command {
 	var urn string
 	cmd := &cobra.Command{
 		Use:   "delete",
@@ -281,7 +280,7 @@ func deleteResourceCommand(ctx context.Context) *cobra.Command {
 			}
 			defer cancel()
 
-			_, err = client.DeleteResource(ctx, &reqBody)
+			_, err = client.DeleteResource(cmd.Context(), &reqBody)
 			if err != nil {
 				return err
 			}

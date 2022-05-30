@@ -8,7 +8,7 @@ import (
 	"github.com/odpf/entropy/internal/store/mongodb"
 )
 
-func cmdMigrate(ctx context.Context) *cobra.Command {
+func cmdMigrate() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "migrate",
 		Short: "Run DB migrations",
@@ -20,7 +20,7 @@ func cmdMigrate(ctx context.Context) *cobra.Command {
 			return err
 		}
 
-		return runMigrations(ctx, cfg.DB)
+		return runMigrations(cmd.Context(), cfg.DB)
 	}
 
 	return cmd

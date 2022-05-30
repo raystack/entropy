@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"google.golang.org/protobuf/encoding/protojson"
+	"github.com/ghodss/yaml"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -19,11 +19,11 @@ func parseFile(filePath string, v protoreflect.ProtoMessage) error {
 
 	switch filepath.Ext(filePath) {
 	case ".json":
-		if err := protojson.Unmarshal(b, v); err != nil {
+		if err := json.Unmarshal(b, v); err != nil {
 			return fmt.Errorf("invalid json: %w", err)
 		}
 	case ".yaml", ".yml":
-		if err := protojson.Unmarshal(b, v); err != nil {
+		if err := yaml.Unmarshal(b, v); err != nil {
 			return fmt.Errorf("invalid yaml: %w", err)
 		}
 	default:

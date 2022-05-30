@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"errors"
 	"io"
 	"log"
@@ -15,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func cmdLogs(ctx context.Context) *cobra.Command {
+func cmdLogs() *cobra.Command {
 	var urn string
 	var filter []string
 	filters := make(map[string]string)
@@ -42,7 +41,7 @@ func cmdLogs(ctx context.Context) *cobra.Command {
 
 			var reqBody entropyv1beta1.GetLogRequest
 			for _, f := range filter {
-				keyValue := strings.Split(f, ":")
+				keyValue := strings.Split(f, "=")
 				filters[keyValue[0]] = keyValue[1]
 			}
 
@@ -54,36 +53,30 @@ func cmdLogs(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			stream, err := client.GetLog(ctx, &reqBody)
+			stream, err := client.GetLog(cmd.Context(), &reqBody)
 			if err != nil {
 				return err
 			}
 			spinner.Stop()
 
-			done := make(chan bool)
-
-			go func() {
-				for {
-					resp, err := stream.Recv()
-					if errors.Is(err, io.EOF) {
-						done <- true
-						return
-					}
-					if err != nil {
-						log.Fatalf("cannot receive %v", err)
-					}
-					log.Printf(cs.Bluef("%s", resp.GetChunk().GetData())) //nolint
+			for {
+				resp, err := stream.Recv()
+				if errors.Is(err, io.EOF) {
+					break
 				}
-			}()
-
-			<-done
+				if err != nil {
+					log.Fatalf("cannot receive %v", err)
+				}
+				log.SetFlags(0)
+				log.Printf(cs.Bluef("%s", resp.GetChunk().GetData())) //nolint
+			}
 
 			return nil
 		},
 	}
 
 	cmd.Flags().StringVarP(&urn, "urn", "u", "", "urn of the resource")
-	cmd.Flags().StringArrayVarP(&filter, "filter", "f", nil, "Use filters. Example: --filter=key:value")
+	cmd.Flags().StringArrayVarP(&filter, "filter", "f", nil, "Use filters. Example: --filter=\"key=value\"")
 
 	return cmd
 }

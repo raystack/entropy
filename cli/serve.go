@@ -18,7 +18,7 @@ import (
 	"github.com/odpf/entropy/pkg/metric"
 )
 
-func cmdServe(ctx context.Context) *cobra.Command {
+func cmdServe() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "serve",
 		Short:   "Start gRPC & HTTP servers",
@@ -36,12 +36,12 @@ func cmdServe(ctx context.Context) *cobra.Command {
 		}
 
 		if migrate {
-			if migrateErr := runMigrations(ctx, cfg.DB); migrateErr != nil {
+			if migrateErr := runMigrations(cmd.Context(), cfg.DB); migrateErr != nil {
 				return migrateErr
 			}
 		}
 
-		return runServer(ctx, cfg, noSync)
+		return runServer(cmd.Context(), cfg, noSync)
 	}
 	return cmd
 }
