@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -33,10 +34,28 @@ func parseFile(filePath string, v protoreflect.ProtoMessage) error {
 	return nil
 }
 
-func prettyPrint(i interface{}) string {
-	s, e := json.MarshalIndent(i, "", "\t")
+func formatOutput(i protoreflect.ProtoMessage, format string) string {
+	marshalOpts := protojson.MarshalOptions{
+		Indent:         "\t",
+		Multiline:      true,
+		UseEnumNumbers: false,
+	}
+
+	b, e := marshalOpts.Marshal(i)
 	if e != nil {
 		return fmt.Sprintln(e.Error())
 	}
-	return string(s)
+
+	switch format {
+	case "json":
+		return string(b)
+	case "yaml", "yml":
+		y, e := yaml.JSONToYAML(b)
+		if e != nil {
+			return fmt.Sprintln(e.Error())
+		}
+		return string(y)
+	default:
+		return fmt.Sprintln(i)
+	}
 }

@@ -13,7 +13,7 @@ import (
 )
 
 func cmdAction() *cobra.Command {
-	var urn, action, filePath string
+	var urn, filePath, output string
 	var params *structpb.Value
 	cmd := &cobra.Command{
 		Use:     "action",
@@ -25,6 +25,7 @@ func cmdAction() *cobra.Command {
 		Annotations: map[string]string{
 			"action:core": "true",
 		},
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
@@ -39,7 +40,7 @@ func cmdAction() *cobra.Command {
 			}
 
 			reqBody.Urn = urn
-			reqBody.Action = action
+			reqBody.Action = args[0]
 
 			err := reqBody.ValidateAll()
 			if err != nil {
@@ -59,15 +60,17 @@ func cmdAction() *cobra.Command {
 			spinner.Stop()
 
 			fmt.Println(cs.Greenf("Action applied successfully"))
-			fmt.Println(cs.Bluef(prettyPrint(res.GetResource())))
+			if output != "" {
+				fmt.Println(cs.Bluef(formatOutput(res.GetResource(), output)))
+			}
 
 			return nil
 		},
 	}
 
 	cmd.Flags().StringVarP(&urn, "urn", "u", "", "urn of the resource")
-	cmd.Flags().StringVarP(&action, "action", "a", "", "action to be performed")
 	cmd.Flags().StringVarP(&filePath, "filePath", "f", "", "path to the params file")
+	cmd.Flags().StringVarP(&output, "out", "o", "", "output format, `-o json | yaml`")
 
 	return cmd
 }

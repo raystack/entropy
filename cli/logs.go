@@ -15,7 +15,6 @@ import (
 )
 
 func cmdLogs() *cobra.Command {
-	var urn string
 	var filter []string
 	filters := make(map[string]string)
 	cmd := &cobra.Command{
@@ -28,6 +27,7 @@ func cmdLogs() *cobra.Command {
 		Annotations: map[string]string{
 			"action:core": "true",
 		},
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
@@ -46,7 +46,7 @@ func cmdLogs() *cobra.Command {
 			}
 
 			reqBody.Filter = filters
-			reqBody.Urn = urn
+			reqBody.Urn = args[0]
 
 			err = reqBody.ValidateAll()
 			if err != nil {
@@ -75,7 +75,6 @@ func cmdLogs() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&urn, "urn", "u", "", "urn of the resource")
 	cmd.Flags().StringArrayVarP(&filter, "filter", "f", nil, "Use filters. Example: --filter=\"key=value\"")
 
 	return cmd

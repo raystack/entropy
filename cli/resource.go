@@ -12,8 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const outputJSON = "json"
-
 func cmdResource() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "resource",
@@ -43,7 +41,7 @@ func cmdResource() *cobra.Command {
 }
 
 func createResourceCommand() *cobra.Command {
-	var filePath string
+	var filePath, output string
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "create a resource",
@@ -80,11 +78,15 @@ func createResourceCommand() *cobra.Command {
 			spinner.Stop()
 
 			fmt.Println("URN: \t", cs.Greenf(res.Resource.Urn))
+			if output != "" {
+				fmt.Println(cs.Bluef(formatOutput(res.GetResource(), output)))
+			}
 			return nil
 		},
 	}
 
 	cmd.Flags().StringVarP(&filePath, "filePath", "f", "", "path to body of resource")
+	cmd.Flags().StringVarP(&output, "out", "o", "", "output format, `-o json | yaml`")
 
 	return cmd
 }
@@ -121,8 +123,10 @@ func listAllResourcesCommand() *cobra.Command {
 			}
 			spinner.Stop()
 
-			if output == outputJSON {
-				fmt.Println(cs.Bluef(prettyPrint(res.GetResources())))
+			if output != "" {
+				for _, resource := range res.GetResources() {
+					fmt.Println(cs.Bluef(formatOutput(resource, output)))
+				}
 			} else {
 				report := [][]string{}
 				report = append(report, []string{"URN", "NAME", "KIND", "PROJECT", "STATUS"})
@@ -134,13 +138,13 @@ func listAllResourcesCommand() *cobra.Command {
 				printer.Table(os.Stdout, report)
 				fmt.Println("\nTotal: ", count)
 
-				fmt.Println(cs.Cyanf("To view all the data in JSON format, use flag `-o json`"))
+				fmt.Println(cs.Cyanf("To view all the data in JSON/YAML format, use flag `-o json | yaml`"))
 			}
 			return nil
 		},
 	}
 
-	cmd.Flags().StringVarP(&output, "out", "o", "table", "output format, for json `-o json`")
+	cmd.Flags().StringVarP(&output, "out", "o", "", "output format, `-o json | yaml`")
 	cmd.Flags().StringVarP(&kind, "kind", "k", "", "kind of resources")
 	cmd.Flags().StringVarP(&project, "project", "p", "", "project of resources")
 
@@ -148,7 +152,7 @@ func listAllResourcesCommand() *cobra.Command {
 }
 
 func viewResourceCommand() *cobra.Command {
-	var output, urn string
+	var output string
 	cmd := &cobra.Command{
 		Use:   "view",
 		Short: "view a resource",
@@ -158,13 +162,14 @@ func viewResourceCommand() *cobra.Command {
 		Annotations: map[string]string{
 			"action:core": "true",
 		},
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
 			cs := term.NewColorScheme()
 
 			var reqBody entropyv1beta1.GetResourceRequest
-			reqBody.Urn = urn
+			reqBody.Urn = args[0]
 
 			client, cancel, err := createClient(cmd)
 			if err != nil {
@@ -177,8 +182,8 @@ func viewResourceCommand() *cobra.Command {
 			}
 			spinner.Stop()
 
-			if output == outputJSON {
-				fmt.Println(cs.Bluef(prettyPrint(res.GetResource())))
+			if output != "" {
+				fmt.Println(cs.Bluef(formatOutput(res.GetResource(), output)))
 			} else {
 				report := [][]string{}
 				report = append(report, []string{"URN", "NAME", "KIND", "PROJECT", "STATUS"})
@@ -187,20 +192,19 @@ func viewResourceCommand() *cobra.Command {
 
 				printer.Table(os.Stdout, report)
 
-				fmt.Println(cs.Cyanf("\nTo view all the data in JSON format, use flag `-o json`"))
+				fmt.Println(cs.Cyanf("\nTo view all the data in JSON/YAML format, use flag `-o json | yaml`"))
 			}
 			return nil
 		},
 	}
 
-	cmd.Flags().StringVarP(&output, "out", "o", "table", "output format, for json `-o json`")
-	cmd.Flags().StringVarP(&urn, "urn", "u", "", "urn of resource")
+	cmd.Flags().StringVarP(&output, "out", "o", "", "output format, `-o json | yaml`")
 
 	return cmd
 }
 
 func editResourceCommand() *cobra.Command {
-	var filePath, urn string
+	var filePath string
 	cmd := &cobra.Command{
 		Use:   "edit",
 		Short: "edit a resource",
@@ -210,6 +214,7 @@ func editResourceCommand() *cobra.Command {
 		Annotations: map[string]string{
 			"action:core": "true",
 		},
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
@@ -226,7 +231,7 @@ func editResourceCommand() *cobra.Command {
 
 			var reqBody entropyv1beta1.UpdateResourceRequest
 			reqBody.NewSpec = &newSpec
-			reqBody.Urn = urn
+			reqBody.Urn = args[0]
 			err = reqBody.ValidateAll()
 			if err != nil {
 				return err
@@ -250,13 +255,11 @@ func editResourceCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&filePath, "filePath", "f", "", "path to the updated spec of resource")
-	cmd.Flags().StringVarP(&urn, "urn", "u", "", "urn of resource")
 
 	return cmd
 }
 
 func deleteResourceCommand() *cobra.Command {
-	var urn string
 	cmd := &cobra.Command{
 		Use:   "delete",
 		Short: "delete a resource",
@@ -266,13 +269,14 @@ func deleteResourceCommand() *cobra.Command {
 		Annotations: map[string]string{
 			"action:core": "true",
 		},
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
 			cs := term.NewColorScheme()
 
 			var reqBody entropyv1beta1.DeleteResourceRequest
-			reqBody.Urn = urn
+			reqBody.Urn = args[0]
 
 			client, cancel, err := createClient(cmd)
 			if err != nil {
@@ -290,8 +294,5 @@ func deleteResourceCommand() *cobra.Command {
 			return nil
 		},
 	}
-
-	cmd.Flags().StringVarP(&urn, "urn", "u", "", "urn of resource")
-
 	return cmd
 }
