@@ -36,9 +36,8 @@ func parseFile(filePath string, v protoreflect.ProtoMessage) error {
 
 func formatOutput(i protoreflect.ProtoMessage, format string) string {
 	marshalOpts := protojson.MarshalOptions{
-		Indent:         "\t",
-		Multiline:      true,
-		UseEnumNumbers: false,
+		Indent:    "\t",
+		Multiline: true,
 	}
 
 	b, e := marshalOpts.Marshal(i)
