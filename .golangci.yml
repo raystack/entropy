@@ -29,6 +29,9 @@ linters:
     - scopelint
     - tagliatelle
     - testpackage
+    - paralleltest
+    - tparallel
+    - containedctx
     - varnamelen
     - wrapcheck
     - wsl

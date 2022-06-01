@@ -40,7 +40,7 @@ func New(queue JobQueue, opts ...Option) (*Worker, error) {
 // Enqueue enqueues all jobs for processing.
 func (w *Worker) Enqueue(ctx context.Context, jobs ...Job) error {
 	for i, job := range jobs {
-		if err := job.sanitise(); err != nil {
+		if err := job.Sanitise(); err != nil {
 			return err
 		} else if _, knownKind := w.handlers[job.Kind]; !knownKind {
 			return fmt.Errorf("%w: kind '%s'", ErrUnknownKind, job.Kind)
@@ -63,21 +63,17 @@ func (w *Worker) Run(baseCtx context.Context) error {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-
-			if err := w.runWorker(ctx); err != nil && !errors.Is(err, context.Canceled) {
-				w.logger.Error("worker exited with error",
-					zap.Error(err),
-					zap.Int("worker_id", id),
-				)
-			}
+			w.runWorker(ctx)
+			w.logger.Info("worker exited", zap.Int("worker_id", id))
 		}(i)
 	}
 	wg.Wait()
 
+	w.logger.Info("all workers-threads exited")
 	return cleanupCtxErr(ctx.Err())
 }
 
-func (w *Worker) runWorker(ctx context.Context) error {
+func (w *Worker) runWorker(ctx context.Context) {
 	timer := time.NewTimer(w.pollInt)
 	defer timer.Stop()
 
@@ -89,7 +85,7 @@ func (w *Worker) runWorker(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return cleanupCtxErr(ctx.Err())
+			return
 
 		case <-timer.C:
 			timer.Reset(w.pollInt)
@@ -109,8 +105,7 @@ func (w *Worker) handleJob(ctx context.Context, job Job) ([]byte, error) {
 	if !exists {
 		// Note: This should never happen since Dequeue() has `kinds` filter.
 		//       It is only kept as a safety net to prevent nil-dereferences.
-		return nil, &RunError{
-			JobID:      job.ID,
+		return nil, &RetryableError{
 			Cause:      errors.New("job kind is invalid"),
 			RetryAfter: invalidKindBackoff,
 		}
@@ -120,7 +115,7 @@ func (w *Worker) handleJob(ctx context.Context, job Job) ([]byte, error) {
 }
 
 func cleanupCtxErr(err error) error {
-	if errors.Is(err, context.Canceled) {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return nil
 	}
 	return err

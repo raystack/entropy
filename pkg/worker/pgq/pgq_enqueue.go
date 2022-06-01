@@ -3,13 +3,13 @@ package pgq
 import (
 	"context"
 
-	"github.com/odpf/entropy/pkg/worker"
-
 	sq "github.com/Masterminds/squirrel"
+
+	"github.com/odpf/entropy/pkg/worker"
 )
 
 func (q *Queue) Enqueue(ctx context.Context, jobs ...worker.Job) error {
-	var insertQuery = sq.Insert(q.table).Columns(
+	insertQuery := sq.Insert(q.table).Columns(
 		"id", "kind", "status", "run_at",
 		"payload", "created_at", "updated_at",
 	)

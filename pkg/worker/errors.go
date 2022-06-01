@@ -12,19 +12,13 @@ var (
 	ErrUnknownKind = errors.New("job kind is invalid")
 )
 
-// RunError can be returned by a JobFn on failure to process a job, to provide
-// instructions to the JobQueue about the next steps to be taken.
-type RunError struct {
-	JobID string
-	Cause error
-
-	// RetryAfter indicates when to retry this failed job again. Zero-value
-	// indicates no-retry.
+// RetryableError can be returned by a JobFn to instruct the worker to attempt
+// retry after time specified by the RetryAfter field.
+type RetryableError struct {
+	Cause      error
 	RetryAfter time.Duration
 }
 
-func (re *RunError) ShouldRetry() bool { return re.RetryAfter > 0 }
-
-func (re *RunError) Error() string {
-	return fmt.Sprintf("failed to run job '%s': %v", re.JobID, re.Cause)
+func (re *RetryableError) Error() string {
+	return fmt.Sprintf("retryable-error: %v", re.Cause)
 }

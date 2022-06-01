@@ -1,11 +1,16 @@
 package worker
 
+//go:generate mockery --name=JobQueue -r --case underscore --with-expecter --structname JobQueue --filename=job_queue.go --output=./mocks
+
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 )
+
+const ctxCancellationBackoff = 3 * time.Second
 
 const (
 	StatusDone    = "DONE"
@@ -48,10 +53,10 @@ type JobQueue interface {
 // JobFn is invoked by the JobQueue for ready jobs. If it returns no error,
 // job will be marked with StatusDone by the JobQueue. If it returns error
 // job should be retried or marked with StatusFailed accordingly.
-// Refer RunError for expected behaviour on error.
+// Refer RetryableError for expected behaviour on error.
 type JobFn func(ctx context.Context, job Job) ([]byte, error)
 
-func (j *Job) sanitise() error {
+func (j *Job) Sanitise() error {
 	now := time.Now()
 
 	j.ID = strings.TrimSpace(j.ID)
@@ -79,30 +84,39 @@ func (j *Job) sanitise() error {
 	return nil
 }
 
-func (j *Job) Attempt(ctx context.Context, fn JobFn) {
-	attemptStart := time.Now()
-
+func (j *Job) Attempt(ctx context.Context, now time.Time, fn JobFn) {
 	defer func() {
 		if v := recover(); v != nil {
 			j.LastError = fmt.Sprintf("panic: %v", v)
 			j.Status = StatusPanic
 		}
 
-		j.LastAttemptAt = attemptStart
-		j.UpdatedAt = time.Now()
+		j.AttemptsDone++
+		j.LastAttemptAt = now
+		j.UpdatedAt = now
 	}()
 
-	res, err := fn(ctx, *j)
-	if err != nil {
-		if re, ok := err.(*RunError); ok && re.ShouldRetry() {
-			j.RunAt = time.Now().Add(re.RetryAfter)
-			j.Status = StatusPending
+	select {
+	case <-ctx.Done():
+		j.Status = StatusPending
+		j.RunAt = now.Add(ctxCancellationBackoff)
+		j.LastError = fmt.Sprintf("cancelled: %v", ctx.Err())
+
+	default:
+		res, err := fn(ctx, *j)
+		if err != nil {
+			re := &RetryableError{}
+			if errors.As(err, &re) {
+				j.LastError = re.Error()
+				j.RunAt = now.Add(re.RetryAfter)
+				j.Status = StatusPending
+			} else {
+				j.LastError = err.Error()
+				j.Status = StatusFailed
+			}
 		} else {
-			j.LastError = err.Error()
-			j.Status = StatusFailed
+			j.Result = res
+			j.Status = StatusDone
 		}
-	} else {
-		j.Result = res
-		j.Status = StatusDone
 	}
 }

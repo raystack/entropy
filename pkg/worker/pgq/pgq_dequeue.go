@@ -26,28 +26,28 @@ func (q *Queue) Dequeue(baseCtx context.Context, kinds []string, fn worker.JobFn
 	// Heartbeat goroutine: Keeps extending the ready_at timestamp
 	// until the job-handler is running to make sure no other worker
 	// picks up the same job.
-	go func() {
-		defer cancel()
+	go q.runHeartbeat(ctx, cancel, job.ID)
+	job.Attempt(ctx, time.Now(), fn)
+	return q.saveJobResult(ctx, *job)
+}
 
-		tick := time.NewTicker(q.refreshInterval)
-		defer tick.Stop()
+func (q *Queue) runHeartbeat(ctx context.Context, cancel context.CancelFunc, id string) {
+	defer cancel()
 
-		for {
-			select {
-			case <-ctx.Done():
+	tick := time.NewTicker(q.refreshInterval)
+	defer tick.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case <-tick.C:
+			if err := q.extendWaitTime(ctx, q.db, id); err != nil {
 				return
-
-			case <-tick.C:
-				if err := q.extendWaitTime(ctx, q.db, job.ID); err != nil {
-					return
-				}
 			}
 		}
-	}()
-
-	job.Attempt(ctx, fn)
-
-	return q.saveJobResult(ctx, *job)
+	}
 }
 
 func (q *Queue) pickupJob(ctx context.Context, kinds []string) (*worker.Job, error) {
@@ -69,7 +69,7 @@ func (q *Queue) pickupJob(ctx context.Context, kinds []string) (*worker.Job, err
 }
 
 func (q *Queue) saveJobResult(ctx context.Context, job worker.Job) error {
-	var updateQuery = sq.Update(q.table).
+	updateQuery := sq.Update(q.table).
 		Where(sq.Eq{
 			"id":     job.ID,
 			"status": worker.StatusPending,
@@ -86,7 +86,7 @@ func (q *Queue) saveJobResult(ctx context.Context, job worker.Job) error {
 }
 
 func (q *Queue) fetchReadyJob(ctx context.Context, r sq.BaseRunner, kinds []string) (*worker.Job, error) {
-	var selectQuery = sq.Select().From(q.table).
+	selectQuery := sq.Select().From(q.table).
 		Columns(
 			"id", "kind", "status", "run_at",
 			"payload", "created_at", "updated_at",
@@ -106,7 +106,7 @@ func (q *Queue) fetchReadyJob(ctx context.Context, r sq.BaseRunner, kinds []stri
 
 func (q *Queue) extendWaitTime(ctx context.Context, r sq.BaseRunner, id string) error {
 	extendTo := sq.Expr("current_timestamp + (? ||' seconds')::interval ", q.extendInterval.Seconds())
-	var extendQuery = sq.Update(q.table).
+	extendQuery := sq.Update(q.table).
 		Set("run_at", extendTo).
 		Where(sq.Eq{"id": id})
 
