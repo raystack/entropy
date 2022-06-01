@@ -78,8 +78,12 @@ func createResourceCommand() *cobra.Command {
 			spinner.Stop()
 
 			fmt.Println("URN: \t", cs.Greenf(res.Resource.Urn))
-			if output != "" {
-				fmt.Println(cs.Bluef(formatOutput(res.GetResource(), output)))
+			if output == outputJSON || output == outputYAML || output == outputYML {
+				formattedOutput, err := formatOutput(res.GetResource(), output)
+				if err != nil {
+					return err
+				}
+				fmt.Println(cs.Bluef(formattedOutput))
 			}
 			return nil
 		},
@@ -123,9 +127,13 @@ func listAllResourcesCommand() *cobra.Command {
 			}
 			spinner.Stop()
 
-			if output != "" {
+			if output == outputJSON || output == outputYAML || output == outputYML {
 				for _, resource := range res.GetResources() {
-					fmt.Println(cs.Bluef(formatOutput(resource, output)))
+					formattedOutput, err := formatOutput(resource, output)
+					if err != nil {
+						return err
+					}
+					fmt.Println(cs.Bluef(formattedOutput))
 				}
 			} else {
 				report := [][]string{}
@@ -182,8 +190,12 @@ func viewResourceCommand() *cobra.Command {
 			}
 			spinner.Stop()
 
-			if output != "" {
-				fmt.Println(cs.Bluef(formatOutput(res.GetResource(), output)))
+			if output == outputJSON || output == outputYAML || output == outputYML {
+				formattedOutput, err := formatOutput(res.GetResource(), output)
+				if err != nil {
+					return err
+				}
+				fmt.Println(cs.Bluef(formattedOutput))
 			} else {
 				report := [][]string{}
 				report = append(report, []string{"URN", "NAME", "KIND", "PROJECT", "STATUS"})

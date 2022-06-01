@@ -60,8 +60,12 @@ func cmdAction() *cobra.Command {
 			spinner.Stop()
 
 			fmt.Println(cs.Greenf("Action applied successfully"))
-			if output != "" {
-				fmt.Println(cs.Bluef(formatOutput(res.GetResource(), output)))
+			if output == outputJSON || output == outputYAML || output == outputYML {
+				formattedString, err := formatOutput(res.GetResource(), output)
+				if err != nil {
+					return err
+				}
+				fmt.Println(cs.Bluef(formattedString))
 			}
 
 			return nil

@@ -12,6 +12,12 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
+const (
+	outputJSON = "json"
+	outputYAML = "yaml"
+	outputYML  = "yml"
+)
+
 func parseFile(filePath string, v protoreflect.ProtoMessage) error {
 	b, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -34,7 +40,7 @@ func parseFile(filePath string, v protoreflect.ProtoMessage) error {
 	return nil
 }
 
-func formatOutput(i protoreflect.ProtoMessage, format string) string {
+func formatOutput(i protoreflect.ProtoMessage, format string) (string, error) {
 	marshalOpts := protojson.MarshalOptions{
 		Indent:    "\t",
 		Multiline: true,
@@ -42,19 +48,19 @@ func formatOutput(i protoreflect.ProtoMessage, format string) string {
 
 	b, e := marshalOpts.Marshal(i)
 	if e != nil {
-		return fmt.Sprintln(e.Error())
+		return "", e
 	}
 
 	switch format {
-	case "json":
-		return string(b)
-	case "yaml", "yml":
+	case outputJSON:
+		return string(b), nil
+	case outputYAML, outputYML:
 		y, e := yaml.JSONToYAML(b)
 		if e != nil {
-			return fmt.Sprintln(e.Error())
+			return "", e
 		}
-		return string(y)
+		return string(y), nil
 	default:
-		return fmt.Sprintln(i)
+		return "", nil
 	}
 }
