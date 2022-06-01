@@ -12,6 +12,9 @@ func cmdMigrate() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "migrate",
 		Short: "Run DB migrations",
+		Annotations: map[string]string{
+			"group:other": "server",
+		},
 	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {

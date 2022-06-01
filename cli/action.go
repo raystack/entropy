@@ -16,14 +16,14 @@ func cmdAction() *cobra.Command {
 	var urn, filePath, output string
 	var params *structpb.Value
 	cmd := &cobra.Command{
-		Use:     "action",
+		Use:     "action <action-name>",
 		Aliases: []string{"action"},
 		Short:   "Manage actions",
 		Example: heredoc.Doc(`
-			$ entropy action
+			$ entropy action start --urn=<resource-urn> --filePath=<file-path> --out=json
 		`),
 		Annotations: map[string]string{
-			"action:core": "true",
+			"group:core": "true",
 		},
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

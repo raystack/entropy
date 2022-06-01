@@ -23,6 +23,9 @@ func cmdServe() *cobra.Command {
 		Use:     "serve",
 		Short:   "Start gRPC & HTTP servers",
 		Aliases: []string{"server", "start"},
+		Annotations: map[string]string{
+			"group:other": "server",
+		},
 	}
 
 	var migrate, noSync bool

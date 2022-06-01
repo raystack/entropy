@@ -18,14 +18,14 @@ func cmdLogs() *cobra.Command {
 	var filter []string
 	filters := make(map[string]string)
 	cmd := &cobra.Command{
-		Use:     "logs",
+		Use:     "logs <resource-urn>",
 		Aliases: []string{"logs"},
 		Short:   "Gets logs",
 		Example: heredoc.Doc(`
-			$ entropy logs
+			$ entropy logs <resource-urn> --filter="key1=value1" --filter="key2=value2"
 		`),
 		Annotations: map[string]string{
-			"action:core": "true",
+			"group:core": "true",
 		},
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

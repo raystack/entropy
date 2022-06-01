@@ -23,9 +23,9 @@ func cmdResource() *cobra.Command {
 		Example: heredoc.Doc(`
 			$ entropy resource create
 			$ entropy resource list
-			$ entropy resource view
-			$ entropy resource delete
-			$ entropy resource edit
+			$ entropy resource view <resource-urn>
+			$ entropy resource delete <resource-urn>
+			$ entropy resource edit <resource-urn>
 		`),
 	}
 
@@ -46,7 +46,7 @@ func createResourceCommand() *cobra.Command {
 		Use:   "create",
 		Short: "create a resource",
 		Example: heredoc.Doc(`
-			$ entropy resource create
+			$ entropy resource create --filePath=<file-path> --out=json
 		`),
 		Annotations: map[string]string{
 			"action:core": "true",
@@ -97,7 +97,7 @@ func listAllResourcesCommand() *cobra.Command {
 		Use:   "list",
 		Short: "list all resources",
 		Example: heredoc.Doc(`
-			$ entropy resource list
+			$ entropy resource list --kind=<resource-kind> --project=<project-name> --out=json
 		`),
 		Annotations: map[string]string{
 			"action:core": "true",
@@ -154,10 +154,10 @@ func listAllResourcesCommand() *cobra.Command {
 func viewResourceCommand() *cobra.Command {
 	var output string
 	cmd := &cobra.Command{
-		Use:   "view",
+		Use:   "view <resource-urn>",
 		Short: "view a resource",
 		Example: heredoc.Doc(`
-			$ entropy resource view 
+			$ entropy resource view <resource-urn> --out=json
 		`),
 		Annotations: map[string]string{
 			"action:core": "true",
@@ -206,10 +206,10 @@ func viewResourceCommand() *cobra.Command {
 func editResourceCommand() *cobra.Command {
 	var filePath string
 	cmd := &cobra.Command{
-		Use:   "edit",
+		Use:   "edit <resource-urn>",
 		Short: "edit a resource",
 		Example: heredoc.Doc(`
-			$ entropy resource edit
+			$ entropy resource edit <resource-urn> --filePath=<file-path>
 		`),
 		Annotations: map[string]string{
 			"action:core": "true",
@@ -261,10 +261,10 @@ func editResourceCommand() *cobra.Command {
 
 func deleteResourceCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "delete",
+		Use:   "delete <resource-urn>",
 		Short: "delete a resource",
 		Example: heredoc.Doc(`
-			$ entropy resource delete 
+			$ entropy resource delete <resource-urn>
 		`),
 		Annotations: map[string]string{
 			"action:core": "true",
