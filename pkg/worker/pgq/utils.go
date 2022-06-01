@@ -7,29 +7,8 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 
-	"github.com/odpf/entropy/pkg/errors"
 	"github.com/odpf/entropy/pkg/worker"
 )
-
-func (q *Queue) Dequeue(baseCtx context.Context, kinds []string, fn worker.JobFn) error {
-	ctx, cancel := context.WithCancel(baseCtx)
-	defer cancel()
-
-	job, err := q.pickupJob(ctx, kinds)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
-		return err
-	}
-
-	// Heartbeat goroutine: Keeps extending the ready_at timestamp
-	// until the job-handler is running to make sure no other worker
-	// picks up the same job.
-	go q.runHeartbeat(ctx, cancel, job.ID)
-	job.Attempt(ctx, time.Now(), fn)
-	return q.saveJobResult(ctx, *job)
-}
 
 func (q *Queue) runHeartbeat(ctx context.Context, cancel context.CancelFunc, id string) {
 	defer cancel()
@@ -53,7 +32,7 @@ func (q *Queue) runHeartbeat(ctx context.Context, cancel context.CancelFunc, id 
 func (q *Queue) pickupJob(ctx context.Context, kinds []string) (*worker.Job, error) {
 	var job worker.Job
 
-	txErr := q.withTxn(ctx, false, func(ctx context.Context, tx *sql.Tx) error {
+	txErr := q.withTx(ctx, false, func(ctx context.Context, tx *sql.Tx) error {
 		j, err := q.fetchReadyJob(ctx, tx, kinds)
 		if err != nil {
 			return err
@@ -87,11 +66,9 @@ func (q *Queue) saveJobResult(ctx context.Context, job worker.Job) error {
 
 func (q *Queue) fetchReadyJob(ctx context.Context, r sq.BaseRunner, kinds []string) (*worker.Job, error) {
 	selectQuery := sq.Select().From(q.table).
-		Columns(
-			"id", "kind", "status", "run_at",
+		Columns("id", "kind", "status", "run_at",
 			"payload", "created_at", "updated_at",
-			"result", "attempts_done", "last_attempt_at", "last_error",
-		).
+			"result", "attempts_done", "last_attempt_at", "last_error").
 		Where(sq.Eq{
 			"kind":   kinds,
 			"status": worker.StatusPending,
