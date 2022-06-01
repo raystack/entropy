@@ -13,14 +13,14 @@ import (
 )
 
 func cmdAction() *cobra.Command {
-	var urn, filePath, output string
+	var urn, file, output string
 	var params *structpb.Value
 	cmd := &cobra.Command{
 		Use:     "action <action-name>",
 		Aliases: []string{"action"},
 		Short:   "Manage actions",
 		Example: heredoc.Doc(`
-			$ entropy action start --urn=<resource-urn> --filePath=<file-path> --out=json
+			$ entropy action start --urn=<resource-urn> --file=<file-path> --out=json
 		`),
 		Annotations: map[string]string{
 			"group:core": "true",
@@ -32,8 +32,8 @@ func cmdAction() *cobra.Command {
 			cs := term.NewColorScheme()
 
 			var reqBody entropyv1beta1.ApplyActionRequest
-			if filePath != "" {
-				if err := parseFile(filePath, params); err != nil {
+			if file != "" {
+				if err := parseFile(file, params); err != nil {
 					return err
 				}
 				reqBody.Params = params
@@ -69,7 +69,7 @@ func cmdAction() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&urn, "urn", "u", "", "urn of the resource")
-	cmd.Flags().StringVarP(&filePath, "filePath", "f", "", "path to the params file")
+	cmd.Flags().StringVarP(&file, "file", "f", "", "path to the params file")
 	cmd.Flags().StringVarP(&output, "out", "o", "", "output format, `-o json | yaml`")
 
 	return cmd

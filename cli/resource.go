@@ -41,12 +41,12 @@ func cmdResource() *cobra.Command {
 }
 
 func createResourceCommand() *cobra.Command {
-	var filePath, output string
+	var file, output string
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "create a resource",
 		Example: heredoc.Doc(`
-			$ entropy resource create --filePath=<file-path> --out=json
+			$ entropy resource create --file=<file-path> --out=json
 		`),
 		Annotations: map[string]string{
 			"action:core": "true",
@@ -57,7 +57,7 @@ func createResourceCommand() *cobra.Command {
 			cs := term.NewColorScheme()
 
 			var reqBody entropyv1beta1.CreateResourceRequest
-			if err := parseFile(filePath, &reqBody); err != nil {
+			if err := parseFile(file, &reqBody); err != nil {
 				return err
 			}
 			err := reqBody.ValidateAll()
@@ -85,7 +85,7 @@ func createResourceCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&filePath, "filePath", "f", "", "path to body of resource")
+	cmd.Flags().StringVarP(&file, "file", "f", "", "path to body of resource")
 	cmd.Flags().StringVarP(&output, "out", "o", "", "output format, `-o json | yaml`")
 
 	return cmd
@@ -204,12 +204,12 @@ func viewResourceCommand() *cobra.Command {
 }
 
 func editResourceCommand() *cobra.Command {
-	var filePath string
+	var file string
 	cmd := &cobra.Command{
 		Use:   "edit <resource-urn>",
 		Short: "edit a resource",
 		Example: heredoc.Doc(`
-			$ entropy resource edit <resource-urn> --filePath=<file-path>
+			$ entropy resource edit <resource-urn> --file=<file-path>
 		`),
 		Annotations: map[string]string{
 			"action:core": "true",
@@ -221,7 +221,7 @@ func editResourceCommand() *cobra.Command {
 			cs := term.NewColorScheme()
 
 			var newSpec entropyv1beta1.ResourceSpec
-			if err := parseFile(filePath, &newSpec); err != nil {
+			if err := parseFile(file, &newSpec); err != nil {
 				return err
 			}
 			err := newSpec.ValidateAll()
@@ -254,7 +254,7 @@ func editResourceCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&filePath, "filePath", "f", "", "path to the updated spec of resource")
+	cmd.Flags().StringVarP(&file, "file", "f", "", "path to the updated spec of resource")
 
 	return cmd
 }
