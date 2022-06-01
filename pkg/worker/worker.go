@@ -39,12 +39,13 @@ func New(queue JobQueue, opts ...Option) (*Worker, error) {
 
 // Enqueue enqueues all jobs for processing.
 func (w *Worker) Enqueue(ctx context.Context, jobs ...Job) error {
-	for _, job := range jobs {
+	for i, job := range jobs {
 		if err := job.sanitise(); err != nil {
 			return err
 		} else if _, knownKind := w.handlers[job.Kind]; !knownKind {
 			return fmt.Errorf("%w: kind '%s'", ErrUnknownKind, job.Kind)
 		}
+		jobs[i] = job
 	}
 
 	return w.queue.Enqueue(ctx, jobs...)
@@ -93,6 +94,7 @@ func (w *Worker) runWorker(ctx context.Context) error {
 		case <-timer.C:
 			timer.Reset(w.pollInt)
 
+			w.logger.Info("looking for a job")
 			if err := w.queue.Dequeue(ctx, kinds, w.handleJob); err != nil {
 				w.logger.Error("dequeue failed", zap.Error(err))
 			}
@@ -100,14 +102,14 @@ func (w *Worker) runWorker(ctx context.Context) error {
 	}
 }
 
-func (w *Worker) handleJob(ctx context.Context, job Job) error {
+func (w *Worker) handleJob(ctx context.Context, job Job) ([]byte, error) {
 	const invalidKindBackoff = 5 * time.Minute
 
 	fn, exists := w.handlers[job.Kind]
 	if !exists {
 		// Note: This should never happen since Dequeue() has `kinds` filter.
 		//       It is only kept as a safety net to prevent nil-dereferences.
-		return &RunError{
+		return nil, &RunError{
 			JobID:      job.ID,
 			Cause:      errors.New("job kind is invalid"),
 			RetryAfter: invalidKindBackoff,
