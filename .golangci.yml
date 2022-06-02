@@ -130,5 +130,9 @@ issues:
       linters:
         - gocritic
         - dupl
+    - path: cli
+      linters:
+        - forbidigo
+        - contextcheck
 severity:
   default-severity: error

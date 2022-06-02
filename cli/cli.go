@@ -17,12 +17,15 @@ familiar languages, tools, and engineering practices.`,
 func Execute(ctx context.Context) {
 	rootCmd.PersistentFlags().StringP(configFlag, "c", "", "Override config file")
 	rootCmd.AddCommand(
-		cmdServe(ctx),
-		cmdMigrate(ctx),
+		cmdServe(),
+		cmdMigrate(),
 		cmdVersion(),
 		cmdShowConfigs(),
+		cmdResource(),
+		cmdAction(),
+		cmdLogs(),
 	)
 
 	cmdx.SetHelp(rootCmd)
-	_ = rootCmd.Execute()
+	_ = rootCmd.ExecuteContext(ctx)
 }
