@@ -21,6 +21,13 @@ type Worker struct {
 	handlers map[string]JobFn
 }
 
+// JobFn is invoked by the Worker for ready jobs. If it returns no error,
+// job will be marked with StatusDone. If it returns RetryableError, the
+// job will remain in StatusPending and will be enqueued for retry. If
+// it returns any other error, job will be marked as StatusFailed. In case
+// if a panic occurs, job will be marked as StatusPanic.
+type JobFn func(ctx context.Context, job Job) ([]byte, error)
+
 type Option func(w *Worker) error
 
 func New(queue JobQueue, opts ...Option) (*Worker, error) {
@@ -98,7 +105,7 @@ func (w *Worker) runWorker(ctx context.Context) {
 	}
 }
 
-func (w *Worker) handleJob(ctx context.Context, job Job) ([]byte, error) {
+func (w *Worker) handleJob(ctx context.Context, job Job) (*Job, error) {
 	const invalidKindBackoff = 5 * time.Minute
 
 	fn, exists := w.handlers[job.Kind]
@@ -111,7 +118,8 @@ func (w *Worker) handleJob(ctx context.Context, job Job) ([]byte, error) {
 		}
 	}
 
-	return fn(ctx, job)
+	job.Attempt(ctx, time.Now(), fn)
+	return &job, nil
 }
 
 func cleanupCtxErr(err error) error {

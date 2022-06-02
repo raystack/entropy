@@ -187,7 +187,7 @@ func TestWorker_Run(t *testing.T) {
 		q := &mocks.JobQueue{}
 		q.EXPECT().
 			Dequeue(mock.Anything, []string{"test"}, mock.Anything).
-			Run(func(ctx context.Context, kinds []string, fn worker.JobFn) {
+			Run(func(ctx context.Context, kinds []string, fn worker.DequeueFn) {
 				_, err := fn(ctx, sampleJob)
 				assert.Error(t, err)
 				assert.EqualError(t, err, "retryable-error: job kind is invalid")
@@ -219,10 +219,10 @@ func TestWorker_Run(t *testing.T) {
 		q := &mocks.JobQueue{}
 		q.EXPECT().
 			Dequeue(mock.Anything, []string{"test"}, mock.Anything).
-			Run(func(ctx context.Context, kinds []string, fn worker.JobFn) {
+			Run(func(ctx context.Context, kinds []string, fn worker.DequeueFn) {
 				res, err := fn(ctx, sampleJob)
 				assert.NoError(t, err)
-				assert.Equal(t, []byte("test_result"), res)
+				assert.Equal(t, []byte("test_result"), res.Result)
 
 				dequeued++
 				cancel() // cancel context to stop the worker.

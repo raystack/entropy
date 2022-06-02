@@ -10,9 +10,25 @@ import (
 	"github.com/odpf/entropy/pkg/worker"
 )
 
-func (q *Queue) runHeartbeat(ctx context.Context, cancel context.CancelFunc, id string) {
-	defer cancel()
+type txnFn func(ctx context.Context, tx *sql.Tx) error
 
+func (q *Queue) withTx(ctx context.Context, readOnly bool, fn txnFn) error {
+	opts := &sql.TxOptions{ReadOnly: readOnly}
+
+	tx, err := q.db.BeginTx(ctx, opts)
+	if err != nil {
+		return err
+	}
+
+	if fnErr := fn(ctx, tx); fnErr != nil {
+		_ = tx.Rollback()
+		return fnErr
+	}
+
+	return tx.Commit()
+}
+
+func (q *Queue) runHeartbeat(ctx context.Context, id string) {
 	tick := time.NewTicker(q.refreshInterval)
 	defer tick.Stop()
 
@@ -48,7 +64,7 @@ func (q *Queue) pickupJob(ctx context.Context, kinds []string) (*worker.Job, err
 }
 
 func (q *Queue) saveJobResult(ctx context.Context, job worker.Job) error {
-	updateQuery := sq.Update(q.table).
+	updateQuery := sq.Update(q.tableName).
 		Where(sq.Eq{
 			"id":     job.ID,
 			"status": worker.StatusPending,
@@ -65,7 +81,7 @@ func (q *Queue) saveJobResult(ctx context.Context, job worker.Job) error {
 }
 
 func (q *Queue) fetchReadyJob(ctx context.Context, r sq.BaseRunner, kinds []string) (*worker.Job, error) {
-	selectQuery := sq.Select().From(q.table).
+	selectQuery := sq.Select().From(q.tableName).
 		Columns("id", "kind", "status", "run_at",
 			"payload", "created_at", "updated_at",
 			"result", "attempts_done", "last_attempt_at", "last_error").
@@ -83,7 +99,7 @@ func (q *Queue) fetchReadyJob(ctx context.Context, r sq.BaseRunner, kinds []stri
 
 func (q *Queue) extendWaitTime(ctx context.Context, r sq.BaseRunner, id string) error {
 	extendTo := sq.Expr("current_timestamp + (? ||' seconds')::interval ", q.extendInterval.Seconds())
-	extendQuery := sq.Update(q.table).
+	extendQuery := sq.Update(q.tableName).
 		Set("run_at", extendTo).
 		Where(sq.Eq{"id": id})
 

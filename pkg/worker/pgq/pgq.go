@@ -32,17 +32,14 @@ var (
 	errInvalidQueueName = fmt.Errorf("queue name must match pattern '%s'", queueNamePattern)
 )
 
-// Queue implements a JobQueue backed by PostgreSQL.
-// Refer Open() for initialising.
+// Queue implements a JobQueue backed by PostgreSQL. Refer Open() for initialising.
 type Queue struct {
 	db              *sql.DB
-	name            string
-	table           string
+	queueName       string
+	tableName       string
 	extendInterval  time.Duration
 	refreshInterval time.Duration
 }
-
-type txnFn func(ctx context.Context, tx *sql.Tx) error
 
 // Open returns a JobQueue implementation backed by the PostgreSQL instance
 // discovered by the conString. The table used for the queue will be based
@@ -60,8 +57,8 @@ func Open(conString, queueName string) (*Queue, error) {
 
 	q := &Queue{
 		db:              db,
-		name:            queueName,
-		table:           tableName,
+		queueName:       queueName,
+		tableName:       tableName,
 		extendInterval:  extendInterval,
 		refreshInterval: refreshInterval,
 	}
@@ -75,7 +72,7 @@ func Open(conString, queueName string) (*Queue, error) {
 }
 
 func (q *Queue) Enqueue(ctx context.Context, jobs ...worker.Job) error {
-	insertQuery := sq.Insert(q.table).Columns(
+	insertQuery := sq.Insert(q.tableName).Columns(
 		"id", "kind", "status", "run_at",
 		"payload", "created_at", "updated_at",
 	)
@@ -94,10 +91,7 @@ func (q *Queue) Enqueue(ctx context.Context, jobs ...worker.Job) error {
 	return nil
 }
 
-func (q *Queue) Dequeue(baseCtx context.Context, kinds []string, fn worker.JobFn) error {
-	ctx, cancel := context.WithCancel(baseCtx)
-	defer cancel()
-
+func (q *Queue) Dequeue(ctx context.Context, kinds []string, fn worker.DequeueFn) error {
 	job, err := q.pickupJob(ctx, kinds)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -106,38 +100,33 @@ func (q *Queue) Dequeue(baseCtx context.Context, kinds []string, fn worker.JobFn
 		return err
 	}
 
+	resultJob, err := q.handleDequeued(ctx, *job, fn)
+	if err != nil {
+		return err
+	}
+
+	return q.saveJobResult(ctx, *resultJob)
+}
+
+func (q *Queue) handleDequeued(baseCtx context.Context, job worker.Job, fn worker.DequeueFn) (*worker.Job, error) {
+	jobCtx, cancel := context.WithCancel(baseCtx)
+	defer cancel()
+
 	go func() {
-		job.Attempt(ctx, time.Now(), fn)
-		cancel() // Attempt finished. Stop the heartbeat.
+		q.runHeartbeat(jobCtx, job.ID)
+
+		// Heartbeat process stopped for some reason. job should be
+		// released as soon as possible. so cancel context.
+		cancel()
 	}()
 
-	// Keep extending the run_at timestamp until the job-handler
-	// is running to make sure no other worker picks up the same job.
-	q.runHeartbeat(ctx, cancel, job.ID)
-
-	return q.saveJobResult(ctx, *job)
+	return fn(jobCtx, job)
 }
 
 func (q *Queue) Close() error { return q.db.Close() }
 
 func (q *Queue) prepareDB() error {
-	sqlSchema := strings.ReplaceAll(sqlSchemaTemplate, tableNamePlaceholder, q.table)
+	sqlSchema := strings.ReplaceAll(sqlSchemaTemplate, tableNamePlaceholder, q.tableName)
 	_, execErr := q.db.Exec(sqlSchema)
 	return execErr
-}
-
-func (q *Queue) withTx(ctx context.Context, readOnly bool, fn txnFn) error {
-	opts := &sql.TxOptions{ReadOnly: readOnly}
-
-	tx, err := q.db.BeginTx(ctx, opts)
-	if err != nil {
-		return err
-	}
-
-	if fnErr := fn(ctx, tx); fnErr != nil {
-		_ = tx.Rollback()
-		return fnErr
-	}
-
-	return tx.Commit()
 }

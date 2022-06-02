@@ -41,7 +41,7 @@ func TestJob_Attempt(t *testing.T) {
 			},
 			want: worker.Job{
 				Status:        worker.StatusPending,
-				RunAt:         frozenTime.Add(3 * time.Second),
+				RunAt:         frozenTime.Add(5 * time.Second),
 				UpdatedAt:     frozenTime,
 				AttemptsDone:  1,
 				LastAttemptAt: frozenTime,

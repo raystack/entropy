@@ -23,11 +23,11 @@ func (_m *JobQueue) EXPECT() *JobQueue_Expecter {
 }
 
 // Dequeue provides a mock function with given fields: ctx, kinds, fn
-func (_m *JobQueue) Dequeue(ctx context.Context, kinds []string, fn worker.JobFn) error {
+func (_m *JobQueue) Dequeue(ctx context.Context, kinds []string, fn worker.DequeueFn) error {
 	ret := _m.Called(ctx, kinds, fn)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []string, worker.JobFn) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []string, worker.DequeueFn) error); ok {
 		r0 = rf(ctx, kinds, fn)
 	} else {
 		r0 = ret.Error(0)
@@ -44,14 +44,14 @@ type JobQueue_Dequeue_Call struct {
 // Dequeue is a helper method to define mock.On call
 //  - ctx context.Context
 //  - kinds []string
-//  - fn worker.JobFn
+//  - fn worker.DequeueFn
 func (_e *JobQueue_Expecter) Dequeue(ctx interface{}, kinds interface{}, fn interface{}) *JobQueue_Dequeue_Call {
 	return &JobQueue_Dequeue_Call{Call: _e.mock.On("Dequeue", ctx, kinds, fn)}
 }
 
-func (_c *JobQueue_Dequeue_Call) Run(run func(ctx context.Context, kinds []string, fn worker.JobFn)) *JobQueue_Dequeue_Call {
+func (_c *JobQueue_Dequeue_Call) Run(run func(ctx context.Context, kinds []string, fn worker.DequeueFn)) *JobQueue_Dequeue_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]string), args[2].(worker.JobFn))
+		run(args[0].(context.Context), args[1].([]string), args[2].(worker.DequeueFn))
 	})
 	return _c
 }

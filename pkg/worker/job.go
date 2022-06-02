@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const ctxCancellationBackoff = 3 * time.Second
+const minRetryBackoff = 5 * time.Second
 
 const (
 	// StatusDone indicates the Job is successfully finished.
@@ -56,7 +56,7 @@ type Job struct {
 }
 
 // JobQueue represents a special queue that holds jobs and releases them via
-// Dequeue() only after their ReadyAt time.
+// Dequeue() only after their RunAt time.
 type JobQueue interface {
 	// Enqueue all jobs. Enqueue must ensure all-or-nothing behaviour.
 	// Jobs with zero-value or historical value for ReadyAt must be
@@ -64,18 +64,17 @@ type JobQueue interface {
 	Enqueue(ctx context.Context, jobs ...Job) error
 
 	// Dequeue one job having one of the given kinds and invoke `fn`.
-	// The job should be 'locked' until `fn` returns. Refer JobFn.
-	Dequeue(ctx context.Context, kinds []string, fn JobFn) error
+	// The job should be 'locked' until `fn` returns. Refer DequeueFn.
+	Dequeue(ctx context.Context, kinds []string, fn DequeueFn) error
 }
 
-// JobFn is invoked by the JobQueue for ready jobs. If it returns no error,
-// job will be marked with StatusDone by the JobQueue. If it returns error
-// job should be retried or marked with StatusFailed accordingly.
-// Refer RetryableError for expected behaviour on error.
-type JobFn func(ctx context.Context, job Job) ([]byte, error)
+// DequeueFn is invoked by the JobQueue for ready jobs. It is responsible for
+// handling a ready job and returning the updated version after the attempt.
+type DequeueFn func(ctx context.Context, j Job) (*Job, error)
 
 // RetryableError can be returned by a JobFn to instruct the worker to attempt
-// retry after time specified by the RetryAfter field.
+// retry after time specified by the RetryAfter field. RetryAfter can have min
+// of 5 seconds.
 type RetryableError struct {
 	Cause      error
 	RetryAfter time.Duration
@@ -126,7 +125,7 @@ func (j *Job) Attempt(ctx context.Context, now time.Time, fn JobFn) {
 	select {
 	case <-ctx.Done():
 		j.Status = StatusPending
-		j.RunAt = now.Add(ctxCancellationBackoff)
+		j.RunAt = now.Add(minRetryBackoff)
 		j.LastError = fmt.Sprintf("cancelled: %v", ctx.Err())
 
 	default:
@@ -134,8 +133,8 @@ func (j *Job) Attempt(ctx context.Context, now time.Time, fn JobFn) {
 		if err != nil {
 			re := &RetryableError{}
 			if errors.As(err, &re) {
+				j.RunAt = now.Add(re.backoff())
 				j.LastError = re.Error()
-				j.RunAt = now.Add(re.RetryAfter)
 				j.Status = StatusPending
 			} else {
 				j.LastError = err.Error()
@@ -150,4 +149,11 @@ func (j *Job) Attempt(ctx context.Context, now time.Time, fn JobFn) {
 
 func (re *RetryableError) Error() string {
 	return fmt.Sprintf("retryable-error: %v", re.Cause)
+}
+
+func (re RetryableError) backoff() time.Duration {
+	if re.RetryAfter <= minRetryBackoff {
+		return minRetryBackoff
+	}
+	return re.RetryAfter
 }
