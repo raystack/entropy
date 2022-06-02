@@ -61,6 +61,6 @@ func formatOutput(i protoreflect.ProtoMessage, format string) (string, error) {
 		}
 		return string(y), nil
 	default:
-		return "", nil
+		return "", errors.New("unsupported format") //nolint
 	}
 }
