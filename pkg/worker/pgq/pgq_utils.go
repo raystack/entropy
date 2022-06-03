@@ -49,7 +49,7 @@ func (q *Queue) pickupJob(ctx context.Context, kinds []string) (*worker.Job, err
 	var job worker.Job
 
 	txErr := q.withTx(ctx, false, func(ctx context.Context, tx *sql.Tx) error {
-		j, err := q.fetchReadyJob(ctx, tx, kinds)
+		j, err := fetchReadyJob(ctx, tx, q.tableName, kinds)
 		if err != nil {
 			return err
 		} else if extendErr := q.extendWaitTime(ctx, tx, j.ID); extendErr != nil {
@@ -80,8 +80,8 @@ func (q *Queue) saveJobResult(ctx context.Context, job worker.Job) error {
 	return err
 }
 
-func (q *Queue) fetchReadyJob(ctx context.Context, r sq.BaseRunner, kinds []string) (*worker.Job, error) {
-	selectQuery := sq.Select().From(q.tableName).
+func fetchReadyJob(ctx context.Context, r sq.BaseRunner, tableName string, kinds []string) (*worker.Job, error) {
+	selectQuery := sq.Select().From(tableName).
 		Columns("id", "kind", "status", "run_at",
 			"payload", "created_at", "updated_at",
 			"result", "attempts_done", "last_attempt_at", "last_error").
@@ -89,7 +89,7 @@ func (q *Queue) fetchReadyJob(ctx context.Context, r sq.BaseRunner, kinds []stri
 			"kind":   kinds,
 			"status": worker.StatusPending,
 		}).
-		Where(sq.Lt{"run_at": time.Now()}).
+		Where(sq.Expr("run_at < current_timestamp")).
 		Limit(1).
 		Suffix("FOR UPDATE SKIP LOCKED")
 
