@@ -19,7 +19,8 @@ format:
 	@gofumpt -l -w .
 
 lint:
-	golangci-lint run
+	@echo "Running lint checks using golangci-lint..."
+	@golangci-lint run
 
 clean: tidy
 	@echo "Cleaning up build directories..."
