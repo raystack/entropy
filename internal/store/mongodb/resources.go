@@ -36,7 +36,7 @@ func (rc *ResourceStore) GetByURN(ctx context.Context, urn string) (*resource.Re
 	return modelToResource(rm), nil
 }
 
-func (rc *ResourceStore) List(ctx context.Context, filter map[string]string) ([]*resource.Resource, error) {
+func (rc *ResourceStore) List(ctx context.Context, filter map[string]string) ([]resource.Resource, error) {
 	cur, err := rc.coll.Find(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -47,9 +47,10 @@ func (rc *ResourceStore) List(ctx context.Context, filter map[string]string) ([]
 		return nil, err
 	}
 
-	var res []*resource.Resource
+	var res []resource.Resource
 	for _, rec := range records {
-		res = append(res, modelToResource(rec))
+		r := modelToResource(rec)
+		res = append(res, *r)
 	}
 	return res, nil
 }

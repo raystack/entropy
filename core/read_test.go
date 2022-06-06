@@ -120,7 +120,7 @@ func TestService_ListResources(t *testing.T) {
 				repo := &mocks.ResourceStore{}
 				repo.EXPECT().
 					List(mock.Anything, mock.Anything).
-					Return([]*resource.Resource{&sampleResource}, nil).
+					Return([]resource.Resource{sampleResource}, nil).
 					Once()
 				return core.New(repo, nil, deadClock, nil)
 			},

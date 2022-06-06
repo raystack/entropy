@@ -214,15 +214,15 @@ func (_c *ResourceStore_GetByURN_Call) Return(_a0 *resource.Resource, _a1 error)
 }
 
 // List provides a mock function with given fields: ctx, filter
-func (_m *ResourceStore) List(ctx context.Context, filter map[string]string) ([]*resource.Resource, error) {
+func (_m *ResourceStore) List(ctx context.Context, filter map[string]string) ([]resource.Resource, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*resource.Resource
-	if rf, ok := ret.Get(0).(func(context.Context, map[string]string) []*resource.Resource); ok {
+	var r0 []resource.Resource
+	if rf, ok := ret.Get(0).(func(context.Context, map[string]string) []resource.Resource); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*resource.Resource)
+			r0 = ret.Get(0).([]resource.Resource)
 		}
 	}
 
@@ -255,7 +255,7 @@ func (_c *ResourceStore_List_Call) Run(run func(ctx context.Context, filter map[
 	return _c
 }
 
-func (_c *ResourceStore_List_Call) Return(_a0 []*resource.Resource, _a1 error) *ResourceStore_List_Call {
+func (_c *ResourceStore_List_Call) Return(_a0 []resource.Resource, _a1 error) *ResourceStore_List_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }

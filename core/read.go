@@ -32,12 +32,7 @@ func (s *Service) ListResources(ctx context.Context, project string, kind string
 	if err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
-
-	var result []resource.Resource
-	for _, res := range resources {
-		result = append(result, *res)
-	}
-	return result, nil
+	return resources, nil
 }
 
 func (s *Service) GetLog(ctx context.Context, urn string, filter map[string]string) (<-chan module.LogChunk, error) {
