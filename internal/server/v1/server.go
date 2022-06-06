@@ -17,7 +17,7 @@ import (
 
 type ResourceService interface {
 	GetResource(ctx context.Context, urn string) (*resource.Resource, error)
-	ListResources(ctx context.Context, project string, kind string) ([]resource.Resource, error)
+	ListResources(ctx context.Context, filter resource.Filter) ([]resource.Resource, error)
 	CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error)
 	UpdateResource(ctx context.Context, urn string, newSpec resource.Spec) (*resource.Resource, error)
 	DeleteResource(ctx context.Context, urn string) error
@@ -97,7 +97,13 @@ func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1
 }
 
 func (server APIServer) ListResources(ctx context.Context, request *entropyv1beta1.ListResourcesRequest) (*entropyv1beta1.ListResourcesResponse, error) {
-	resources, err := server.resourceService.ListResources(ctx, request.GetProject(), request.GetKind())
+	filter := resource.Filter{
+		Kind:    request.GetKind(),
+		Project: request.GetProject(),
+		Labels:  nil,
+	}
+
+	resources, err := server.resourceService.ListResources(ctx, filter)
 	if err != nil {
 		return nil, generateRPCErr(err)
 	}

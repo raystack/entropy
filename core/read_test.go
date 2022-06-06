@@ -80,8 +80,7 @@ func TestService_ListResources(t *testing.T) {
 	tests := []struct {
 		name    string
 		setup   func(t *testing.T) *core.Service
-		project string
-		kind    string
+		filter  resource.Filter
 		want    []resource.Resource
 		wantErr error
 	}{
@@ -135,7 +134,7 @@ func TestService_ListResources(t *testing.T) {
 			t.Parallel()
 			svc := tt.setup(t)
 
-			got, err := svc.ListResources(context.Background(), tt.project, tt.kind)
+			got, err := svc.ListResources(context.Background(), tt.filter)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))

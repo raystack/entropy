@@ -19,20 +19,12 @@ func (s *Service) GetResource(ctx context.Context, urn string) (*resource.Resour
 	return res, nil
 }
 
-func (s *Service) ListResources(ctx context.Context, project string, kind string) ([]resource.Resource, error) {
-	filter := map[string]string{}
-	if kind != "" {
-		filter["kind"] = kind
-	}
-	if project != "" {
-		filter["project"] = project
-	}
-
+func (s *Service) ListResources(ctx context.Context, filter resource.Filter) ([]resource.Resource, error) {
 	resources, err := s.store.List(ctx, filter)
 	if err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
-	return resources, nil
+	return filter.Apply(resources), nil
 }
 
 func (s *Service) GetLog(ctx context.Context, urn string, filter map[string]string) (<-chan module.LogChunk, error) {

@@ -14,6 +14,8 @@ import (
 
 const resourceRepoName = "resources"
 
+var _ resource.Store = (*ResourceStore)(nil)
+
 type ResourceStore struct{ coll *mongo.Collection }
 
 func NewResourceStore(db *mongo.Database) *ResourceStore {
@@ -36,7 +38,17 @@ func (rc *ResourceStore) GetByURN(ctx context.Context, urn string) (*resource.Re
 	return modelToResource(rm), nil
 }
 
-func (rc *ResourceStore) List(ctx context.Context, filter map[string]string) ([]resource.Resource, error) {
+func (rc *ResourceStore) List(ctx context.Context, filter resource.Filter) ([]resource.Resource, error) {
+	fq := map[string]string{}
+
+	if filter.Kind != "" {
+		fq["kind"] = filter.Kind
+	}
+
+	if filter.Project != "" {
+		fq["project"] = filter.Project
+	}
+
 	cur, err := rc.coll.Find(ctx, filter)
 	if err != nil {
 		return nil, err

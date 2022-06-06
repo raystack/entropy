@@ -214,11 +214,11 @@ func (_c *ResourceStore_GetByURN_Call) Return(_a0 *resource.Resource, _a1 error)
 }
 
 // List provides a mock function with given fields: ctx, filter
-func (_m *ResourceStore) List(ctx context.Context, filter map[string]string) ([]resource.Resource, error) {
+func (_m *ResourceStore) List(ctx context.Context, filter resource.Filter) ([]resource.Resource, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []resource.Resource
-	if rf, ok := ret.Get(0).(func(context.Context, map[string]string) []resource.Resource); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Filter) []resource.Resource); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -227,7 +227,7 @@ func (_m *ResourceStore) List(ctx context.Context, filter map[string]string) ([]
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, map[string]string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, resource.Filter) error); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
@@ -243,14 +243,14 @@ type ResourceStore_List_Call struct {
 
 // List is a helper method to define mock.On call
 //  - ctx context.Context
-//  - filter map[string]string
+//  - filter resource.Filter
 func (_e *ResourceStore_Expecter) List(ctx interface{}, filter interface{}) *ResourceStore_List_Call {
 	return &ResourceStore_List_Call{Call: _e.mock.On("List", ctx, filter)}
 }
 
-func (_c *ResourceStore_List_Call) Run(run func(ctx context.Context, filter map[string]string)) *ResourceStore_List_Call {
+func (_c *ResourceStore_List_Call) Run(run func(ctx context.Context, filter resource.Filter)) *ResourceStore_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(map[string]string))
+		run(args[0].(context.Context), args[1].(resource.Filter))
 	})
 	return _c
 }

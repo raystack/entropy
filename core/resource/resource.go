@@ -18,7 +18,7 @@ var namingPattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]+$`)
 
 type Store interface {
 	GetByURN(ctx context.Context, urn string) (*Resource, error)
-	List(ctx context.Context, filter map[string]string) ([]Resource, error)
+	List(ctx context.Context, filter Filter) ([]Resource, error)
 
 	Create(ctx context.Context, r Resource, hooks ...MutationHook) error
 	Update(ctx context.Context, r Resource, hooks ...MutationHook) error
@@ -50,6 +50,12 @@ type Spec struct {
 	Dependencies map[string]string `json:"dependencies"`
 }
 
+type Filter struct {
+	Kind    string            `json:"kind"`
+	Project string            `json:"project"`
+	Labels  map[string]string `json:"labels"`
+}
+
 func (res *Resource) Validate() error {
 	res.Kind = strings.TrimSpace(res.Kind)
 	res.Name = strings.TrimSpace(res.Name)
@@ -71,6 +77,32 @@ func (res *Resource) Validate() error {
 
 	res.URN = generateURN(*res)
 	return nil
+}
+
+func (f Filter) Apply(arr []Resource) []Resource {
+	var res []Resource
+	for _, r := range arr {
+		if f.isMatch(r) {
+			res = append(res, r)
+		}
+	}
+	return res
+}
+
+func (f Filter) isMatch(r Resource) bool {
+	kindMatch := f.Kind == "" || f.Kind == r.Kind
+	projectMatch := f.Project == "" || f.Project == r.Project
+	if !kindMatch || !projectMatch {
+		return false
+	}
+
+	for k, v := range f.Labels {
+		if r.Labels[k] != v {
+			return false
+		}
+	}
+
+	return true
 }
 
 func generateURN(res Resource) string {
