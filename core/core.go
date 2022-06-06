@@ -14,18 +14,18 @@ import (
 type Service struct {
 	logger     *zap.Logger
 	clock      func() time.Time
-	repository resource.Repository
+	store      resource.Store
 	rootModule module.Module
 }
 
-func New(repo resource.Repository, rootModule module.Module, clockFn func() time.Time, lg *zap.Logger) *Service {
+func New(repo resource.Store, rootModule module.Module, clockFn func() time.Time, lg *zap.Logger) *Service {
 	if clockFn == nil {
 		clockFn = time.Now
 	}
 	return &Service{
 		logger:     lg,
 		clock:      clockFn,
-		repository: repo,
+		store:      repo,
 		rootModule: rootModule,
 	}
 }

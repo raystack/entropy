@@ -60,10 +60,10 @@ func (s *Service) execAction(ctx context.Context, res resource.Resource, act mod
 		return nil, err
 	}
 
-	if act.Name == module.CreateAction { //nolint
+	if act.Name == module.CreateAction { // nolint
 		plannedRes.CreatedAt = s.clock()
 		plannedRes.UpdatedAt = plannedRes.CreatedAt
-		if err := s.repository.Create(ctx, *plannedRes); err != nil {
+		if err := s.store.Create(ctx, *plannedRes); err != nil {
 			if errors.Is(err, errors.ErrConflict) {
 				return nil, errors.ErrConflict.
 					WithMsgf("resource with urn '%s' already exists", plannedRes.URN)
@@ -73,7 +73,7 @@ func (s *Service) execAction(ctx context.Context, res resource.Resource, act mod
 	} else {
 		plannedRes.CreatedAt = res.CreatedAt
 		plannedRes.UpdatedAt = s.clock()
-		if err := s.repository.Update(ctx, *plannedRes); err != nil {
+		if err := s.store.Update(ctx, *plannedRes); err != nil {
 			if errors.Is(err, errors.ErrNotFound) {
 				return nil, errors.ErrNotFound.
 					WithMsgf("resource with urn '%s' does not exist", plannedRes.URN)

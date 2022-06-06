@@ -59,7 +59,7 @@ func TestService_CreateResource(t *testing.T) {
 						Project: "project",
 					}, nil).Once()
 
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(errSample).Once()
 
 				return core.New(resourceRepo, mod, deadClock, nil)
@@ -85,7 +85,7 @@ func TestService_CreateResource(t *testing.T) {
 						Project: "project",
 					}, nil).Once()
 
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(errors.ErrConflict).Once()
 
 				return core.New(resourceRepo, mod, deadClock, nil)
@@ -112,7 +112,7 @@ func TestService_CreateResource(t *testing.T) {
 						State:   resource.State{Status: resource.StatusCompleted},
 					}, nil).Once()
 
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().Create(mock.Anything, mock.Anything).Return(nil).Once()
 
 				return core.New(resourceRepo, mod, deadClock, nil)
@@ -177,7 +177,7 @@ func TestService_UpdateResource(t *testing.T) {
 			name: "ResourceNotFound",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:project:child").
 					Return(nil, errors.ErrNotFound).
@@ -199,7 +199,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Plan(mock.Anything, mock.Anything, mock.Anything).
 					Return(nil, errors.ErrInvalid).Once()
 
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:project:child").
 					Return(&testResource, nil).
@@ -221,7 +221,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Plan(mock.Anything, mock.Anything, mock.Anything).
 					Return(&testResource, nil).Once()
 
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:project:child").
 					Return(&testResource, nil).
@@ -257,7 +257,7 @@ func TestService_UpdateResource(t *testing.T) {
 						CreatedAt: frozenTime,
 					}, nil).Once()
 
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:project:child").
 					Return(&testResource, nil).Once()
@@ -319,7 +319,7 @@ func TestService_DeleteResource(t *testing.T) {
 			name: "ResourceNotFound",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
 					Return(nil, testErr).
@@ -347,7 +347,7 @@ func TestService_DeleteResource(t *testing.T) {
 						UpdatedAt: frozenTime,
 					}, nil).Once()
 
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
 					Return(&resource.Resource{
@@ -388,7 +388,7 @@ func TestService_DeleteResource(t *testing.T) {
 						UpdatedAt: frozenTime,
 					}, nil).Once()
 
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
 					Return(&resource.Resource{
@@ -450,7 +450,7 @@ func TestService_ApplyAction(t *testing.T) {
 			name: "NotFound",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
 					Return(nil, errors.ErrNotFound).
@@ -467,7 +467,7 @@ func TestService_ApplyAction(t *testing.T) {
 			name: "ModuleResolutionFailure",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
 					Return(&resource.Resource{
@@ -495,7 +495,7 @@ func TestService_ApplyAction(t *testing.T) {
 					Return(nil, errors.New("failed")).
 					Once()
 
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
 					Return(&resource.Resource{
@@ -530,7 +530,7 @@ func TestService_ApplyAction(t *testing.T) {
 					}, nil).
 					Once()
 
-				resourceRepo := &mocks.ResourceRepository{}
+				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
 					Return(&resource.Resource{

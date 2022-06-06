@@ -14,7 +14,7 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-func TestResourceRepository_Create(t *testing.T) {
+func TestResourceStore_Create(t *testing.T) {
 	t.Parallel()
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
@@ -90,7 +90,7 @@ func TestResourceRepository_Create(t *testing.T) {
 	for _, tt := range tests {
 		mt.Run(tt.name, func(mt *mtest.T) {
 			tt.setup(mt)
-			rc := NewResourceRepository(mt.DB)
+			rc := NewResourceStore(mt.DB)
 			if err := rc.Create(context.Background(), tt.args(mt).resource); !errors.Is(err, tt.wantErr) {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -98,7 +98,7 @@ func TestResourceRepository_Create(t *testing.T) {
 	}
 }
 
-func TestResourceRepository_GetByURN(t *testing.T) {
+func TestResourceStore_GetByURN(t *testing.T) {
 	t.Parallel()
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
@@ -149,7 +149,7 @@ func TestResourceRepository_GetByURN(t *testing.T) {
 	for _, tt := range tests {
 		mt.Run(tt.name, func(mt *mtest.T) {
 			tt.setup(mt)
-			rc := NewResourceRepository(mt.DB)
+			rc := NewResourceStore(mt.DB)
 			got, err := rc.GetByURN(context.Background(), tt.args(mt).urn)
 			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("GetByURN() error = %v, wantErr %v", err, tt.wantErr)

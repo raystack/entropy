@@ -35,8 +35,8 @@ func runMigrations(ctx context.Context, cfg mongodb.Config) error {
 		return err
 	}
 
-	resourceRepository := mongodb.NewResourceRepository(mongoStore)
-	if err := resourceRepository.Migrate(ctx); err != nil {
+	resourceStore := mongodb.NewResourceStore(mongoStore)
+	if err := resourceStore.Migrate(ctx); err != nil {
 		return err
 	}
 

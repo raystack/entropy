@@ -27,7 +27,7 @@ func TestService_GetResource(t *testing.T) {
 			name: "NotFound",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				repo := &mocks.ResourceRepository{}
+				repo := &mocks.ResourceStore{}
 				repo.EXPECT().
 					GetByURN(mock.Anything, mock.Anything).
 					Return(nil, errors.ErrNotFound).
@@ -41,7 +41,7 @@ func TestService_GetResource(t *testing.T) {
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				repo := &mocks.ResourceRepository{}
+				repo := &mocks.ResourceStore{}
 				repo.EXPECT().
 					GetByURN(mock.Anything, mock.Anything).
 					Return(&sampleResource, nil).
@@ -75,7 +75,7 @@ func TestService_GetResource(t *testing.T) {
 func TestService_ListResources(t *testing.T) {
 	t.Parallel()
 
-	errRepoFailure := errors.New("some repository error")
+	errStoreFailure := errors.New("some store error")
 
 	tests := []struct {
 		name    string
@@ -89,7 +89,7 @@ func TestService_ListResources(t *testing.T) {
 			name: "EmptyResult",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				repo := &mocks.ResourceRepository{}
+				repo := &mocks.ResourceStore{}
 				repo.EXPECT().
 					List(mock.Anything, mock.Anything).
 					Return(nil, nil).
@@ -100,13 +100,13 @@ func TestService_ListResources(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "RepositoryError",
+			name: "StoreError",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				repo := &mocks.ResourceRepository{}
+				repo := &mocks.ResourceStore{}
 				repo.EXPECT().
 					List(mock.Anything, mock.Anything).
-					Return(nil, errRepoFailure).
+					Return(nil, errStoreFailure).
 					Once()
 				return core.New(repo, nil, deadClock, nil)
 			},
@@ -117,7 +117,7 @@ func TestService_ListResources(t *testing.T) {
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				repo := &mocks.ResourceRepository{}
+				repo := &mocks.ResourceStore{}
 				repo.EXPECT().
 					List(mock.Anything, mock.Anything).
 					Return([]*resource.Resource{&sampleResource}, nil).

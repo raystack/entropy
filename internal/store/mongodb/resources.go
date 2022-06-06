@@ -14,15 +14,15 @@ import (
 
 const resourceRepoName = "resources"
 
-type ResourceRepository struct{ coll *mongo.Collection }
+type ResourceStore struct{ coll *mongo.Collection }
 
-func NewResourceRepository(db *mongo.Database) *ResourceRepository {
-	return &ResourceRepository{
+func NewResourceStore(db *mongo.Database) *ResourceStore {
+	return &ResourceStore{
 		coll: db.Collection(resourceRepoName),
 	}
 }
 
-func (rc *ResourceRepository) GetByURN(ctx context.Context, urn string) (*resource.Resource, error) {
+func (rc *ResourceStore) GetByURN(ctx context.Context, urn string) (*resource.Resource, error) {
 	var rm resourceModel
 
 	filter := map[string]interface{}{"urn": urn}
@@ -36,7 +36,7 @@ func (rc *ResourceRepository) GetByURN(ctx context.Context, urn string) (*resour
 	return modelToResource(rm), nil
 }
 
-func (rc *ResourceRepository) List(ctx context.Context, filter map[string]string) ([]*resource.Resource, error) {
+func (rc *ResourceStore) List(ctx context.Context, filter map[string]string) ([]*resource.Resource, error) {
 	cur, err := rc.coll.Find(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (rc *ResourceRepository) List(ctx context.Context, filter map[string]string
 	return res, nil
 }
 
-func (rc *ResourceRepository) Create(ctx context.Context, res resource.Resource, _ ...resource.MutationHook) error {
+func (rc *ResourceStore) Create(ctx context.Context, res resource.Resource, _ ...resource.MutationHook) error {
 	res.CreatedAt = time.Now()
 	res.UpdatedAt = time.Now()
 
@@ -69,7 +69,7 @@ func (rc *ResourceRepository) Create(ctx context.Context, res resource.Resource,
 	return nil
 }
 
-func (rc *ResourceRepository) Update(ctx context.Context, res resource.Resource, _ ...resource.MutationHook) error {
+func (rc *ResourceStore) Update(ctx context.Context, res resource.Resource, _ ...resource.MutationHook) error {
 	res.UpdatedAt = time.Now()
 
 	filter := map[string]interface{}{"urn": res.URN}
@@ -86,7 +86,7 @@ func (rc *ResourceRepository) Update(ctx context.Context, res resource.Resource,
 	return nil
 }
 
-func (rc *ResourceRepository) Delete(ctx context.Context, urn string, _ ...resource.MutationHook) error {
+func (rc *ResourceStore) Delete(ctx context.Context, urn string, _ ...resource.MutationHook) error {
 	_, err := rc.coll.DeleteOne(ctx, map[string]interface{}{"urn": urn})
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
@@ -97,7 +97,7 @@ func (rc *ResourceRepository) Delete(ctx context.Context, urn string, _ ...resou
 	return nil
 }
 
-func (rc *ResourceRepository) DoPending(ctx context.Context, fn resource.PendingHandler) error {
+func (rc *ResourceStore) DoPending(ctx context.Context, fn resource.PendingHandler) error {
 	filter := map[string]interface{}{"state.status": resource.StatusPending}
 
 	var rec resourceModel
@@ -125,7 +125,7 @@ func (rc *ResourceRepository) DoPending(ctx context.Context, fn resource.Pending
 	return rc.Update(ctx, *modified)
 }
 
-func (rc *ResourceRepository) Migrate(ctx context.Context) error {
+func (rc *ResourceStore) Migrate(ctx context.Context) error {
 	return createUniqueIndex(ctx, rc.coll, "urn", 1)
 }
 

@@ -13,7 +13,7 @@ import (
 
 func TestService_Sync(t *testing.T) {
 	t.Parallel()
-	s := core.New(&mocks.ResourceRepository{}, &mocks.Module{}, deadClock, nil)
+	s := core.New(&mocks.ResourceStore{}, &mocks.Module{}, deadClock, nil)
 
 	t.Run("CancelledContext", func(t *testing.T) {
 		t.Parallel()

@@ -1,6 +1,6 @@
 package resource
 
-//go:generate mockery --name=Repository -r --case underscore --with-expecter --structname ResourceRepository --filename=resource_repo.go --output=../mocks
+//go:generate mockery --name=Store -r --case underscore --with-expecter --structname ResourceStore --filename=resource_store.go --output=../mocks
 
 import (
 	"context"
@@ -16,7 +16,7 @@ const urnSeparator = ":"
 
 var namingPattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]+$`)
 
-type Repository interface {
+type Store interface {
 	GetByURN(ctx context.Context, urn string) (*Resource, error)
 	List(ctx context.Context, filter map[string]string) ([]*Resource, error)
 

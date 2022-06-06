@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Service) GetResource(ctx context.Context, urn string) (*resource.Resource, error) {
-	res, err := s.repository.GetByURN(ctx, urn)
+	res, err := s.store.GetByURN(ctx, urn)
 	if err != nil {
 		if errors.Is(err, errors.ErrNotFound) {
 			return nil, errors.ErrNotFound.WithMsgf("resource with urn '%s' not found", urn)
@@ -28,7 +28,7 @@ func (s *Service) ListResources(ctx context.Context, project string, kind string
 		filter["project"] = project
 	}
 
-	resources, err := s.repository.List(ctx, filter)
+	resources, err := s.store.List(ctx, filter)
 	if err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}

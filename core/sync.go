@@ -27,7 +27,7 @@ func (s *Service) RunSync(ctx context.Context) error {
 			return nil
 
 		case <-pollTicker.C:
-			err := s.repository.DoPending(ctx, s.syncChange)
+			err := s.store.DoPending(ctx, s.syncChange)
 			if err != nil {
 				if errors.Is(err, errors.ErrNotFound) {
 					// backOff to reduce polling pressure.

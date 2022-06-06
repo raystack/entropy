@@ -72,8 +72,8 @@ func runServer(baseCtx context.Context, c Config, disableSync bool) error {
 	if err != nil {
 		return err
 	}
-	resourceRepository := mongodb.NewResourceRepository(mongoStore)
-	resourceService := core.New(resourceRepository, moduleRegistry, time.Now, zapLog)
+	resourceStore := mongodb.NewResourceStore(mongoStore)
+	resourceService := core.New(resourceStore, moduleRegistry, time.Now, zapLog)
 
 	if !disableSync {
 		go func() {
