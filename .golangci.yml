@@ -1,8 +1,12 @@
 run:
   go: '1.17'
   timeout: 10m
+  skip-files:
+    - expt/main.go
+
 output:
   format: colored-line-number
+
 linters:
   enable-all: true
   disable:
@@ -49,7 +53,7 @@ linters-settings:
     threshold: 100
   errcheck: # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
     check-type-assertions: true
-  goconst:   
+  goconst:
     min-len: 2 # Minimal length of string constant.
     min-occurrences: 2 # Minimum occurrences of constant string count to trigger issue.
     ignore-tests: true
@@ -120,13 +124,14 @@ linters-settings:
       - singleCaseSwitch
     enabled-tags:
       - diagnostic
-#      - style
-#      - opinionated
-#      - performance
+  #      - style
+  #      - opinionated
+  #      - performance
   unparam:
     # Inspect exported functions.
     # XXX: if you enable this setting, unparam will report a lot of false-positives in text editors:
     check-exported: true
+
 issues:
   exclude-rules:
     # Exclude some linters from running on tests files.

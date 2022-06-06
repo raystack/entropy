@@ -1,5 +1,7 @@
 package resource
 
+//go:generate mockery --name=Repository -r --case underscore --with-expecter --structname ResourceRepository --filename=resource_repo.go --output=../mocks
+
 import (
 	"context"
 	"encoding/json"
@@ -13,6 +15,23 @@ import (
 const urnSeparator = ":"
 
 var namingPattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]+$`)
+
+type Repository interface {
+	GetByURN(ctx context.Context, urn string) (*Resource, error)
+	List(ctx context.Context, filter map[string]string) ([]*Resource, error)
+
+	Create(ctx context.Context, r Resource, hooks ...MutationHook) error
+	Update(ctx context.Context, r Resource, hooks ...MutationHook) error
+	Delete(ctx context.Context, urn string, hooks ...MutationHook) error
+
+	DoPending(ctx context.Context, fn PendingHandler) error
+}
+
+// MutationHook values are passed to mutation operations of resource storage
+// to handle any transactional requirements.
+type MutationHook func(ctx context.Context) error
+
+type PendingHandler func(ctx context.Context, res Resource) (*Resource, bool, error)
 
 type Resource struct {
 	URN       string            `json:"urn"`
@@ -30,18 +49,6 @@ type Spec struct {
 	Configs      json.RawMessage   `json:"configs"`
 	Dependencies map[string]string `json:"dependencies"`
 }
-
-type Repository interface {
-	GetByURN(ctx context.Context, urn string) (*Resource, error)
-	List(ctx context.Context, filter map[string]string) ([]*Resource, error)
-	Create(ctx context.Context, r Resource) error
-	Update(ctx context.Context, r Resource) error
-	Delete(ctx context.Context, urn string) error
-
-	DoPending(ctx context.Context, fn PendingHandler) error
-}
-
-type PendingHandler func(ctx context.Context, res Resource) (*Resource, bool, error)
 
 func (res *Resource) Validate() error {
 	res.Kind = strings.TrimSpace(res.Kind)

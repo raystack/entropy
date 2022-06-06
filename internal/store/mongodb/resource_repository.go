@@ -54,7 +54,7 @@ func (rc *ResourceRepository) List(ctx context.Context, filter map[string]string
 	return res, nil
 }
 
-func (rc *ResourceRepository) Create(ctx context.Context, res resource.Resource) error {
+func (rc *ResourceRepository) Create(ctx context.Context, res resource.Resource, _ ...resource.MutationHook) error {
 	res.CreatedAt = time.Now()
 	res.UpdatedAt = time.Now()
 
@@ -69,7 +69,7 @@ func (rc *ResourceRepository) Create(ctx context.Context, res resource.Resource)
 	return nil
 }
 
-func (rc *ResourceRepository) Update(ctx context.Context, res resource.Resource) error {
+func (rc *ResourceRepository) Update(ctx context.Context, res resource.Resource, _ ...resource.MutationHook) error {
 	res.UpdatedAt = time.Now()
 
 	filter := map[string]interface{}{"urn": res.URN}
@@ -86,7 +86,7 @@ func (rc *ResourceRepository) Update(ctx context.Context, res resource.Resource)
 	return nil
 }
 
-func (rc *ResourceRepository) Delete(ctx context.Context, urn string) error {
+func (rc *ResourceRepository) Delete(ctx context.Context, urn string, _ ...resource.MutationHook) error {
 	_, err := rc.coll.DeleteOne(ctx, map[string]interface{}{"urn": urn})
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
