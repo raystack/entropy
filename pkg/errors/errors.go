@@ -14,7 +14,7 @@ type Error struct {
 	Message string `json:"message"`
 }
 
-// Common timer domain errors. Use `ErrX.WithCausef()` to clone and add context.
+// Common error categories. Use `ErrX.WithXXX()` to clone and add context.
 var (
 	ErrInvalid     = Error{Code: "bad_request", Message: "Request is not valid"}
 	ErrNotFound    = Error{Code: "not_found", Message: "Requested entity not found"}
@@ -23,10 +23,17 @@ var (
 	ErrUnsupported = Error{Code: "unsupported", Message: "Requested feature is not supported"}
 )
 
+// These aliased values are added to avoid conflicting imports of standard `errors`
+// package and this `errors` package where these functions are needed.
+var (
+	Is = errors.Is
+	As = errors.As
+)
+
 // E converts any given error to the Error type. Unknown are converted
 // to ErrInternal.
 func E(err error) Error {
-	if e, ok := err.(Error); ok { //nolint
+	if e, ok := err.(Error); ok { // nolint
 		return e
 	}
 	return ErrInternal.WithCausef(err.Error())
@@ -55,7 +62,7 @@ func (err Error) WithMsgf(format string, args ...interface{}) Error {
 // Is checks if 'other' is of type Error and has the same code.
 // See https://blog.golang.org/go1.13-errors.
 func (err Error) Is(other error) bool {
-	if oe, ok := other.(Error); ok { //nolint
+	if oe, ok := other.(Error); ok { // nolint
 		return oe.Code == err.Code
 	}
 
@@ -77,10 +84,6 @@ func Errorf(format string, args ...interface{}) error {
 	return ErrInternal.WithMsgf(format, args...)
 }
 
-// Is returns true if 'err' is equivalent to the 'target' error.
-// This function is a convenience shortcut for the errors.Is().
-func Is(err, target error) bool { return errors.Is(err, target) }
-
 // OneOf checks if the error is one of the 'others'.
 func OneOf(err error, others ...error) bool {
 	for _, other := range others {
@@ -93,4 +96,4 @@ func OneOf(err error, others ...error) bool {
 
 // New returns a new error equivalent to ErrInternal.
 // This function is a convenience shortcut for the errors.New().
-func New(msg string) error { return errors.New(msg) } //nolint
+func New(msg string) error { return errors.New(msg) } // nolint

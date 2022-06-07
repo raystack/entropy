@@ -1,29 +1,22 @@
-package pgsql
+package postgres
 
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"strings"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-const (
-	tableResources            = "resources"
-	tableResourceTags         = "resource_tags"
-	tableResourceDependencies = "resource_dependencies"
-)
-
 func (st *Store) GetByURN(ctx context.Context, urn string) (*resource.Resource, error) {
-	var rec resourceRecord
+	var rec resourceModel
 	var tags []string
 	deps := map[string]string{}
 
-	readResourceParts := func(ctx context.Context, tx *sql.Tx) error {
+	readResourceParts := func(ctx context.Context, tx *sqlx.Tx) error {
 		if err := readResourceRecord(ctx, tx, urn, &rec); err != nil {
 			return err
 		}
@@ -105,17 +98,44 @@ func (st *Store) List(ctx context.Context, filter resource.Filter) ([]resource.R
 }
 
 func (st *Store) Create(ctx context.Context, r resource.Resource, hooks ...resource.MutationHook) error {
-	// TODO implement me
-	panic("implement me")
+	insertResource := func(ctx context.Context, tx *sqlx.Tx) error {
+		id, err := insertResourceRecord(ctx, tx, r)
+		if err != nil {
+			return err
+		}
+
+		if err := setResourceTags(ctx, tx, id, r.Labels); err != nil {
+			return err
+		}
+
+		if err := insertResourceDependencies(ctx, tx, id, r.Spec.Dependencies); err != nil {
+			return err
+		}
+
+		return runAllHooks(ctx, hooks)
+	}
+
+	txErr := withinTx(ctx, st.db, false, insertResource)
+	if txErr != nil {
+		return txErr
+	}
+	return nil
 }
 
 func (st *Store) Update(ctx context.Context, r resource.Resource, hooks ...resource.MutationHook) error {
-	// TODO implement me
-	panic("implement me")
+	updateResource := func(ctx context.Context, tx *sqlx.Tx) error {
+		panic("not implemented")
+	}
+
+	txErr := withinTx(ctx, st.db, false, updateResource)
+	if txErr != nil {
+		return txErr
+	}
+	return nil
 }
 
 func (st *Store) Delete(ctx context.Context, urn string, hooks ...resource.MutationHook) error {
-	deleteFn := func(ctx context.Context, tx *sql.Tx) error {
+	deleteFn := func(ctx context.Context, tx *sqlx.Tx) error {
 		id, err := translateURNToID(ctx, tx, urn)
 		if err != nil {
 			return err
@@ -146,108 +166,51 @@ func (st *Store) Delete(ctx context.Context, urn string, hooks ...resource.Mutat
 }
 
 func (st *Store) DoPending(ctx context.Context, fn resource.PendingHandler) error {
-	// TODO implement me
-	panic("implement me")
+	return nil
 }
 
-func translateURNToID(ctx context.Context, r sq.BaseRunner, urn string) (int64, error) {
-	row := sq.Select("id").
-		From(tableResources).
-		Where(sq.Eq{"urn": urn}).
-		PlaceholderFormat(sq.Dollar).
-		RunWith(r).
-		QueryRowContext(ctx)
+func insertResourceRecord(ctx context.Context, runner sq.BaseRunner, r resource.Resource) (int64, error) {
+	q := sq.Insert(tableResources).
+		Columns("urn", "kind", "project", "name", "created_at", "updated_at",
+			"spec_configs", "state_status", "state_output", "state_module_data").
+		Values(r.URN, r.Kind, r.Project, r.Name, r.CreatedAt, r.UpdatedAt,
+			r.Spec.Configs, r.State.Status, r.State.Output, r.State.ModuleData).
+		Suffix(`RETURNING "id"`).
+		PlaceholderFormat(sq.Dollar)
 
 	var id int64
-	if err := row.Scan(&id); err != nil {
+	if err := q.RunWith(runner).QueryRowContext(ctx).Scan(&id); err != nil {
 		return 0, err
 	}
 	return id, nil
 }
 
-func readResourceRecord(ctx context.Context, r sq.BaseRunner, urn string, into *resourceRecord) error {
-	cols := []string{
-		"id", "urn", "kind", "project", "name", "created_at", "updated_at",
-		"spec_configs", "state_status", "state_output", "state_module_data",
+func setResourceTags(ctx context.Context, runner sq.BaseRunner, id int64, labels map[string]string) error {
+	deleteOld := sq.Delete(tableResourceTags).Where(sq.Eq{"resource_id": id}).PlaceholderFormat(sq.Dollar)
+	insertTags := sq.Insert(tableResourceTags).Columns("resource_id", "tag").PlaceholderFormat(sq.Dollar)
+	for _, tag := range labelMapToTags(labels) {
+		insertTags = insertTags.Values(id, tag)
 	}
-	q := sq.Select(cols...).From(tableResources).Where(sq.Eq{"urn": urn})
 
-	row := q.PlaceholderFormat(sq.Dollar).RunWith(r).QueryRowContext(ctx)
-
-	if err := structScan(row, cols, into); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return errors.ErrNotFound
-		}
-		return err
-	}
-	return nil
-}
-
-func readResourceTags(ctx context.Context, r sq.BaseRunner, id int64, into *[]string) error {
-	q := sq.Select("tag").From(tableResourceTags).Where(sq.Eq{"resource_id": id})
-
-	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(r).QueryContext(ctx)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
+	if _, err := deleteOld.RunWith(runner).ExecContext(ctx); err != nil {
 		return err
 	}
 
-	for rows.Next() {
-		var tag string
-		if err := rows.Scan(&tag); err != nil {
-			return err
-		}
-		*into = append(*into, tag)
-	}
-	return nil
-}
-
-func readResourceDeps(ctx context.Context, r sq.BaseRunner, id int64, into map[string]string) error {
-	q := sq.Select("dependency_key", "depends_on").From(tableResourceDependencies).Where(sq.Eq{"resource_id": id})
-
-	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(r).QueryContext(ctx)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
+	if _, err := insertTags.RunWith(runner).ExecContext(ctx); err != nil {
 		return err
 	}
 
-	for rows.Next() {
-		var key, val string
-		if err := rows.Scan(&key, &val); err != nil {
-			return err
-		}
-		into[key] = val
-	}
 	return nil
 }
 
-func tagsToLabelMap(tags []string) map[string]string {
-	labels := map[string]string{}
-	for _, tag := range tags {
-		parts := strings.SplitN(tag, "=", 2)
-		key, val := parts[0], parts[1]
-		labels[key] = val
+func insertResourceDependencies(ctx context.Context, runner sq.BaseRunner, id int64, deps map[string]string) error {
+	insertDeps := sq.Insert(tableResourceDependencies).
+		Columns("resource_id", "dependency_key", "depends_on").
+		PlaceholderFormat(sq.Dollar)
+	for key, val := range deps {
+		insertDeps = insertDeps.Values(id, key, val)
 	}
-	return labels
-}
 
-func labelMapToTags(labels map[string]string) []string {
-	var res []string
-	for k, v := range labels {
-		res = append(res, fmt.Sprintf("%s=%s", k, v))
-	}
-	return res
-}
-
-func runAllHooks(ctx context.Context, hooks []resource.MutationHook) error {
-	for _, hook := range hooks {
-		if err := hook(ctx); err != nil {
-			return err
-		}
-	}
-	return nil
+	_, err := insertDeps.RunWith(runner).ExecContext(ctx)
+	return err
 }
