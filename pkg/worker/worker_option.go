@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -9,16 +8,7 @@ import (
 
 func WithJobKind(kind string, fn JobFn) Option {
 	return func(w *Worker) error {
-		if w.handlers == nil {
-			w.handlers = map[string]JobFn{}
-		}
-
-		if _, exists := w.handlers[kind]; exists {
-			return fmt.Errorf("%w: kind '%s'", ErrKindExists, kind)
-		}
-
-		w.handlers[kind] = fn
-		return nil
+		return w.Register(kind, fn)
 	}
 }
 

@@ -16,8 +16,10 @@ type Worker struct {
 	workers int
 	pollInt time.Duration
 
-	queue    JobQueue
-	logger   *zap.Logger
+	queue  JobQueue
+	logger *zap.Logger
+
+	mu       sync.RWMutex
 	handlers map[string]JobFn
 }
 
@@ -38,10 +40,24 @@ func New(queue JobQueue, opts ...Option) (*Worker, error) {
 		}
 	}
 
-	if len(w.handlers) == 0 {
-		return nil, errors.New("at-least one job handler must be registered")
-	}
 	return w, nil
+}
+
+// Register registers a job-kind and the function that should be invoked for
+// handling it. Returns ErrKindExists if the kind already registered.
+func (w *Worker) Register(kind string, h JobFn) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.handlers == nil {
+		w.handlers = map[string]JobFn{}
+	}
+
+	if _, exists := w.handlers[kind]; exists {
+		return fmt.Errorf("%w: kind '%s'", ErrKindExists, kind)
+	}
+	w.handlers[kind] = h
+	return nil
 }
 
 // Enqueue enqueues all jobs for processing.
@@ -84,11 +100,6 @@ func (w *Worker) runWorker(ctx context.Context) {
 	timer := time.NewTimer(w.pollInt)
 	defer timer.Stop()
 
-	var kinds []string
-	for kind := range w.handlers {
-		kinds = append(kinds, kind)
-	}
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -97,9 +108,14 @@ func (w *Worker) runWorker(ctx context.Context) {
 		case <-timer.C:
 			timer.Reset(w.pollInt)
 
-			w.logger.Info("looking for a job")
-			if err := w.queue.Dequeue(ctx, kinds, w.handleJob); err != nil {
-				w.logger.Error("dequeue failed", zap.Error(err))
+			kinds := w.getKinds()
+			if len(kinds) == 0 {
+				w.logger.Warn("no job-handler registered, skipping dequeue")
+			} else {
+				w.logger.Info("looking for a job", zap.Strings("kinds", kinds))
+				if err := w.queue.Dequeue(ctx, kinds, w.handleJob); err != nil {
+					w.logger.Error("dequeue failed", zap.Error(err))
+				}
 			}
 		}
 	}
@@ -120,6 +136,17 @@ func (w *Worker) handleJob(ctx context.Context, job Job) (*Job, error) {
 
 	job.Attempt(ctx, time.Now(), fn)
 	return &job, nil
+}
+
+func (w *Worker) getKinds() []string {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+
+	var kinds []string
+	for kind := range w.handlers {
+		kinds = append(kinds, kind)
+	}
+	return kinds
 }
 
 func cleanupCtxErr(err error) error {

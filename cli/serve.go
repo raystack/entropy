@@ -11,11 +11,13 @@ import (
 	"github.com/odpf/entropy/core"
 	"github.com/odpf/entropy/core/module"
 	entropyserver "github.com/odpf/entropy/internal/server"
-	"github.com/odpf/entropy/internal/store/mongodb"
+	"github.com/odpf/entropy/internal/store/postgres"
 	"github.com/odpf/entropy/modules/firehose"
 	"github.com/odpf/entropy/modules/kubernetes"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
+	"github.com/odpf/entropy/pkg/worker"
+	"github.com/odpf/entropy/pkg/worker/pgq"
 )
 
 func cmdServe() *cobra.Command {
@@ -28,9 +30,8 @@ func cmdServe() *cobra.Command {
 		},
 	}
 
-	var migrate, worker bool
+	var migrate bool
 	cmd.Flags().BoolVar(&migrate, "migrate", false, "Run migrations before starting")
-	cmd.Flags().BoolVar(&worker, "worker", false, "Run worker threads as well")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cfg, err := loadConfig(cmd)
@@ -49,33 +50,36 @@ func cmdServe() *cobra.Command {
 	return cmd
 }
 
-func runServer(baseCtx context.Context, c Config) error {
+func runServer(baseCtx context.Context, cfg Config) error {
 	ctx, cancel := context.WithCancel(baseCtx)
 	defer cancel()
 
-	nr, err := metric.New(&c.NewRelic)
+	nr, err := metric.New(&cfg.NewRelic)
 	if err != nil {
 		return err
 	}
 
-	zapLog, err := logger.New(&c.Log)
+	zapLog, err := logger.New(&cfg.Log)
 	if err != nil {
 		return err
 	}
 
-	moduleRegistry := setupRegistry(zapLog,
+	modules := []module.Descriptor{
 		kubernetes.Module,
 		firehose.Module,
-	)
+	}
 
-	mongoStore, err := mongodb.Connect(c.DB)
-	if err != nil {
+	store := setupStorage(zapLog, cfg.PGConnStr)
+	asyncWorker := setupWorker(zapLog, cfg.Worker)
+	moduleRegistry := setupRegistry(zapLog, modules...)
+
+	service := core.New(store, moduleRegistry, asyncWorker, time.Now, zapLog)
+
+	if err := asyncWorker.Register(core.JobKindSyncResource, service.HandleSyncJob); err != nil {
 		return err
 	}
-	resourceStore := mongodb.NewResourceStore(mongoStore)
-	resourceService := core.New(resourceStore, moduleRegistry, time.Now, zapLog)
 
-	return entropyserver.Serve(ctx, c.Service, zapLog, nr, resourceService)
+	return entropyserver.Serve(ctx, cfg.Service, zapLog, nr, service)
 }
 
 func setupRegistry(logger *zap.Logger, modules ...module.Descriptor) *module.Registry {
@@ -90,4 +94,27 @@ func setupRegistry(logger *zap.Logger, modules ...module.Descriptor) *module.Reg
 		}
 	}
 	return moduleRegistry
+}
+
+func setupWorker(logger *zap.Logger, conf workerConf) *worker.Worker {
+	pgQueue, err := pgq.Open(conf.QueueSpec, conf.QueueName)
+	if err != nil {
+		logger.Fatal("failed to init postgres job-queue", zap.Error(err))
+	}
+
+	asyncWorker, err := worker.New(pgQueue)
+	if err != nil {
+		logger.Fatal("failed to init worker instance", zap.Error(err))
+	}
+
+	return asyncWorker
+}
+
+func setupStorage(logger *zap.Logger, pgConStr string) *postgres.Store {
+	store, err := postgres.Open(pgConStr)
+	if err != nil {
+		logger.Fatal("failed to connect to Postgres database",
+			zap.Error(err), zap.String("conn_str", pgConStr))
+	}
+	return store
 }
