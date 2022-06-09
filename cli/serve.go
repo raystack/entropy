@@ -39,27 +39,27 @@ func cmdServe() *cobra.Command {
 			return err
 		}
 
+		zapLog, err := logger.New(&cfg.Log)
+		if err != nil {
+			return err
+		}
+
 		if migrate {
-			if migrateErr := runMigrations(cmd.Context(), cfg.DB); migrateErr != nil {
+			if migrateErr := runMigrations(cmd.Context(), zapLog, cfg); migrateErr != nil {
 				return migrateErr
 			}
 		}
 
-		return runServer(cmd.Context(), cfg)
+		return runServer(cmd.Context(), zapLog, cfg)
 	}
 	return cmd
 }
 
-func runServer(baseCtx context.Context, cfg Config) error {
+func runServer(baseCtx context.Context, zapLog *zap.Logger, cfg Config) error {
 	ctx, cancel := context.WithCancel(baseCtx)
 	defer cancel()
 
 	nr, err := metric.New(&cfg.NewRelic)
-	if err != nil {
-		return err
-	}
-
-	zapLog, err := logger.New(&cfg.Log)
 	if err != nil {
 		return err
 	}
