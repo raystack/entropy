@@ -9,6 +9,78 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
+func Test_E(t *testing.T) {
+	t.Parallel()
+
+	t.Run("NotError", func(t *testing.T) {
+		want := errors.Error{
+			Code:    "internal_error",
+			Cause:   "some native error",
+			Message: "Some unexpected error occurred",
+		}
+
+		err := errors.New("some native error")
+		got := errors.E(err)
+
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("ErrorValue", func(t *testing.T) {
+		want := errors.Error{
+			Code:    "not_found",
+			Cause:   "foo not found",
+			Message: "something was not found",
+		}
+
+		err := error(errors.ErrNotFound.
+			WithMsgf("something was not found").
+			WithCausef("foo not found"))
+
+		got := errors.E(err)
+		assert.Equal(t, want, got)
+	})
+}
+
+func Test_Verbose(t *testing.T) {
+	t.Parallel()
+
+	t.Run("NonError", func(t *testing.T) {
+		err := errors.New("some native error")
+
+		got := errors.Verbose(err)
+		assert.EqualError(t, got, "some native error")
+	})
+
+	t.Run("CustomError", func(t *testing.T) {
+		err := errors.ErrInvalid.
+			WithMsgf("request is not valid").
+			WithCausef("invalid parameter value")
+
+		got := errors.Verbose(err)
+		assert.EqualError(t, got, "bad_request: request is not valid (cause: invalid parameter value)")
+	})
+}
+
+func Test_Errorf(t *testing.T) {
+	t.Parallel()
+	e := errors.Errorf("failed: %d", 100)
+	assert.Error(t, e)
+	assert.EqualError(t, e, "failed: 100")
+}
+
+func Test_OneOf(t *testing.T) {
+	t.Parallel()
+
+	group := []error{
+		errors.ErrNotFound,
+		errors.ErrInvalid,
+		errors.ErrUnsupported,
+	}
+
+	assert.False(t, errors.OneOf(errors.New("failed"), group...))
+	assert.True(t, errors.OneOf(errors.ErrNotFound.WithMsgf("object not found"), group...))
+}
+
 func TestError_Error(t *testing.T) {
 	t.Parallel()
 
@@ -57,7 +129,7 @@ func TestError_Is(t *testing.T) {
 		{
 			title: "NonEntropyErr",
 			err:   errors.ErrInternal,
-			other: goerrors.New("foo"), //nolint
+			other: goerrors.New("foo"), // nolint
 			want:  true,
 		},
 		{
@@ -148,11 +220,4 @@ func TestError_WithMsgf(t *testing.T) {
 			assert.Equal(t, tt.want, tt.err)
 		})
 	}
-}
-
-func Test_Errorf(t *testing.T) {
-	t.Parallel()
-	e := errors.Errorf("failed: %d", 100)
-	assert.Error(t, e)
-	assert.EqualError(t, e, "failed: 100")
 }

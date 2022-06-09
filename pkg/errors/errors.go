@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-// Error represents any error returned by the Entropy components along with any
-// relevant context.
-type Error struct {
-	Code    string `json:"code"`
-	Cause   string `json:"cause,omitempty"`
-	Message string `json:"message"`
-}
+// These aliased values are added to avoid conflicting imports of standard `errors`
+// package and this `errors` package where these functions are needed.
+var (
+	Is  = errors.Is
+	As  = errors.As
+	New = errors.New
+)
 
 // Common error categories. Use `ErrX.WithXXX()` to clone and add context.
 var (
@@ -23,28 +23,12 @@ var (
 	ErrUnsupported = Error{Code: "unsupported", Message: "Requested feature is not supported"}
 )
 
-// These aliased values are added to avoid conflicting imports of standard `errors`
-// package and this `errors` package where these functions are needed.
-var (
-	Is = errors.Is
-	As = errors.As
-)
-
-// E converts any given error to the Error type. Unknown are converted
-// to ErrInternal.
-func E(err error) Error {
-	if e, ok := err.(Error); ok { // nolint
-		return e
-	}
-	return ErrInternal.WithCausef(err.Error())
-}
-
-// Verbose returns a verbose error value.
-func Verbose(err error) error {
-	if e, ok := err.(Error); ok {
-		return fmt.Errorf("%s: %s (cause: %s)", e.Code, e.Message, e.Cause)
-	}
-	return err
+// Error represents any error returned by the Entropy components along with any
+// relevant context.
+type Error struct {
+	Code    string `json:"code"`
+	Cause   string `json:"cause,omitempty"`
+	Message string `json:"message"`
 }
 
 // WithCausef returns clone of err with the cause added. Use this when
@@ -102,6 +86,21 @@ func OneOf(err error, others ...error) bool {
 	return false
 }
 
-// New returns a new error equivalent to ErrInternal.
-// This function is a convenience shortcut for the errors.New().
-func New(msg string) error { return errors.New(msg) } // nolint
+// E converts any given error to the Error type. Unknown are converted
+// to ErrInternal.
+func E(err error) Error {
+	var e Error
+	if errors.As(err, &e) {
+		return e
+	}
+	return ErrInternal.WithCausef(err.Error())
+}
+
+// Verbose returns a verbose error value.
+func Verbose(err error) error {
+	var e Error
+	if errors.As(err, &e) {
+		return e.WithMsgf("%s: %s (cause: %s)", e.Code, e.Message, e.Cause)
+	}
+	return err
+}
