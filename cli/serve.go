@@ -21,16 +21,16 @@ import (
 func cmdServe() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "serve",
-		Short:   "Start gRPC & HTTP servers",
+		Short:   "Start gRPC & HTTP servers and optionally workers",
 		Aliases: []string{"server", "start"},
 		Annotations: map[string]string{
 			"group:other": "server",
 		},
 	}
 
-	var migrate, noSync bool
+	var migrate, worker bool
 	cmd.Flags().BoolVar(&migrate, "migrate", false, "Run migrations before starting")
-	cmd.Flags().BoolVar(&noSync, "no-sync", false, "Disable sync-loop")
+	cmd.Flags().BoolVar(&worker, "worker", false, "Run worker threads as well")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cfg, err := loadConfig(cmd)
@@ -44,12 +44,12 @@ func cmdServe() *cobra.Command {
 			}
 		}
 
-		return runServer(cmd.Context(), cfg, noSync)
+		return runServer(cmd.Context(), cfg)
 	}
 	return cmd
 }
 
-func runServer(baseCtx context.Context, c Config, disableSync bool) error {
+func runServer(baseCtx context.Context, c Config) error {
 	ctx, cancel := context.WithCancel(baseCtx)
 	defer cancel()
 
@@ -74,18 +74,6 @@ func runServer(baseCtx context.Context, c Config, disableSync bool) error {
 	}
 	resourceStore := mongodb.NewResourceStore(mongoStore)
 	resourceService := core.New(resourceStore, moduleRegistry, time.Now, zapLog)
-
-	if !disableSync {
-		go func() {
-			defer cancel()
-
-			if err := resourceService.RunSync(ctx); err != nil {
-				zapLog.Error("sync-loop exited with error", zap.Error(err))
-			} else {
-				zapLog.Info("sync-loop exited gracefully")
-			}
-		}()
-	}
 
 	return entropyserver.Serve(ctx, c.Service, zapLog, nr, resourceService)
 }

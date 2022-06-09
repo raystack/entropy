@@ -195,10 +195,6 @@ func (st *Store) Delete(ctx context.Context, urn string, hooks ...resource.Mutat
 	return withinTx(ctx, st.db, false, deleteFn)
 }
 
-func (*Store) DoPending(_ context.Context, _ resource.PendingHandler) error {
-	return nil
-}
-
 func insertResourceRecord(ctx context.Context, runner sq.BaseRunner, r resource.Resource) (int64, error) {
 	q := sq.Insert(tableResources).
 		Columns("urn", "kind", "project", "name", "created_at", "updated_at",
