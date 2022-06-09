@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.2
 	github.com/google/go-cmp v0.5.8
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
+	github.com/k0kubun/pp/v3 v3.1.0
 	github.com/lib/pq v1.10.4
 	github.com/mcuadros/go-defaults v1.2.0
 	github.com/newrelic/go-agent/v3 v3.15.2

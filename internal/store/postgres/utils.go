@@ -51,9 +51,11 @@ func translateErr(err error) error {
 }
 
 func tagsToLabelMap(tags []string) map[string]string {
+	const keyValueParts = 2
+
 	labels := map[string]string{}
 	for _, tag := range tags {
-		parts := strings.SplitN(tag, "=", 2)
+		parts := strings.SplitN(tag, "=", keyValueParts)
 		key, val := parts[0], parts[1]
 		labels[key] = val
 	}

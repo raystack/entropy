@@ -67,9 +67,10 @@ func (st *Store) List(ctx context.Context, filter resource.Filter) ([]resource.R
 
 	if len(filter.Labels) > 0 {
 		tags := labelMapToTags(filter.Labels)
-		q = q.Join("resource_tags USING (resource_id)").
+		q = q.Join("resource_tags ON resource_id=id").
 			Where(sq.Eq{"tag": tags}).
-			GroupBy("resource_id")
+			GroupBy("urn").
+			Having("count(*) >= ?", len(tags))
 	}
 
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(st.db).QueryContext(ctx)
@@ -79,6 +80,7 @@ func (st *Store) List(ctx context.Context, filter resource.Filter) ([]resource.R
 		}
 		return nil, err
 	}
+	defer rows.Close()
 
 	var res []resource.Resource
 	for rows.Next() {
@@ -94,22 +96,22 @@ func (st *Store) List(ctx context.Context, filter resource.Filter) ([]resource.R
 		res = append(res, *r)
 	}
 
-	return res, nil
+	return res, rows.Err()
 }
 
 func (st *Store) Create(ctx context.Context, r resource.Resource, hooks ...resource.MutationHook) error {
 	insertResource := func(ctx context.Context, tx *sqlx.Tx) error {
 		id, err := insertResourceRecord(ctx, tx, r)
 		if err != nil {
-			return err
+			return translateErr(err)
 		}
 
 		if err := setResourceTags(ctx, tx, id, r.Labels); err != nil {
-			return err
+			return translateErr(err)
 		}
 
-		if err := insertResourceDependencies(ctx, tx, id, r.Spec.Dependencies); err != nil {
-			return err
+		if err := setDependencies(ctx, tx, id, r.Spec.Dependencies); err != nil {
+			return translateErr(err)
 		}
 
 		return runAllHooks(ctx, hooks)
@@ -124,7 +126,35 @@ func (st *Store) Create(ctx context.Context, r resource.Resource, hooks ...resou
 
 func (st *Store) Update(ctx context.Context, r resource.Resource, hooks ...resource.MutationHook) error {
 	updateResource := func(ctx context.Context, tx *sqlx.Tx) error {
-		panic("not implemented")
+		id, err := translateURNToID(ctx, tx, r.URN)
+		if err != nil {
+			return err
+		}
+
+		updateSpec := sq.Update(tableResources).
+			Where(sq.Eq{"id": id}).
+			SetMap(map[string]interface{}{
+				"updated_at":        sq.Expr("current_timestamp"),
+				"spec_configs":      r.Spec.Configs,
+				"state_status":      r.State.Status,
+				"state_output":      r.State.Output,
+				"state_module_data": r.State.ModuleData,
+			}).
+			PlaceholderFormat(sq.Dollar)
+
+		if _, err := updateSpec.RunWith(tx).ExecContext(ctx); err != nil {
+			return err
+		}
+
+		if err := setResourceTags(ctx, tx, id, r.Labels); err != nil {
+			return err
+		}
+
+		if err := setDependencies(ctx, tx, id, r.Spec.Dependencies); err != nil {
+			return err
+		}
+
+		return runAllHooks(ctx, hooks)
 	}
 
 	txErr := withinTx(ctx, st.db, false, updateResource)
@@ -165,7 +195,7 @@ func (st *Store) Delete(ctx context.Context, urn string, hooks ...resource.Mutat
 	return withinTx(ctx, st.db, false, deleteFn)
 }
 
-func (st *Store) DoPending(ctx context.Context, fn resource.PendingHandler) error {
+func (*Store) DoPending(_ context.Context, _ resource.PendingHandler) error {
 	return nil
 }
 
@@ -187,30 +217,47 @@ func insertResourceRecord(ctx context.Context, runner sq.BaseRunner, r resource.
 
 func setResourceTags(ctx context.Context, runner sq.BaseRunner, id int64, labels map[string]string) error {
 	deleteOld := sq.Delete(tableResourceTags).Where(sq.Eq{"resource_id": id}).PlaceholderFormat(sq.Dollar)
-	insertTags := sq.Insert(tableResourceTags).Columns("resource_id", "tag").PlaceholderFormat(sq.Dollar)
-	for _, tag := range labelMapToTags(labels) {
-		insertTags = insertTags.Values(id, tag)
-	}
 
 	if _, err := deleteOld.RunWith(runner).ExecContext(ctx); err != nil {
 		return err
 	}
 
-	if _, err := insertTags.RunWith(runner).ExecContext(ctx); err != nil {
-		return err
+	if len(labels) > 0 {
+		insertTags := sq.Insert(tableResourceTags).Columns("resource_id", "tag").PlaceholderFormat(sq.Dollar)
+		for _, tag := range labelMapToTags(labels) {
+			insertTags = insertTags.Values(id, tag)
+		}
+		if _, err := insertTags.RunWith(runner).ExecContext(ctx); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func insertResourceDependencies(ctx context.Context, runner sq.BaseRunner, id int64, deps map[string]string) error {
-	insertDeps := sq.Insert(tableResourceDependencies).
-		Columns("resource_id", "dependency_key", "depends_on").
-		PlaceholderFormat(sq.Dollar)
-	for key, val := range deps {
-		insertDeps = insertDeps.Values(id, key, val)
+func setDependencies(ctx context.Context, runner sq.BaseRunner, id int64, deps map[string]string) error {
+	deleteOld := sq.Delete(tableResourceDependencies).Where(sq.Eq{"resource_id": id}).PlaceholderFormat(sq.Dollar)
+	if _, err := deleteOld.RunWith(runner).ExecContext(ctx); err != nil {
+		return err
 	}
 
-	_, err := insertDeps.RunWith(runner).ExecContext(ctx)
-	return err
+	if len(deps) > 0 {
+		insertDeps := sq.Insert(tableResourceDependencies).
+			Columns("resource_id", "dependency_key", "depends_on").
+			PlaceholderFormat(sq.Dollar)
+
+		for depKey, dependsOnURN := range deps {
+			dependsOnID, err := translateURNToID(ctx, runner, dependsOnURN)
+			if err != nil {
+				return err
+			}
+			insertDeps = insertDeps.Values(id, depKey, dependsOnID)
+		}
+
+		if _, err := insertDeps.RunWith(runner).ExecContext(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

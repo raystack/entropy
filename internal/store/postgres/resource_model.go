@@ -56,6 +56,7 @@ func readResourceTags(ctx context.Context, r sq.BaseRunner, id int64, into *[]st
 		}
 		return err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var tag string
@@ -64,7 +65,7 @@ func readResourceTags(ctx context.Context, r sq.BaseRunner, id int64, into *[]st
 		}
 		*into = append(*into, tag)
 	}
-	return nil
+	return rows.Err()
 }
 
 func readResourceDeps(ctx context.Context, r sq.BaseRunner, id int64, into map[string]string) error {
@@ -77,6 +78,7 @@ func readResourceDeps(ctx context.Context, r sq.BaseRunner, id int64, into map[s
 		}
 		return err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var key, val string
@@ -85,7 +87,7 @@ func readResourceDeps(ctx context.Context, r sq.BaseRunner, id int64, into map[s
 		}
 		into[key] = val
 	}
-	return nil
+	return rows.Err()
 }
 
 func translateURNToID(ctx context.Context, r sq.BaseRunner, urn string) (int64, error) {
