@@ -32,7 +32,7 @@ type workerConf struct {
 	QueueSpec string `mapstructure:"queue_spec"`
 
 	Threads      int           `mapstructure:"threads" default:"1"`
-	PollInterval time.Duration `mapstrucutre:"poll_interval" default:"100ms"`
+	PollInterval time.Duration `mapstructure:"poll_interval" default:"100ms"`
 }
 
 func cmdShowConfigs() *cobra.Command {

@@ -6,14 +6,6 @@ service:
 # Refer https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
 pg_conn_str: 'postgres://postgres@localhost:5432/entropy?sslmode=disable'
 
-# MongoDB configurations
-# Refer https://www.mongodb.com/docs/manual/reference/connection-string/ for the
-# uri format.
-db:
-  uri: "mongodb://localhost:27017/?connectTimeoutMS=1000&socketTimeoutMS=1000&readPreference=secondaryPreferred"
-  name: entropy
-  ping_timeout: 3s
-
 newrelic:
   enabled: false
   appname: Entropy
@@ -26,4 +18,4 @@ worker:
   queue_name: entropy_jobs
   queue_spec: 'postgres://postgres@localhost:5432/entropy?sslmode=disable'
   threads: 1
-  poll_interval: 100ms
+  poll_interval: 1s

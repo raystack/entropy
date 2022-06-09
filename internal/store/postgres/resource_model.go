@@ -69,7 +69,10 @@ func readResourceTags(ctx context.Context, r sq.BaseRunner, id int64, into *[]st
 }
 
 func readResourceDeps(ctx context.Context, r sq.BaseRunner, id int64, into map[string]string) error {
-	q := sq.Select("dependency_key", "depends_on").From(tableResourceDependencies).Where(sq.Eq{"resource_id": id})
+	q := sq.Select("rd.dependency_key as dep_key", "r.urn as dep_urn").
+		From("resource_dependencies rd").
+		Join("resources r ON r.id=rd.depends_on").
+		Where(sq.Eq{"resource_id": id})
 
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(r).QueryContext(ctx)
 	if err != nil {

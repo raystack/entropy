@@ -30,8 +30,9 @@ func cmdServe() *cobra.Command {
 		},
 	}
 
-	var migrate bool
+	var migrate, spawnWorker bool
 	cmd.Flags().BoolVar(&migrate, "migrate", false, "Run migrations before starting")
+	cmd.Flags().BoolVar(&spawnWorker, "worker", false, "Run worker threads as well")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cfg, err := loadConfig(cmd)
@@ -44,18 +45,28 @@ func cmdServe() *cobra.Command {
 			return err
 		}
 
+		asyncWorker := setupWorker(zapLog, cfg.Worker)
+
 		if migrate {
 			if migrateErr := runMigrations(cmd.Context(), zapLog, cfg); migrateErr != nil {
 				return migrateErr
 			}
 		}
 
-		return runServer(cmd.Context(), zapLog, cfg)
+		if spawnWorker {
+			go func() {
+				if runErr := asyncWorker.Run(cmd.Context()); runErr != nil {
+					zapLog.Error("worker exited with error", zap.Error(err))
+				}
+			}()
+		}
+
+		return runServer(cmd.Context(), zapLog, cfg, asyncWorker)
 	}
 	return cmd
 }
 
-func runServer(baseCtx context.Context, zapLog *zap.Logger, cfg Config) error {
+func runServer(baseCtx context.Context, zapLog *zap.Logger, cfg Config, asyncWorker *worker.Worker) error {
 	ctx, cancel := context.WithCancel(baseCtx)
 	defer cancel()
 
@@ -70,9 +81,7 @@ func runServer(baseCtx context.Context, zapLog *zap.Logger, cfg Config) error {
 	}
 
 	store := setupStorage(zapLog, cfg.PGConnStr)
-	asyncWorker := setupWorker(zapLog, cfg.Worker)
 	moduleRegistry := setupRegistry(zapLog, modules...)
-
 	service := core.New(store, moduleRegistry, asyncWorker, time.Now, zapLog)
 
 	if err := asyncWorker.Register(core.JobKindSyncResource, service.HandleSyncJob); err != nil {
@@ -102,7 +111,12 @@ func setupWorker(logger *zap.Logger, conf workerConf) *worker.Worker {
 		logger.Fatal("failed to init postgres job-queue", zap.Error(err))
 	}
 
-	asyncWorker, err := worker.New(pgQueue)
+	opts := []worker.Option{
+		worker.WithLogger(logger.Named("worker")),
+		worker.WithRunConfig(conf.Threads, conf.PollInterval),
+	}
+
+	asyncWorker, err := worker.New(pgQueue, opts...)
 	if err != nil {
 		logger.Fatal("failed to init worker instance", zap.Error(err))
 	}

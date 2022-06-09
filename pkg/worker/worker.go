@@ -124,6 +124,11 @@ func (w *Worker) runWorker(ctx context.Context) {
 func (w *Worker) handleJob(ctx context.Context, job Job) (*Job, error) {
 	const invalidKindBackoff = 5 * time.Minute
 
+	w.logger.Info("got a pending job",
+		zap.String("job_id", job.ID),
+		zap.String("job_kind", job.Kind),
+	)
+
 	fn, exists := w.handlers[job.Kind]
 	if !exists {
 		// Note: This should never happen since Dequeue() has `kinds` filter.

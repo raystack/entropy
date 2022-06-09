@@ -69,12 +69,12 @@ func (q *Queue) saveJobResult(ctx context.Context, job worker.Job) error {
 			"id":     job.ID,
 			"status": worker.StatusPending,
 		}).
-		Set("updated_at", job.UpdatedAt).
+		Set("updated_at", job.UpdatedAt.UTC()).
 		Set("status", job.Status).
 		Set("result", job.Result).
 		Set("attempts_done", sq.Expr("attempts_done + 1")).
 		Set("last_error", job.LastError).
-		Set("last_attempt_at", job.LastAttemptAt)
+		Set("last_attempt_at", job.LastAttemptAt.UTC())
 
 	_, err := updateQuery.PlaceholderFormat(sq.Dollar).RunWith(q.db).ExecContext(ctx)
 	return err

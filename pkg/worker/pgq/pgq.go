@@ -79,8 +79,8 @@ func (q *Queue) Enqueue(ctx context.Context, jobs ...worker.Job) error {
 
 	for _, job := range jobs {
 		insertQuery = insertQuery.Values(
-			job.ID, job.Kind, job.Status, job.RunAt,
-			job.Payload, job.CreatedAt, job.UpdatedAt,
+			job.ID, job.Kind, job.Status, job.RunAt.UTC(),
+			job.Payload, job.CreatedAt.UTC(), job.UpdatedAt.UTC(),
 		)
 	}
 

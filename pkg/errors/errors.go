@@ -39,6 +39,14 @@ func E(err error) Error {
 	return ErrInternal.WithCausef(err.Error())
 }
 
+// Verbose returns a verbose error value.
+func Verbose(err error) error {
+	if e, ok := err.(Error); ok {
+		return fmt.Errorf("%s: %s (cause: %s)", e.Code, e.Message, e.Cause)
+	}
+	return err
+}
+
 // WithCausef returns clone of err with the cause added. Use this when
 // you need to provide description of the underlying technical root-cause
 // which may be written in log for debugging purposes. Cause will be shown
