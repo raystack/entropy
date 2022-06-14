@@ -110,34 +110,6 @@ func (rc *ResourceStore) Delete(ctx context.Context, urn string, _ ...resource.M
 	return nil
 }
 
-func (rc *ResourceStore) DoPending(ctx context.Context, fn resource.PendingHandler) error {
-	filter := map[string]interface{}{"state.status": resource.StatusPending}
-
-	var rec resourceModel
-	if err := rc.coll.FindOne(ctx, filter).Decode(&rec); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return errors.ErrNotFound // no pending item is available.
-		}
-		return err
-	}
-
-	res := modelToResource(rec)
-	modified, shouldDelete, err := fn(ctx, *res)
-	if err != nil {
-		return err
-	}
-
-	if shouldDelete {
-		_, err := rc.coll.DeleteOne(ctx, map[string]interface{}{"urn": res.URN})
-		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
-			return err
-		}
-		return nil
-	}
-
-	return rc.Update(ctx, *modified)
-}
-
 func (rc *ResourceStore) Migrate(ctx context.Context) error {
 	return createUniqueIndex(ctx, rc.coll, "urn", 1)
 }

@@ -128,44 +128,6 @@ func (_c *ResourceStore_Delete_Call) Return(_a0 error) *ResourceStore_Delete_Cal
 	return _c
 }
 
-// DoPending provides a mock function with given fields: ctx, fn
-func (_m *ResourceStore) DoPending(ctx context.Context, fn resource.PendingHandler) error {
-	ret := _m.Called(ctx, fn)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, resource.PendingHandler) error); ok {
-		r0 = rf(ctx, fn)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// ResourceStore_DoPending_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DoPending'
-type ResourceStore_DoPending_Call struct {
-	*mock.Call
-}
-
-// DoPending is a helper method to define mock.On call
-//  - ctx context.Context
-//  - fn resource.PendingHandler
-func (_e *ResourceStore_Expecter) DoPending(ctx interface{}, fn interface{}) *ResourceStore_DoPending_Call {
-	return &ResourceStore_DoPending_Call{Call: _e.mock.On("DoPending", ctx, fn)}
-}
-
-func (_c *ResourceStore_DoPending_Call) Run(run func(ctx context.Context, fn resource.PendingHandler)) *ResourceStore_DoPending_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(resource.PendingHandler))
-	})
-	return _c
-}
-
-func (_c *ResourceStore_DoPending_Call) Return(_a0 error) *ResourceStore_DoPending_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
 // GetByURN provides a mock function with given fields: ctx, urn
 func (_m *ResourceStore) GetByURN(ctx context.Context, urn string) (*resource.Resource, error) {
 	ret := _m.Called(ctx, urn)

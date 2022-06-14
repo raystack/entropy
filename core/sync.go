@@ -2,70 +2,102 @@ package core
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
-
-	"go.uber.org/zap"
 
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
+	"github.com/odpf/entropy/pkg/worker"
 )
 
-// RunSync runs a loop for processing resources in pending state. It runs until
-// context is cancelled.
-func (s *Service) RunSync(ctx context.Context) error {
-	const (
-		backOff      = 2
-		pollInterval = 500 * time.Millisecond
-	)
+const JobKindSyncResource = "sync_resource"
 
-	pollTicker := time.NewTimer(pollInterval)
-	defer pollTicker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-
-		case <-pollTicker.C:
-			err := s.store.DoPending(ctx, s.syncChange)
-			if err != nil {
-				if errors.Is(err, errors.ErrNotFound) {
-					// backOff to reduce polling pressure.
-					pollTicker.Reset(backOff * pollInterval)
-				} else {
-					e := errors.E(err)
-					s.logger.Error("failed to handle pending item",
-						zap.Error(e),
-						zap.String("cause", e.Cause),
-					)
-					return e
-				}
-			} else {
-				pollTicker.Reset(pollInterval)
-			}
-		}
-	}
+type syncJobPayload struct {
+	ResourceURN string    `json:"resource_urn"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-func (s *Service) syncChange(ctx context.Context, res resource.Resource) (*resource.Resource, bool, error) {
-	modSpec, err := s.generateModuleSpec(ctx, res)
+func (s *Service) enqueueSyncJob(ctx context.Context, res resource.Resource) error {
+	data := syncJobPayload{
+		ResourceURN: res.URN,
+		UpdatedAt:   res.UpdatedAt,
+	}
+
+	payload, err := json.Marshal(data)
 	if err != nil {
-		return nil, false, err
+		return err
+	}
+
+	return s.worker.Enqueue(ctx, worker.Job{
+		ID:      fmt.Sprintf("sync-%s-%d", res.URN, res.UpdatedAt.Unix()),
+		Kind:    JobKindSyncResource,
+		RunAt:   time.Now(),
+		Payload: payload,
+	})
+}
+
+// HandleSyncJob is meant to be invoked by asyncWorker when an enqueued job is
+// ready.
+// TODO: make this private and move the registration of this handler inside New().
+func (s *Service) HandleSyncJob(ctx context.Context, job worker.Job) ([]byte, error) {
+	const retryBackoff = 5 * time.Second
+
+	var data syncJobPayload
+	if err := json.Unmarshal(job.Payload, &data); err != nil {
+		return nil, err
+	}
+
+	syncedRes, err := s.syncChange(ctx, data.ResourceURN)
+	if err != nil {
+		if errors.Is(err, errors.ErrInternal) {
+			return nil, &worker.RetryableError{
+				Cause:      errors.Verbose(err),
+				RetryAfter: retryBackoff,
+			}
+		}
+
+		return nil, errors.Verbose(err)
+	}
+
+	return json.Marshal(map[string]interface{}{
+		"status": syncedRes.State.Status,
+	})
+}
+
+func (s *Service) syncChange(ctx context.Context, urn string) (*resource.Resource, error) {
+	res, err := s.GetResource(ctx, urn)
+	if err != nil {
+		return nil, err
+	}
+
+	modSpec, err := s.generateModuleSpec(ctx, *res)
+	if err != nil {
+		return nil, err
 	}
 
 	oldState := res.State.Clone()
 	newState, err := s.rootModule.Sync(ctx, *modSpec)
 	if err != nil {
 		if errors.Is(err, errors.ErrInvalid) {
-			return nil, false, err
+			return nil, err
 		}
-		return nil, false, errors.ErrInternal.WithMsgf("sync() failed").WithCausef(err.Error())
+		return nil, errors.ErrInternal.WithMsgf("sync() failed").WithCausef(err.Error())
 	}
+	res.UpdatedAt = s.clock()
+	res.State = *newState
 
 	// TODO: clarify on behaviour when resource schedule for deletion reaches error.
 	shouldDelete := oldState.InDeletion() && newState.IsTerminal()
+	if shouldDelete {
+		if err := s.DeleteResource(ctx, urn); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := s.upsert(ctx, *res, false); err != nil {
+			return nil, err
+		}
+	}
 
-	res.UpdatedAt = s.clock()
-	res.State = *newState
-	return &res, shouldDelete, nil
+	return res, nil
 }

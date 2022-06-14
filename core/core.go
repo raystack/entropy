@@ -1,5 +1,7 @@
 package core
 
+//go:generate mockery --name=AsyncWorker -r --case underscore --with-expecter --structname AsyncWorker  --filename=async_worker.go --output=./mocks
+
 import (
 	"context"
 	"time"
@@ -9,23 +11,31 @@ import (
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
+	"github.com/odpf/entropy/pkg/worker"
 )
 
 type Service struct {
 	logger     *zap.Logger
 	clock      func() time.Time
 	store      resource.Store
+	worker     AsyncWorker
 	rootModule module.Module
 }
 
-func New(repo resource.Store, rootModule module.Module, clockFn func() time.Time, lg *zap.Logger) *Service {
+type AsyncWorker interface {
+	Enqueue(ctx context.Context, jobs ...worker.Job) error
+}
+
+func New(repo resource.Store, rootModule module.Module, asyncWorker AsyncWorker, clockFn func() time.Time, lg *zap.Logger) *Service {
 	if clockFn == nil {
 		clockFn = time.Now
 	}
+
 	return &Service{
 		logger:     lg,
 		clock:      clockFn,
 		store:      repo,
+		worker:     asyncWorker,
 		rootModule: rootModule,
 	}
 }

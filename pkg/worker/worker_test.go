@@ -19,13 +19,6 @@ func Test_New(t *testing.T) {
 
 	q := &mocks.JobQueue{}
 
-	t.Run("NoJobKind", func(t *testing.T) {
-		w, err := worker.New(q)
-		assert.Error(t, err)
-		assert.EqualError(t, err, "at-least one job handler must be registered")
-		assert.Nil(t, w)
-	})
-
 	t.Run("DuplicateKind", func(t *testing.T) {
 		w, err := worker.New(q,
 			worker.WithJobKind("test", nil),

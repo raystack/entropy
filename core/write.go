@@ -60,28 +60,18 @@ func (s *Service) execAction(ctx context.Context, res resource.Resource, act mod
 		return nil, err
 	}
 
-	if act.Name == module.CreateAction { // nolint
+	isCreate := act.Name == module.CreateAction
+	if isCreate {
 		plannedRes.CreatedAt = s.clock()
 		plannedRes.UpdatedAt = plannedRes.CreatedAt
-		if err := s.store.Create(ctx, *plannedRes); err != nil {
-			if errors.Is(err, errors.ErrConflict) {
-				return nil, errors.ErrConflict.
-					WithMsgf("resource with urn '%s' already exists", plannedRes.URN)
-			}
-			return nil, err
-		}
 	} else {
 		plannedRes.CreatedAt = res.CreatedAt
 		plannedRes.UpdatedAt = s.clock()
-		if err := s.store.Update(ctx, *plannedRes); err != nil {
-			if errors.Is(err, errors.ErrNotFound) {
-				return nil, errors.ErrNotFound.
-					WithMsgf("resource with urn '%s' does not exist", plannedRes.URN)
-			}
-			return nil, errors.ErrInternal.WithCausef(err.Error())
-		}
 	}
 
+	if err := s.upsert(ctx, *plannedRes, isCreate); err != nil {
+		return nil, err
+	}
 	return plannedRes, nil
 }
 
@@ -102,4 +92,33 @@ func (s *Service) planChange(ctx context.Context, res resource.Resource, act mod
 	}
 
 	return plannedRes, nil
+}
+
+func (s *Service) upsert(ctx context.Context, res resource.Resource, isCreate bool) error {
+	hook := func(ctx context.Context) error {
+		if res.State.IsTerminal() {
+			// no need to enqueue if resource has reached terminal state.
+			return nil
+		}
+
+		return s.enqueueSyncJob(ctx, res)
+	}
+
+	var err error
+	if isCreate {
+		err = s.store.Create(ctx, res, hook)
+	} else {
+		err = s.store.Update(ctx, res, hook)
+	}
+
+	if err != nil {
+		if isCreate && errors.Is(err, errors.ErrConflict) {
+			return errors.ErrConflict.WithMsgf("resource with urn '%s' already exists", res.URN)
+		} else if !isCreate && errors.Is(err, errors.ErrNotFound) {
+			return errors.ErrNotFound.WithMsgf("resource with urn '%s' does not exist", res.URN)
+		}
+		return errors.ErrInternal.WithCausef(err.Error())
+	}
+
+	return nil
 }

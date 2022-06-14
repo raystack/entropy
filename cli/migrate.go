@@ -4,8 +4,9 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
-	"github.com/odpf/entropy/internal/store/mongodb"
+	"github.com/odpf/entropy/pkg/logger"
 )
 
 func cmdMigrate() *cobra.Command {
@@ -23,22 +24,18 @@ func cmdMigrate() *cobra.Command {
 			return err
 		}
 
-		return runMigrations(cmd.Context(), cfg.DB)
+		zapLog, err := logger.New(&cfg.Log)
+		if err != nil {
+			return err
+		}
+
+		return runMigrations(cmd.Context(), zapLog, cfg)
 	}
 
 	return cmd
 }
 
-func runMigrations(ctx context.Context, cfg mongodb.Config) error {
-	mongoStore, err := mongodb.Connect(cfg)
-	if err != nil {
-		return err
-	}
-
-	resourceStore := mongodb.NewResourceStore(mongoStore)
-	if err := resourceStore.Migrate(ctx); err != nil {
-		return err
-	}
-
-	return nil
+func runMigrations(ctx context.Context, zapLog *zap.Logger, cfg Config) error {
+	store := setupStorage(zapLog, cfg.PGConnStr)
+	return store.Migrate(ctx)
 }

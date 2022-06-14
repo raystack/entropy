@@ -23,8 +23,6 @@ type Store interface {
 	Create(ctx context.Context, r Resource, hooks ...MutationHook) error
 	Update(ctx context.Context, r Resource, hooks ...MutationHook) error
 	Delete(ctx context.Context, urn string, hooks ...MutationHook) error
-
-	DoPending(ctx context.Context, fn PendingHandler) error
 }
 
 // MutationHook values are passed to mutation operations of resource storage

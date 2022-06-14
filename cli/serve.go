@@ -11,26 +11,28 @@ import (
 	"github.com/odpf/entropy/core"
 	"github.com/odpf/entropy/core/module"
 	entropyserver "github.com/odpf/entropy/internal/server"
-	"github.com/odpf/entropy/internal/store/mongodb"
+	"github.com/odpf/entropy/internal/store/postgres"
 	"github.com/odpf/entropy/modules/firehose"
 	"github.com/odpf/entropy/modules/kubernetes"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
+	"github.com/odpf/entropy/pkg/worker"
+	"github.com/odpf/entropy/pkg/worker/pgq"
 )
 
 func cmdServe() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "serve",
-		Short:   "Start gRPC & HTTP servers",
+		Short:   "Start gRPC & HTTP servers and optionally workers",
 		Aliases: []string{"server", "start"},
 		Annotations: map[string]string{
 			"group:other": "server",
 		},
 	}
 
-	var migrate, noSync bool
+	var migrate, spawnWorker bool
 	cmd.Flags().BoolVar(&migrate, "migrate", false, "Run migrations before starting")
-	cmd.Flags().BoolVar(&noSync, "no-sync", false, "Disable sync-loop")
+	cmd.Flags().BoolVar(&spawnWorker, "worker", false, "Run worker threads as well")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cfg, err := loadConfig(cmd)
@@ -38,56 +40,55 @@ func cmdServe() *cobra.Command {
 			return err
 		}
 
+		zapLog, err := logger.New(&cfg.Log)
+		if err != nil {
+			return err
+		}
+
+		asyncWorker := setupWorker(zapLog, cfg.Worker)
+
 		if migrate {
-			if migrateErr := runMigrations(cmd.Context(), cfg.DB); migrateErr != nil {
+			if migrateErr := runMigrations(cmd.Context(), zapLog, cfg); migrateErr != nil {
 				return migrateErr
 			}
 		}
 
-		return runServer(cmd.Context(), cfg, noSync)
+		if spawnWorker {
+			go func() {
+				if runErr := asyncWorker.Run(cmd.Context()); runErr != nil {
+					zapLog.Error("worker exited with error", zap.Error(err))
+				}
+			}()
+		}
+
+		return runServer(cmd.Context(), zapLog, cfg, asyncWorker)
 	}
 	return cmd
 }
 
-func runServer(baseCtx context.Context, c Config, disableSync bool) error {
+func runServer(baseCtx context.Context, zapLog *zap.Logger, cfg Config, asyncWorker *worker.Worker) error {
 	ctx, cancel := context.WithCancel(baseCtx)
 	defer cancel()
 
-	nr, err := metric.New(&c.NewRelic)
+	nr, err := metric.New(&cfg.NewRelic)
 	if err != nil {
 		return err
 	}
 
-	zapLog, err := logger.New(&c.Log)
-	if err != nil {
-		return err
-	}
-
-	moduleRegistry := setupRegistry(zapLog,
+	modules := []module.Descriptor{
 		kubernetes.Module,
 		firehose.Module,
-	)
+	}
 
-	mongoStore, err := mongodb.Connect(c.DB)
-	if err != nil {
+	store := setupStorage(zapLog, cfg.PGConnStr)
+	moduleRegistry := setupRegistry(zapLog, modules...)
+	service := core.New(store, moduleRegistry, asyncWorker, time.Now, zapLog)
+
+	if err := asyncWorker.Register(core.JobKindSyncResource, service.HandleSyncJob); err != nil {
 		return err
 	}
-	resourceStore := mongodb.NewResourceStore(mongoStore)
-	resourceService := core.New(resourceStore, moduleRegistry, time.Now, zapLog)
 
-	if !disableSync {
-		go func() {
-			defer cancel()
-
-			if err := resourceService.RunSync(ctx); err != nil {
-				zapLog.Error("sync-loop exited with error", zap.Error(err))
-			} else {
-				zapLog.Info("sync-loop exited gracefully")
-			}
-		}()
-	}
-
-	return entropyserver.Serve(ctx, c.Service, zapLog, nr, resourceService)
+	return entropyserver.Serve(ctx, cfg.Service, zapLog, nr, service)
 }
 
 func setupRegistry(logger *zap.Logger, modules ...module.Descriptor) *module.Registry {
@@ -102,4 +103,32 @@ func setupRegistry(logger *zap.Logger, modules ...module.Descriptor) *module.Reg
 		}
 	}
 	return moduleRegistry
+}
+
+func setupWorker(logger *zap.Logger, conf workerConf) *worker.Worker {
+	pgQueue, err := pgq.Open(conf.QueueSpec, conf.QueueName)
+	if err != nil {
+		logger.Fatal("failed to init postgres job-queue", zap.Error(err))
+	}
+
+	opts := []worker.Option{
+		worker.WithLogger(logger.Named("worker")),
+		worker.WithRunConfig(conf.Threads, conf.PollInterval),
+	}
+
+	asyncWorker, err := worker.New(pgQueue, opts...)
+	if err != nil {
+		logger.Fatal("failed to init worker instance", zap.Error(err))
+	}
+
+	return asyncWorker
+}
+
+func setupStorage(logger *zap.Logger, pgConStr string) *postgres.Store {
+	store, err := postgres.Open(pgConStr)
+	if err != nil {
+		logger.Fatal("failed to connect to Postgres database",
+			zap.Error(err), zap.String("conn_str", pgConStr))
+	}
+	return store
 }

@@ -6,8 +6,8 @@ require (
 	github.com/Masterminds/squirrel v1.5.2
 	github.com/google/go-cmp v0.5.8
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
+	github.com/k0kubun/pp/v3 v3.1.0
 	github.com/lib/pq v1.10.4
-	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/mcuadros/go-defaults v1.2.0
 	github.com/newrelic/go-agent/v3 v3.15.2
 	github.com/newrelic/go-agent/v3/integrations/nrgrpc v1.3.1
@@ -89,7 +89,7 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jeremywohl/flatten v1.0.1 // indirect
-	github.com/jmoiron/sqlx v1.3.4 // indirect
+	github.com/jmoiron/sqlx v1.3.4
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
