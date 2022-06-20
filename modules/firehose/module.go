@@ -1,28 +1,26 @@
 package firehose
 
 import (
-	"context"
 	_ "embed"
-	"encoding/json"
-
 	"github.com/odpf/entropy/core/module"
-	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/modules/kubernetes"
-	"github.com/odpf/entropy/pkg/errors"
-	"github.com/odpf/entropy/pkg/helm"
-	"github.com/odpf/entropy/pkg/kube"
 )
 
 const (
 	StopAction  = "stop"
 	StartAction = "start"
 	ScaleAction = "scale"
+	ResetAction = "reset"
 )
 
 const (
-	helmCreate = "helm_create"
-	helmUpdate = "helm_update"
+	releaseCreate = "release_create"
+	releaseUpdate = "release_update"
 
+	consumerReset = "consumer_reset"
+)
+
+const (
 	stateRunning = "RUNNING"
 	stateStopped = "STOPPED"
 )
@@ -61,181 +59,13 @@ var Module = module.Descriptor{
 			Name:        StartAction,
 			Description: "Start firehose and all its components.",
 		},
+		{
+			Name:        ResetAction,
+			Description: "Reset firehose kafka consumer group to given timestamp",
+			ParamSchema: resetActionSchema,
+		},
 	},
 	Module: &firehoseModule{},
 }
 
 type firehoseModule struct{}
-
-func (m *firehoseModule) Plan(_ context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
-	if act.Name == module.CreateAction {
-		return m.planCreate(spec, act)
-	}
-	return m.planChange(spec, act)
-}
-
-func (m *firehoseModule) Sync(_ context.Context, spec module.Spec) (*resource.State, error) {
-	r := spec.Resource
-
-	var data moduleData
-	if err := json.Unmarshal(r.State.ModuleData, &data); err != nil {
-		return nil, err
-	}
-
-	if len(data.PendingSteps) == 0 {
-		return &resource.State{
-			Status:     resource.StatusCompleted,
-			Output:     r.State.Output,
-			ModuleData: r.State.ModuleData,
-		}, nil
-	}
-
-	pendingStep := data.PendingSteps[0]
-	data.PendingSteps = data.PendingSteps[1:]
-
-	var conf moduleConfig
-	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
-		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
-	}
-
-	var kubeOut kubernetes.Output
-	if err := json.Unmarshal(spec.Dependencies[keyKubeDependency].Output, &kubeOut); err != nil {
-		return nil, err
-	}
-
-	if err := m.helmSync(pendingStep == helmCreate, conf, kubeOut); err != nil {
-		return nil, err
-	}
-
-	return &resource.State{
-		Status: resource.StatusCompleted,
-		Output: Output{
-			Namespace:   conf.ReleaseConfigs.Namespace,
-			ReleaseName: conf.ReleaseConfigs.Name,
-		}.JSON(),
-		ModuleData: data.JSON(),
-	}, nil
-}
-
-func (*firehoseModule) Log(ctx context.Context, spec module.Spec, filter map[string]string) (<-chan module.LogChunk, error) {
-	r := spec.Resource
-
-	var conf moduleConfig
-	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
-		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
-	}
-
-	var kubeOut kubernetes.Output
-	if err := json.Unmarshal(spec.Dependencies[keyKubeDependency].Output, &kubeOut); err != nil {
-		return nil, err
-	}
-
-	if filter == nil {
-		filter = make(map[string]string)
-	}
-	filter["app"] = conf.ReleaseConfigs.Name
-
-	kubeCl := kube.NewClient(kubeOut.Configs)
-	logs, err := kubeCl.StreamLogs(ctx, defaultNamespace, filter)
-	if err != nil {
-		return nil, err
-	}
-
-	mappedLogs := make(chan module.LogChunk)
-	go func() {
-		defer close(mappedLogs)
-		for {
-			select {
-			case log, ok := <-logs:
-				if !ok {
-					return
-				}
-				mappedLogs <- module.LogChunk{Data: log.Data, Labels: log.Labels}
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
-	return mappedLogs, err
-}
-
-func (*firehoseModule) planCreate(spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
-	r := spec.Resource
-
-	var reqConf moduleConfig
-	if err := json.Unmarshal(act.Params, &reqConf); err != nil {
-		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
-	} else {
-		reqConf.sanitiseAndValidate(r)
-	}
-
-	r.Spec.Configs = reqConf.JSON()
-	r.State = resource.State{
-		Status: resource.StatusPending,
-		ModuleData: moduleData{
-			PendingSteps: []string{helmCreate},
-		}.JSON(),
-	}
-	return &r, nil
-}
-
-func (*firehoseModule) planChange(spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
-	r := spec.Resource
-
-	var conf moduleConfig
-	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
-		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
-	}
-
-	switch act.Name {
-	case module.UpdateAction:
-		var reqConf moduleConfig
-		if err := json.Unmarshal(act.Params, &reqConf); err != nil {
-			return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
-		}
-		conf = reqConf
-
-	case ScaleAction:
-		var scaleParams struct {
-			Replicas int `json:"replicas"`
-		}
-		if err := json.Unmarshal(act.Params, &scaleParams); err != nil {
-			return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
-		}
-		conf.ReleaseConfigs.Values[keyReplicaCount] = scaleParams.Replicas
-
-	case StartAction:
-		conf.State = stateRunning
-
-	case StopAction:
-		conf.State = stateStopped
-	}
-
-	conf.sanitiseAndValidate(r)
-	r.Spec.Configs = conf.JSON()
-	r.State = resource.State{
-		Status: resource.StatusPending,
-		ModuleData: moduleData{
-			PendingSteps: []string{helmUpdate},
-		}.JSON(),
-	}
-	return &r, nil
-}
-
-func (*firehoseModule) helmSync(isCreate bool, conf moduleConfig, kube kubernetes.Output) error {
-	helmCl := helm.NewClient(&helm.Config{Kubernetes: kube.Configs})
-
-	if conf.State == stateStopped {
-		conf.ReleaseConfigs.Values[keyReplicaCount] = 0
-	}
-
-	var helmErr error
-	if isCreate {
-		_, helmErr = helmCl.Create(&conf.ReleaseConfigs)
-	} else {
-		_, helmErr = helmCl.Update(&conf.ReleaseConfigs)
-	}
-
-	return helmErr
-}
