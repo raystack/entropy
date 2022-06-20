@@ -1,15 +1,19 @@
 version: "3"
+
 services:
-  mongodb:
-    image: mongo
-    container_name: mongodb
+  pg14:
+    image: "postgres:14-alpine"
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - 27017:27017
+      - "5432:5432"
     volumes:
-      - dbdata:/data/db
+      - pgdata:/var/lib/postgresql/data
     environment:
       - PUID=1000
       - PGID=1000
     restart: unless-stopped
+    container_name: pg14
+
 volumes:
-  dbdata:
+  pgdata:
