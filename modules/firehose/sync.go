@@ -58,7 +58,7 @@ func (*firehoseModule) releaseSync(isCreate bool, conf moduleConfig, r resource.
 	helmCl := helm.NewClient(&helm.Config{Kubernetes: kube.Configs})
 
 	if conf.State == stateStopped {
-		conf.FirehoseConfigs.Replicas = 0
+		conf.Firehose.Replicas = 0
 	}
 
 	var helmErr error

@@ -11,14 +11,11 @@ const (
 	StopAction  = "stop"
 	StartAction = "start"
 	ScaleAction = "scale"
-	ResetAction = "reset"
 )
 
 const (
 	releaseCreate = "release_create"
 	releaseUpdate = "release_update"
-
-	consumerReset = "consumer_reset"
 )
 
 const (
@@ -27,7 +24,6 @@ const (
 )
 
 const (
-	keyReplicaCount   = "replicaCount"
 	keyKubeDependency = "kube_cluster"
 )
 
@@ -59,11 +55,6 @@ var Module = module.Descriptor{
 		{
 			Name:        StartAction,
 			Description: "Start firehose and all its components.",
-		},
-		{
-			Name:        ResetAction,
-			Description: "Reset firehose kafka consumer group to given timestamp",
-			ParamSchema: resetActionSchema,
 		},
 	},
 	Module: &firehoseModule{},

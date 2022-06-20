@@ -14,7 +14,7 @@
     "chart_version": {
       "type": "string"
     },
-    "firehose_configs": {
+    "firehose": {
       "type": "object",
       "properties": {
         "replicas": {

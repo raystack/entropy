@@ -26,21 +26,18 @@ var (
 
 	//go:embed schema/scale.json
 	scaleActionSchema string
-
-	//go:embed schema/reset.json
-	resetActionSchema string
 )
 
 type moduleConfig struct {
-	State           string `json:"state"`
-	ChartVersion    string `json:"chart_version"`
-	FirehoseConfigs struct {
+	State        string `json:"state"`
+	ChartVersion string `json:"chart_version"`
+	Firehose     struct {
 		Replicas           int               `json:"replicas"`
 		KafkaBrokerAddress string            `json:"kafka_broker_address"`
 		KafkaTopic         string            `json:"kafka_topic"`
 		KafkaConsumerID    string            `json:"kafka_consumer_id"`
 		EnvVariables       map[string]string `json:"env_variables"`
-	} `json:"firehose_configs"`
+	} `json:"firehose"`
 }
 
 func (mc *moduleConfig) sanitiseAndValidate() {
@@ -58,7 +55,7 @@ func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) *helm.ReleaseCo
 	rc.ForceUpdate = true
 	rc.Version = mc.ChartVersion
 
-	fc := mc.FirehoseConfigs
+	fc := mc.Firehose
 	fc.EnvVariables["SOURCE_KAFKA_BROKERS"] = fc.KafkaBrokerAddress
 	fc.EnvVariables["SOURCE_KAFKA_TOPIC"] = fc.KafkaTopic
 	fc.EnvVariables["SOURCE_KAFKA_CONSUMER_GROUP_ID"] = fc.KafkaConsumerID

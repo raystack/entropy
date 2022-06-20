@@ -61,7 +61,7 @@ func (*firehoseModule) planChange(spec module.Spec, act module.ActionRequest) (*
 		if err := json.Unmarshal(act.Params, &scaleParams); err != nil {
 			return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 		}
-		conf.FirehoseConfigs.Replicas = scaleParams.Replicas
+		conf.Firehose.Replicas = scaleParams.Replicas
 
 	case StartAction:
 		conf.State = stateRunning

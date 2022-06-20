@@ -21,7 +21,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		Name:    "test",
 		Project: "demo",
 		Spec: resource.Spec{
-			Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","firehose_configs":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+			Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 		},
 		State: resource.State{},
 	}
@@ -47,7 +47,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 			spec:  module.Spec{Resource: res},
 			act: module.ActionRequest{
 				Name:   module.CreateAction,
-				Params: []byte(`{"state":"RUNNING","firehose_configs":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+				Params: []byte(`{"state":"RUNNING","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 			},
 			want: &resource.Resource{
 				URN:     "urn:odpf:entropy:firehose:test",
@@ -55,7 +55,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Name:    "test",
 				Project: "demo",
 				Spec: resource.Spec{
-					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","firehose_configs":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 				},
 				State: resource.State{
 					Status:     resource.StatusPending,
@@ -85,7 +85,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Name:    "test",
 				Project: "demo",
 				Spec: resource.Spec{
-					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","firehose_configs":{"replicas":5,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","firehose":{"replicas":5,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 				},
 				State: resource.State{
 					Status:     resource.StatusPending,
