@@ -10,7 +10,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/odpf/entropy/internal/server"
-	"github.com/odpf/entropy/internal/store/mongodb"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
 )
@@ -19,7 +18,6 @@ const configFlag = "config"
 
 // Config contains the application configuration.
 type Config struct {
-	DB        mongodb.Config        `mapstructure:"db"`
 	Log       logger.LogConfig      `mapstructure:"log"`
 	Service   server.Config         `mapstructure:"service"`
 	NewRelic  metric.NewRelicConfig `mapstructure:"newrelic"`
@@ -28,8 +26,8 @@ type Config struct {
 }
 
 type workerConf struct {
-	QueueName string `mapstructure:"queue_name"`
-	QueueSpec string `mapstructure:"queue_spec"`
+	QueueName string `mapstructure:"queue_name" default:"entropy_jobs"`
+	QueueSpec string `mapstructure:"queue_spec" default:"postgres://postgres@localhost:5432/entropy?sslmode=disable"`
 
 	Threads      int           `mapstructure:"threads" default:"1"`
 	PollInterval time.Duration `mapstructure:"poll_interval" default:"100ms"`
