@@ -172,6 +172,6 @@
     }
   },
   "required": [
-    "firehose_configs"
+    "firehose"
   ]
 }
