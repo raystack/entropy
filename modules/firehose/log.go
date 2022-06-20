@@ -3,6 +3,7 @@ package firehose
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/modules/kubernetes"
 	"github.com/odpf/entropy/pkg/errors"

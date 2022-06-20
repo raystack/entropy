@@ -2,6 +2,7 @@ package firehose
 
 import (
 	_ "embed"
+
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/modules/kubernetes"
 )
