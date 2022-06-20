@@ -21,7 +21,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		Name:    "test",
 		Project: "demo",
 		Spec: resource.Spec{
-			Configs: []byte(`{"release_configs": {"values": {"replicaCount": 1, "firehose": {}}}}`),
+			Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 		},
 		State: resource.State{},
 	}
@@ -47,7 +47,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 			spec:  module.Spec{Resource: res},
 			act: module.ActionRequest{
 				Name:   module.CreateAction,
-				Params: []byte(`{}`),
+				Params: []byte(`{"state":"RUNNING","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 			},
 			want: &resource.Resource{
 				URN:     "urn:odpf:entropy:firehose:test",
@@ -55,11 +55,11 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Name:    "test",
 				Project: "demo",
 				Spec: resource.Spec{
-					Configs: []byte(`{"state":"","release_configs":{"name":"demo-test-firehose","repository":"https://odpf.github.io/charts/","chart":"firehose","version":"0.1.1","values":null,"namespace":"firehose","timeout":0,"force_update":true,"recreate_pods":false,"wait":false,"wait_for_jobs":false,"replace":false,"description":"","create_namespace":false}}`),
+					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 				},
 				State: resource.State{
 					Status:     resource.StatusPending,
-					ModuleData: []byte(`{"pending_steps":["helm_create"]}`),
+					ModuleData: []byte(`{"pending_steps":["release_create"]}`),
 				},
 			},
 		},
@@ -85,11 +85,11 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Name:    "test",
 				Project: "demo",
 				Spec: resource.Spec{
-					Configs: []byte(`{"state":"","release_configs":{"name":"demo-test-firehose","repository":"https://odpf.github.io/charts/","chart":"firehose","version":"0.1.1","values":{"firehose":{},"replicaCount":5},"namespace":"firehose","timeout":0,"force_update":true,"recreate_pods":false,"wait":false,"wait_for_jobs":false,"replace":false,"description":"","create_namespace":false}}`),
+					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","firehose":{"replicas":5,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 				},
 				State: resource.State{
 					Status:     resource.StatusPending,
-					ModuleData: []byte(`{"pending_steps":["helm_update"]}`),
+					ModuleData: []byte(`{"pending_steps":["release_update"]}`),
 				},
 			},
 		},
