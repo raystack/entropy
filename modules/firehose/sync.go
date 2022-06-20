@@ -9,6 +9,7 @@ import (
 	"github.com/odpf/entropy/modules/kubernetes"
 	"github.com/odpf/entropy/pkg/errors"
 	"github.com/odpf/entropy/pkg/helm"
+	"github.com/odpf/entropy/pkg/kube"
 )
 
 func (m *firehoseModule) Sync(_ context.Context, spec module.Spec) (*resource.State, error) {
@@ -40,8 +41,22 @@ func (m *firehoseModule) Sync(_ context.Context, spec module.Spec) (*resource.St
 		return nil, err
 	}
 
-	if err := m.releaseSync(pendingStep == releaseCreate, conf, r, kubeOut); err != nil {
-		return nil, err
+	switch pendingStep {
+	case releaseCreate, releaseUpdate:
+		if data.StateOverride != "" {
+			conf.State = data.StateOverride
+		}
+		if err := m.releaseSync(pendingStep == releaseCreate, conf, r, kubeOut); err != nil {
+			return nil, err
+		}
+	case consumerReset:
+		if err := m.consumerReset(
+			conf.Firehose.KafkaBrokerAddress,
+			conf.Firehose.KafkaConsumerID,
+			data.ResetTimestamp, kubeOut); err != nil {
+			return nil, err
+		}
+		data.StateOverride = ""
 	}
 
 	return &resource.State{
@@ -69,4 +84,10 @@ func (*firehoseModule) releaseSync(isCreate bool, conf moduleConfig, r resource.
 	}
 
 	return helmErr
+}
+
+func (*firehoseModule) consumerReset(_ string, _ string, _ int64, out kubernetes.Output) error {
+	_ = kube.NewClient(out.Configs)
+
+	return nil
 }

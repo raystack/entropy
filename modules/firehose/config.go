@@ -26,6 +26,9 @@ var (
 
 	//go:embed schema/scale.json
 	scaleActionSchema string
+
+	//go:embed schema/reset.json
+	resetActionSchema string
 )
 
 type moduleConfig struct {

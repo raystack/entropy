@@ -13,6 +13,8 @@ func (m *firehoseModule) Plan(_ context.Context, spec module.Spec, act module.Ac
 	switch act.Name {
 	case module.CreateAction:
 		return m.planCreate(spec, act)
+	case ResetAction:
+		return m.planReset(spec, act)
 	default:
 		return m.planChange(spec, act)
 	}
@@ -75,6 +77,33 @@ func (*firehoseModule) planChange(spec module.Spec, act module.ActionRequest) (*
 		Status: resource.StatusPending,
 		ModuleData: moduleData{
 			PendingSteps: []string{releaseUpdate},
+		}.JSON(),
+	}
+	return &r, nil
+}
+
+func (*firehoseModule) planReset(spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+	r := spec.Resource
+
+	var conf moduleConfig
+	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
+	}
+
+	var resetParams struct {
+		Timestamp int64 `json:"timestamp"`
+	}
+	if err := json.Unmarshal(act.Params, &resetParams); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid action params json: %v", err)
+	}
+
+	r.Spec.Configs = conf.JSON()
+	r.State = resource.State{
+		Status: resource.StatusPending,
+		ModuleData: moduleData{
+			PendingSteps:   []string{releaseUpdate, consumerReset, releaseUpdate},
+			ResetTimestamp: resetParams.Timestamp,
+			StateOverride:  stateStopped,
 		}.JSON(),
 	}
 	return &r, nil
