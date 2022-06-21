@@ -91,19 +91,28 @@ func (*firehoseModule) planReset(spec module.Spec, act module.ActionRequest) (*r
 	}
 
 	var resetParams struct {
-		Timestamp int64 `json:"timestamp"`
+		To       string `json:"to"`
+		Datetime string `json:"datetime"`
 	}
 	if err := json.Unmarshal(act.Params, &resetParams); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid action params json: %v", err)
+	}
+
+	var resetTo string
+	switch resetParams.To {
+	case "DATETIME":
+		resetTo = resetParams.Datetime
+	default:
+		resetTo = resetParams.To
 	}
 
 	r.Spec.Configs = conf.JSON()
 	r.State = resource.State{
 		Status: resource.StatusPending,
 		ModuleData: moduleData{
-			PendingSteps:   []string{releaseUpdate, consumerReset, releaseUpdate},
-			ResetTimestamp: resetParams.Timestamp,
-			StateOverride:  stateStopped,
+			PendingSteps:  []string{releaseUpdate, consumerReset, releaseUpdate},
+			ResetTo:       resetTo,
+			StateOverride: stateStopped,
 		}.JSON(),
 	}
 	return &r, nil
