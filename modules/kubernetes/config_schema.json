@@ -28,7 +28,53 @@
       "default": 100000000
     }
   },
-  "required": [
-    "host"
+  "allOf": [
+    {
+      "oneOf": [
+        {
+          "required": [
+            "token"
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "required": [
+                "client_key"
+              ]
+            },
+            {
+              "required": [
+                "client_certificate"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "oneOf": [
+        {
+          "required": [
+            "cluster_ca_certificate"
+          ]
+        },
+        {
+          "properties": {
+            "insecure": {
+              "const": true
+            }
+          },
+          "required": [
+            "insecure"
+          ]
+        }
+      ]
+    },
+    {
+      "required": [
+        "host"
+      ]
+    }
   ]
 }
