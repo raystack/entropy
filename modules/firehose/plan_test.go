@@ -93,6 +93,27 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				},
 			},
 		},
+		{
+			title: "ValidResetRequest",
+			spec:  module.Spec{Resource: res},
+			act: module.ActionRequest{
+				Name:   ResetAction,
+				Params: []byte(`{"to":"DATETIME","datetime":"2022-06-22T00:00:00+00:00"}`),
+			},
+			want: &resource.Resource{
+				URN:     "urn:odpf:entropy:firehose:test",
+				Kind:    "firehose",
+				Name:    "test",
+				Project: "demo",
+				Spec: resource.Spec{
+					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+				},
+				State: resource.State{
+					Status:     resource.StatusPending,
+					ModuleData: []byte(`{"pending_steps":["release_update","consumer_reset","release_update"],"reset_to":"2022-06-22T00:00:00+00:00","state_override":"STOPPED"}`),
+				},
+			},
+		},
 	}
 
 	for _, tt := range table {
