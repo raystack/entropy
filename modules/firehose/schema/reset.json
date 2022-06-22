@@ -18,7 +18,8 @@
   "then": {
     "properties": {
       "datetime": {
-        "type": "date-time"
+        "type": "string",
+        "format": "date-time"
       }
     }
   },
