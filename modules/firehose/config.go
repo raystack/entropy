@@ -64,7 +64,7 @@ func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) *helm.ReleaseCo
 	fc.EnvVariables["SOURCE_KAFKA_CONSUMER_GROUP_ID"] = fc.KafkaConsumerID
 
 	hv := map[string]interface{}{
-		"replicaCount": defaultReplicaCount,
+		"replicaCount": mc.Firehose.Replicas,
 		"firehose": map[string]interface{}{
 			"image": map[string]interface{}{
 				"repository": defaultImageRepository,
@@ -74,7 +74,6 @@ func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) *helm.ReleaseCo
 			"config": fc.EnvVariables,
 		},
 	}
-
 	rc.Values = hv
 
 	return rc
