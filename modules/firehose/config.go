@@ -71,8 +71,8 @@ func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) *helm.ReleaseCo
 				"pullPolicy": defaultImagePullPolicy,
 				"tag":        defaultImageTag,
 			},
+			"config": fc.EnvVariables,
 		},
-		"config": fc.EnvVariables,
 	}
 
 	rc.Values = hv
