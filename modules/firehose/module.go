@@ -27,6 +27,12 @@ const (
 )
 
 const (
+	ResetToDateTime = "DATETIME"
+	ResetToEarliest = "EARLIEST"
+	ResetToLatest   = "LATEST"
+)
+
+const (
 	keyKubeDependency = "kube_cluster"
 )
 

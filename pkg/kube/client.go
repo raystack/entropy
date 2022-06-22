@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/mcuadros/go-defaults"
-	v1 "k8s.io/api/core/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -88,6 +89,41 @@ func (c Client) StreamLogs(ctx context.Context, namespace string, filter map[str
 	return c.streamFromPods(ctx, namespace, containerName, opts, tailLines, sinceSeconds, filter)
 }
 
+func (c Client) RunJob(ctx context.Context, namespace, name string, image string, cmd []string, retries int32) error {
+	clientSet, err := kubernetes.NewForConfig(&c.restConfig)
+	if err != nil {
+		return err
+	}
+
+	jobs := clientSet.BatchV1().Jobs(namespace)
+
+	jobSpec := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  name,
+							Image: image,
+
+							Command: cmd,
+						},
+					},
+					RestartPolicy: corev1.RestartPolicyNever,
+				},
+			},
+			BackoffLimit: &retries,
+		},
+	}
+
+	_, err = jobs.Create(ctx, jobSpec, metav1.CreateOptions{})
+	return err
+}
+
 func (c Client) streamFromPods(ctx context.Context, namespace, containerName string, opts metav1.ListOptions, tailLines, sinceSeconds int64, filter map[string]string) (<-chan LogChunk, error) {
 	clientSet, err := kubernetes.NewForConfig(&c.restConfig)
 	if err != nil {
@@ -113,7 +149,7 @@ func (c Client) streamFromPods(ctx context.Context, namespace, containerName str
 				continue
 			}
 			wg.Add(1)
-			go func(podName string, c v1.Container) {
+			go func(podName string, c corev1.Container) {
 				defer wg.Done()
 				if err := streamContainerLogs(ctx, namespace, podName, logCh, streamingClientSet, c, tailLines, sinceSeconds, filter); err != nil {
 					log.Printf("[WARN] failed to stream from container '%s':%s", c.Name, err)
@@ -130,8 +166,8 @@ func (c Client) streamFromPods(ctx context.Context, namespace, containerName str
 	return logCh, nil
 }
 
-func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- LogChunk, clientSet *kubernetes.Clientset, container v1.Container, tailLines, sinceSeconds int64, filter map[string]string) error {
-	podLogOpts := v1.PodLogOptions{}
+func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- LogChunk, clientSet *kubernetes.Clientset, container corev1.Container, tailLines, sinceSeconds int64, filter map[string]string) error {
+	podLogOpts := corev1.PodLogOptions{}
 	podLogOpts.Follow = true
 	podLogOpts.Container = container.Name
 

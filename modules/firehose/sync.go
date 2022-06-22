@@ -6,13 +6,14 @@ import (
 
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
+	"github.com/odpf/entropy/modules/firehose/kafka"
 	"github.com/odpf/entropy/modules/kubernetes"
 	"github.com/odpf/entropy/pkg/errors"
 	"github.com/odpf/entropy/pkg/helm"
 	"github.com/odpf/entropy/pkg/kube"
 )
 
-func (m *firehoseModule) Sync(_ context.Context, spec module.Spec) (*resource.State, error) {
+func (m *firehoseModule) Sync(ctx context.Context, spec module.Spec) (*resource.State, error) {
 	r := spec.Resource
 
 	var data moduleData
@@ -50,10 +51,11 @@ func (m *firehoseModule) Sync(_ context.Context, spec module.Spec) (*resource.St
 			return nil, err
 		}
 	case consumerReset:
-		if err := m.consumerReset(
+		if err := m.consumerReset(ctx,
 			conf.Firehose.KafkaBrokerAddress,
 			conf.Firehose.KafkaConsumerID,
-			data.ResetTimestamp, kubeOut); err != nil {
+			conf.GetHelmReleaseConfig(r).Namespace,
+			data.ResetTo, kubeOut); err != nil {
 			return nil, err
 		}
 		data.StateOverride = ""
@@ -86,8 +88,18 @@ func (*firehoseModule) releaseSync(isCreate bool, conf moduleConfig, r resource.
 	return helmErr
 }
 
-func (*firehoseModule) consumerReset(_ string, _ string, _ int64, out kubernetes.Output) error {
-	_ = kube.NewClient(out.Configs)
+func (*firehoseModule) consumerReset(ctx context.Context, brokers string, consumerID string, resetTo string, namespace string, out kubernetes.Output) error {
+	cgm := kafka.NewConsumerGroupManager(brokers, kube.NewClient(out.Configs), namespace)
 
-	return nil
+	var err error
+	switch resetTo {
+	case ResetToEarliest:
+		err = cgm.ResetOffsetToEarliest(ctx, consumerID)
+	case ResetToLatest:
+		err = cgm.ResetOffsetToLatest(ctx, consumerID)
+	default:
+		err = cgm.ResetOffsetToDatetime(ctx, consumerID, resetTo)
+	}
+
+	return err
 }

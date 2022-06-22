@@ -1,25 +1,61 @@
 package kafka
 
-import "github.com/odpf/entropy/modules/kubernetes"
+import (
+	"context"
 
-type KafkaConsumerGroups struct {
-	brokers string
-	topics  []string
-	kube    kubernetes.Output
+	"github.com/odpf/entropy/pkg/kube"
+)
+
+const (
+	kafkaImage = "bitnami/kafka:2.0.0"
+	retries    = 4
+)
+
+type ConsumerGroupManager struct {
+	brokers   string
+	kube      *kube.Client
+	namespace string
 }
 
-func (k KafkaConsumerGroups) ResetOffsetByTimestamp() {
-
+func NewConsumerGroupManager(brokers string, kube *kube.Client, namespace string) *ConsumerGroupManager {
+	return &ConsumerGroupManager{
+		brokers:   brokers,
+		kube:      kube,
+		namespace: namespace,
+	}
 }
 
-func (k KafkaConsumerGroups) ResetOffsetByPeriod() {
-
+func (k ConsumerGroupManager) ResetOffsetToDatetime(ctx context.Context, consumerID string, datetime string) error {
+	return k.kube.RunJob(ctx, k.namespace,
+		getJobName(consumerID),
+		kafkaImage,
+		append(getDefaultCMD(k.brokers), "--to-datetime", datetime),
+		retries,
+	)
 }
 
-func (k KafkaConsumerGroups) ResetOffsetToLatest() {
-
+func (k ConsumerGroupManager) ResetOffsetToLatest(ctx context.Context, consumerID string) error {
+	return k.kube.RunJob(ctx, k.namespace,
+		getJobName(consumerID),
+		kafkaImage,
+		append(getDefaultCMD(k.brokers), "--to-latest"),
+		retries,
+	)
 }
 
-func (k KafkaConsumerGroups) ResetOffsetToEarliest() {
+func (k ConsumerGroupManager) ResetOffsetToEarliest(ctx context.Context, consumerID string) error {
+	return k.kube.RunJob(ctx, k.namespace,
+		getJobName(consumerID),
+		kafkaImage,
+		append(getDefaultCMD(k.brokers), "--to-earliest"),
+		retries,
+	)
+}
 
+func getDefaultCMD(brokers string) []string {
+	return []string{"kafka-consumer-groups.sh", "--bootstrap-server", brokers, "--reset-offsets", "--execute"}
+}
+
+func getJobName(consumerID string) string {
+	return consumerID + "-reset"
 }
