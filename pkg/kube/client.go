@@ -15,14 +15,16 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	typedbatchv1 "k8s.io/client-go/kubernetes/typed/batch/v1"
 	"k8s.io/client-go/rest"
 
 	"github.com/odpf/entropy/pkg/errors"
 )
 
 const (
-	bufferSize = 4096
-	sleepTime  = 500
+	bufferSize                     = 4096
+	sleepTime                      = 500
+	defaultTTLSecondsAfterFinished = 60
 )
 
 type Client struct {
@@ -97,12 +99,15 @@ func (c Client) RunJob(ctx context.Context, namespace, name string, image string
 
 	jobs := clientSet.BatchV1().Jobs(namespace)
 
+	var TTLSecondsAfterFinished int32 = defaultTTLSecondsAfterFinished
+
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
 		Spec: batchv1.JobSpec{
+			TTLSecondsAfterFinished: &TTLSecondsAfterFinished,
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -121,7 +126,37 @@ func (c Client) RunJob(ctx context.Context, namespace, name string, image string
 	}
 
 	_, err = jobs.Create(ctx, jobSpec, metav1.CreateOptions{})
-	return err
+	if err != nil {
+		return err
+	}
+
+	return waitForJob(ctx, name, jobs)
+}
+
+func waitForJob(ctx context.Context, jobName string, jobs typedbatchv1.JobInterface) error {
+	for {
+		job, err := jobs.Get(ctx, jobName, metav1.GetOptions{})
+		if err != nil {
+			return errors.ErrNotFound.WithMsgf("consumer group reset job not found")
+		}
+
+		// job hasn't started yet
+		if job.Status.Active == 0 && job.Status.Succeeded == 0 && job.Status.Failed == 0 {
+			continue
+		}
+
+		// job is still running
+		if job.Status.Active > 0 {
+			continue
+		}
+
+		// Job ran successfully
+		if job.Status.Succeeded > 0 {
+			return nil
+		}
+
+		return errors.ErrInternal.WithCausef("%s has failed with error", job.Name).WithCausef(job.Status.String())
+	}
 }
 
 func (c Client) streamFromPods(ctx context.Context, namespace, containerName string, opts metav1.ListOptions, tailLines, sinceSeconds int64, filter map[string]string) (<-chan LogChunk, error) {

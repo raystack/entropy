@@ -17,7 +17,6 @@ const (
 	defaultImagePullPolicy  = "IfNotPresent"
 	defaultImageRepository  = "odpf/firehose"
 	defaultImageTag         = "latest"
-	defaultReplicaCount     = 1
 )
 
 var (

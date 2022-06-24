@@ -54,15 +54,21 @@ func (m *firehoseModule) Sync(ctx context.Context, spec module.Spec) (*resource.
 		if err := m.consumerReset(ctx,
 			conf.Firehose.KafkaBrokerAddress,
 			conf.Firehose.KafkaConsumerID,
+			data.ResetTo,
 			conf.GetHelmReleaseConfig(r).Namespace,
-			data.ResetTo, kubeOut); err != nil {
+			kubeOut); err != nil {
 			return nil, err
 		}
 		data.StateOverride = ""
 	}
 
+	finalStatus := resource.StatusCompleted
+	if len(data.PendingSteps) > 0 {
+		finalStatus = resource.StatusPending
+	}
+
 	return &resource.State{
-		Status: resource.StatusCompleted,
+		Status: finalStatus,
 		Output: Output{
 			Namespace:   conf.GetHelmReleaseConfig(r).Namespace,
 			ReleaseName: conf.GetHelmReleaseConfig(r).Name,

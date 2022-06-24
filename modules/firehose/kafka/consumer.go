@@ -29,7 +29,7 @@ func (k ConsumerGroupManager) ResetOffsetToDatetime(ctx context.Context, consume
 	return k.kube.RunJob(ctx, k.namespace,
 		getJobName(consumerID),
 		kafkaImage,
-		append(getDefaultCMD(k.brokers), "--to-datetime", datetime),
+		append(k.getDefaultCMD(consumerID), "--to-datetime", datetime),
 		retries,
 	)
 }
@@ -38,7 +38,7 @@ func (k ConsumerGroupManager) ResetOffsetToLatest(ctx context.Context, consumerI
 	return k.kube.RunJob(ctx, k.namespace,
 		getJobName(consumerID),
 		kafkaImage,
-		append(getDefaultCMD(k.brokers), "--to-latest"),
+		append(k.getDefaultCMD(consumerID), "--to-latest"),
 		retries,
 	)
 }
@@ -47,13 +47,13 @@ func (k ConsumerGroupManager) ResetOffsetToEarliest(ctx context.Context, consume
 	return k.kube.RunJob(ctx, k.namespace,
 		getJobName(consumerID),
 		kafkaImage,
-		append(getDefaultCMD(k.brokers), "--to-earliest"),
+		append(k.getDefaultCMD(consumerID), "--to-earliest"),
 		retries,
 	)
 }
 
-func getDefaultCMD(brokers string) []string {
-	return []string{"kafka-consumer-groups.sh", "--bootstrap-server", brokers, "--reset-offsets", "--execute"}
+func (k ConsumerGroupManager) getDefaultCMD(consumerID string) []string {
+	return []string{"kafka-consumer-groups.sh", "--bootstrap-server", k.brokers, "--group", consumerID, "--reset-offsets", "--execute", "--all-topics"}
 }
 
 func getJobName(consumerID string) string {
