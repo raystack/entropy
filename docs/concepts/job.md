@@ -1,5 +1,7 @@
 # Job
 
+A job is an action that needs to be performed by Entropy asynchronously. It has a kind which maps it to a JobFn and a payload that is passed to the JobFn. Jobs are picked by worker treads for execution.
+
 The Job struct looks like this:
 
 ```
