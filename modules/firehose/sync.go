@@ -16,13 +16,13 @@ import (
 )
 
 const (
-	networkErrorRetrySeconds = 5
-	kubeAPIErrorRetrySeconds = 30
+	networkErrorRetryDuration = 5 * time.Second
+	kubeAPIRetryBackoffDuration = 30 * time.Second
 )
 
 var (
-	ErrNetwork = worker.RetryableError{RetryAfter: time.Second * networkErrorRetrySeconds}
-	ErrKubeAPI = worker.RetryableError{RetryAfter: time.Second * kubeAPIErrorRetrySeconds}
+	ErrNetwork = worker.RetryableError{RetryAfter: networkRetryBackoffDuration}
+	ErrKubeAPI = worker.RetryableError{RetryAfter: kubeAPIRetryBackoffDuration}
 )
 
 func (m *firehoseModule) Sync(ctx context.Context, spec module.Spec) (*resource.State, error) {
