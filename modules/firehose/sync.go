@@ -3,6 +3,7 @@ package firehose
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
@@ -11,6 +12,17 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 	"github.com/odpf/entropy/pkg/helm"
 	"github.com/odpf/entropy/pkg/kube"
+	"github.com/odpf/entropy/pkg/worker"
+)
+
+const (
+	networkErrorRetrySeconds = 5
+	kubeAPIErrorRetrySeconds = 30
+)
+
+var (
+	ErrNetwork = worker.RetryableError{RetryAfter: time.Second * networkErrorRetrySeconds}
+	ErrKubeAPI = worker.RetryableError{RetryAfter: time.Second * kubeAPIErrorRetrySeconds}
 )
 
 func (m *firehoseModule) Sync(ctx context.Context, spec module.Spec) (*resource.State, error) {
@@ -107,5 +119,18 @@ func (*firehoseModule) consumerReset(ctx context.Context, brokers string, consum
 		err = cgm.ResetOffsetToDatetime(ctx, consumerID, resetTo)
 	}
 
-	return err
+	return handleErr(err)
+}
+
+func handleErr(err error) error {
+	switch {
+	case errors.Is(err, kube.ErrJobCreationFailed):
+		return ErrNetwork.WithCause(err)
+	case errors.Is(err, kube.ErrJobNotFound):
+		return ErrKubeAPI.WithCause(err)
+	case errors.Is(err, kube.ErrJobExecutionFailed):
+		return ErrKubeAPI.WithCause(err)
+	default:
+		return err
+	}
 }

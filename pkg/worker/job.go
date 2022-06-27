@@ -151,6 +151,12 @@ func (re *RetryableError) Error() string {
 	return fmt.Sprintf("retryable-error: %v", re.Cause)
 }
 
+func (re RetryableError) WithCause(err error) *RetryableError {
+	reCopy := re
+	reCopy.Cause = err
+	return &reCopy
+}
+
 func (re RetryableError) backoff() time.Duration {
 	if re.RetryAfter <= minRetryBackoff {
 		return minRetryBackoff

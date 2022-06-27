@@ -8,7 +8,7 @@ import (
 
 const (
 	kafkaImage = "bitnami/kafka:2.0.0"
-	retries    = 4
+	retries    = 6
 )
 
 type ConsumerGroupManager struct {

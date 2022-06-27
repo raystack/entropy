@@ -27,6 +27,12 @@ const (
 	defaultTTLSecondsAfterFinished = 60
 )
 
+var (
+	ErrJobExecutionFailed = errors.ErrInternal.WithMsgf("job execution failed")
+	ErrJobCreationFailed  = errors.ErrInternal.WithMsgf("job creation failed")
+	ErrJobNotFound        = errors.ErrNotFound.WithMsgf("job not found")
+)
+
 type Client struct {
 	restConfig      rest.Config
 	streamingConfig rest.Config
@@ -94,7 +100,7 @@ func (c Client) StreamLogs(ctx context.Context, namespace string, filter map[str
 func (c Client) RunJob(ctx context.Context, namespace, name string, image string, cmd []string, retries int32) error {
 	clientSet, err := kubernetes.NewForConfig(&c.restConfig)
 	if err != nil {
-		return err
+		return ErrJobCreationFailed.WithCausef(err.Error())
 	}
 
 	jobs := clientSet.BatchV1().Jobs(namespace)
@@ -127,7 +133,7 @@ func (c Client) RunJob(ctx context.Context, namespace, name string, image string
 
 	_, err = jobs.Create(ctx, jobSpec, metav1.CreateOptions{})
 	if err != nil {
-		return err
+		return ErrJobCreationFailed.WithCausef(err.Error())
 	}
 
 	return waitForJob(ctx, name, jobs)
@@ -137,7 +143,7 @@ func waitForJob(ctx context.Context, jobName string, jobs typedbatchv1.JobInterf
 	for {
 		job, err := jobs.Get(ctx, jobName, metav1.GetOptions{})
 		if err != nil {
-			return errors.ErrNotFound.WithMsgf("consumer group reset job not found")
+			return ErrJobNotFound.WithCausef(err.Error())
 		}
 
 		// job hasn't started yet
@@ -155,7 +161,7 @@ func waitForJob(ctx context.Context, jobName string, jobs typedbatchv1.JobInterf
 			return nil
 		}
 
-		return errors.ErrInternal.WithCausef("%s has failed with error", job.Name).WithCausef(job.Status.String())
+		return ErrJobExecutionFailed.WithCausef(job.Status.String())
 	}
 }
 
