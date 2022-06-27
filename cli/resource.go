@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/odpf/salt/term" //nolint
+	"github.com/odpf/salt/term" // nolint
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 
 	"github.com/MakeNowJust/heredoc"
@@ -51,7 +51,7 @@ func createResourceCommand() *cobra.Command {
 		Annotations: map[string]string{
 			"action:core": "true",
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
 			cs := term.NewColorScheme()
@@ -59,9 +59,7 @@ func createResourceCommand() *cobra.Command {
 			var reqBody entropyv1beta1.CreateResourceRequest
 			if err := parseFile(file, &reqBody); err != nil {
 				return err
-			}
-			err := reqBody.ValidateAll()
-			if err != nil {
+			} else if err := reqBody.ValidateAll(); err != nil {
 				return err
 			}
 
@@ -85,8 +83,9 @@ func createResourceCommand() *cobra.Command {
 				}
 				fmt.Println(cs.Bluef(formattedOutput))
 			}
+
 			return nil
-		},
+		}),
 	}
 
 	cmd.Flags().StringVarP(&file, "file", "f", "", "path to body of resource")
@@ -106,7 +105,7 @@ func listAllResourcesCommand() *cobra.Command {
 		Annotations: map[string]string{
 			"action:core": "true",
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
 			cs := term.NewColorScheme()
@@ -149,7 +148,7 @@ func listAllResourcesCommand() *cobra.Command {
 				fmt.Println(cs.Cyanf("To view all the data in JSON/YAML format, use flag `-o json | yaml`"))
 			}
 			return nil
-		},
+		}),
 	}
 
 	cmd.Flags().StringVarP(&output, "out", "o", "", "output format, `-o json | yaml`")
@@ -171,7 +170,7 @@ func viewResourceCommand() *cobra.Command {
 			"action:core": "true",
 		},
 		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
 			cs := term.NewColorScheme()
@@ -184,6 +183,7 @@ func viewResourceCommand() *cobra.Command {
 				return err
 			}
 			defer cancel()
+
 			res, err := client.GetResource(cmd.Context(), &reqBody)
 			if err != nil {
 				return err
@@ -197,17 +197,17 @@ func viewResourceCommand() *cobra.Command {
 				}
 				fmt.Println(cs.Bluef(formattedOutput))
 			} else {
-				report := [][]string{}
-				report = append(report, []string{"URN", "NAME", "KIND", "PROJECT", "STATUS"})
 				r := res.GetResource()
-				report = append(report, []string{r.Urn, r.Name, r.Kind, r.Project, r.State.Status.String()})
 
-				printer.Table(os.Stdout, report)
+				printer.Table(os.Stdout, [][]string{
+					{"URN", "NAME", "KIND", "PROJECT", "STATUS"},
+					{r.Urn, r.Name, r.Kind, r.Project, r.State.Status.String()},
+				})
 
 				fmt.Println(cs.Cyanf("\nTo view all the data in JSON/YAML format, use flag `-o json | yaml`"))
 			}
 			return nil
-		},
+		}),
 	}
 
 	cmd.Flags().StringVarP(&output, "out", "o", "", "output format, `-o json | yaml`")
@@ -227,7 +227,7 @@ func editResourceCommand() *cobra.Command {
 			"action:core": "true",
 		},
 		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
 			cs := term.NewColorScheme()
@@ -235,17 +235,14 @@ func editResourceCommand() *cobra.Command {
 			var newSpec entropyv1beta1.ResourceSpec
 			if err := parseFile(file, &newSpec); err != nil {
 				return err
-			}
-			err := newSpec.ValidateAll()
-			if err != nil {
+			} else if err := newSpec.ValidateAll(); err != nil {
 				return err
 			}
 
 			var reqBody entropyv1beta1.UpdateResourceRequest
 			reqBody.NewSpec = &newSpec
 			reqBody.Urn = args[0]
-			err = reqBody.ValidateAll()
-			if err != nil {
+			if err := reqBody.ValidateAll(); err != nil {
 				return err
 			}
 
@@ -263,7 +260,7 @@ func editResourceCommand() *cobra.Command {
 
 			fmt.Println(cs.Greenf("Successfully updated"))
 			return nil
-		},
+		}),
 	}
 
 	cmd.Flags().StringVarP(&file, "file", "f", "", "path to the updated spec of resource")
@@ -282,7 +279,7 @@ func deleteResourceCommand() *cobra.Command {
 			"action:core": "true",
 		},
 		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
 			cs := term.NewColorScheme()
@@ -304,7 +301,7 @@ func deleteResourceCommand() *cobra.Command {
 
 			fmt.Println(cs.Greenf("Successfully deleted"))
 			return nil
-		},
+		}),
 	}
 	return cmd
 }

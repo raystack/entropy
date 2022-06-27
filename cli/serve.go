@@ -34,7 +34,7 @@ func cmdServe() *cobra.Command {
 	cmd.Flags().BoolVar(&migrate, "migrate", false, "Run migrations before starting")
 	cmd.Flags().BoolVar(&spawnWorker, "worker", false, "Run worker threads as well")
 
-	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+	cmd.RunE = handleErr(func(cmd *cobra.Command, args []string) error {
 		cfg, err := loadConfig(cmd)
 		if err != nil {
 			return err
@@ -62,7 +62,8 @@ func cmdServe() *cobra.Command {
 		}
 
 		return runServer(cmd.Context(), zapLog, cfg, asyncWorker)
-	}
+	})
+
 	return cmd
 }
 

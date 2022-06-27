@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/odpf/salt/term" //nolint
+	"github.com/odpf/salt/term" // nolint
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -26,7 +26,7 @@ func cmdAction() *cobra.Command {
 			"group:core": "true",
 		},
 		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
 			cs := term.NewColorScheme()
@@ -69,7 +69,7 @@ func cmdAction() *cobra.Command {
 			}
 
 			return nil
-		},
+		}),
 	}
 
 	cmd.Flags().StringVarP(&urn, "urn", "u", "", "urn of the resource")

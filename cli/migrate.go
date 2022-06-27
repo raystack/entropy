@@ -18,7 +18,7 @@ func cmdMigrate() *cobra.Command {
 		},
 	}
 
-	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+	cmd.RunE = handleErr(func(cmd *cobra.Command, args []string) error {
 		cfg, err := loadConfig(cmd)
 		if err != nil {
 			return err
@@ -30,7 +30,7 @@ func cmdMigrate() *cobra.Command {
 		}
 
 		return runMigrations(cmd.Context(), zapLog, cfg)
-	}
+	})
 
 	return cmd
 }
