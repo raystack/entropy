@@ -16,12 +16,12 @@ import (
 )
 
 const (
-	networkErrorRetryDuration = 5 * time.Second
+	networkErrorRetryDuration   = 5 * time.Second
 	kubeAPIRetryBackoffDuration = 30 * time.Second
 )
 
 var (
-	ErrNetwork = worker.RetryableError{RetryAfter: networkRetryBackoffDuration}
+	ErrNetwork = worker.RetryableError{RetryAfter: networkErrorRetryDuration}
 	ErrKubeAPI = worker.RetryableError{RetryAfter: kubeAPIRetryBackoffDuration}
 )
 
