@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -37,14 +36,13 @@ func cmdShowConfigs() *cobra.Command {
 	return &cobra.Command{
 		Use:   "configs",
 		Short: "Display configurations currently loaded",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			cfg, err := loadConfig(cmd)
 			if err != nil {
-				fmt.Printf("failed to read configs: %v\n", err) // nolint
-				os.Exit(1)
+				fatalExitf("failed to read configs: %v", err)
 			}
-			_ = yaml.NewEncoder(os.Stdout).Encode(cfg)
-		},
+			return yaml.NewEncoder(os.Stdout).Encode(cfg)
+		}),
 	}
 }
 

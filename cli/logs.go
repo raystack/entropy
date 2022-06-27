@@ -2,11 +2,12 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"strings"
 
-	"github.com/odpf/salt/term" //nolint
+	"github.com/odpf/salt/term" // nolint
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 
 	"github.com/MakeNowJust/heredoc"
@@ -28,7 +29,7 @@ func cmdLogs() *cobra.Command {
 			"group:core": "true",
 		},
 		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
 			cs := term.NewColorScheme()
@@ -44,7 +45,6 @@ func cmdLogs() *cobra.Command {
 				keyValue := strings.Split(f, "=")
 				filters[keyValue[0]] = keyValue[1]
 			}
-
 			reqBody.Filter = filters
 			reqBody.Urn = args[0]
 
@@ -61,21 +61,21 @@ func cmdLogs() *cobra.Command {
 
 			for {
 				resp, err := stream.Recv()
-				if errors.Is(err, io.EOF) {
-					break
-				}
 				if err != nil {
-					log.Fatalf("cannot receive %v", err)
+					if errors.Is(err, io.EOF) {
+						break
+					}
+					return fmt.Errorf("failed to read stream: %w", err)
 				}
+
 				log.SetFlags(0)
-				log.Printf(cs.Bluef("%s", resp.GetChunk().GetData())) //nolint
+				log.Printf(cs.Bluef("%s", resp.GetChunk().GetData())) // nolint
 			}
 
 			return nil
-		},
+		}),
 	}
 
 	cmd.Flags().StringArrayVarP(&filter, "filter", "f", nil, "Use filters. Example: --filter=\"key=value\"")
-
 	return cmd
 }
