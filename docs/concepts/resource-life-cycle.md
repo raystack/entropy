@@ -27,7 +27,7 @@ type Spec struct {
 }
 
 type State struct {
-    Data   json.RawMessage
+    ModuleData   json.RawMessage
     Status string
     Output Output
 }
