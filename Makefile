@@ -14,6 +14,10 @@ tidy:
 	@echo "Tidy up go.mod..."
 	@go mod tidy -v
 
+install:
+	@echo "Installing Entropy to ${GOBIN}..."
+	@go install
+	
 format:
 	@echo "Running gofumpt..."
 	@gofumpt -l -w .
