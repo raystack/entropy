@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"log"
 	"os"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/odpf/entropy/internal/server"
+	"github.com/odpf/entropy/pkg/errors"
 	"github.com/odpf/entropy/pkg/logger"
 	"github.com/odpf/entropy/pkg/metric"
 )
@@ -61,8 +63,11 @@ func loadConfig(cmd *cobra.Command) (Config, error) {
 
 	var cfg Config
 	err := config.NewLoader(opts...).Load(&cfg)
-	if err != nil {
+	if errors.As(err, &config.ConfigFileNotFoundError{}) {
+		log.Println(err)
+	} else {
 		return cfg, err
 	}
+
 	return cfg, nil
 }
