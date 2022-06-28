@@ -11,8 +11,7 @@
       "default": false
     },
     "token": {
-      "type": "string",
-      "default": ""
+      "type": "string"
     },
     "client_key": {
       "type": "string"

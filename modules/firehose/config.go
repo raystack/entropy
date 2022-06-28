@@ -17,7 +17,6 @@ const (
 	defaultImagePullPolicy  = "IfNotPresent"
 	defaultImageRepository  = "odpf/firehose"
 	defaultImageTag         = "latest"
-	defaultReplicaCount     = 1
 )
 
 var (
@@ -26,6 +25,9 @@ var (
 
 	//go:embed schema/scale.json
 	scaleActionSchema string
+
+	//go:embed schema/reset.json
+	resetActionSchema string
 )
 
 type moduleConfig struct {
@@ -61,17 +63,16 @@ func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) *helm.ReleaseCo
 	fc.EnvVariables["SOURCE_KAFKA_CONSUMER_GROUP_ID"] = fc.KafkaConsumerID
 
 	hv := map[string]interface{}{
-		"replicaCount": defaultReplicaCount,
+		"replicaCount": mc.Firehose.Replicas,
 		"firehose": map[string]interface{}{
 			"image": map[string]interface{}{
 				"repository": defaultImageRepository,
 				"pullPolicy": defaultImagePullPolicy,
 				"tag":        defaultImageTag,
 			},
+			"config": fc.EnvVariables,
 		},
-		"config": fc.EnvVariables,
 	}
-
 	rc.Values = hv
 
 	return rc
