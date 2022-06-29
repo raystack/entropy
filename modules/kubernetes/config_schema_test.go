@@ -102,7 +102,6 @@ func TestModule_KubernetesJSONSchema(t *testing.T) {
 
 			c := gojsonschema.NewStringLoader(tt.Case)
 			result, err := schema.Validate(c)
-			fmt.Println(result)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))
