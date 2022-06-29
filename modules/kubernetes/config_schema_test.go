@@ -2,8 +2,7 @@ package kubernetes
 
 import (
 	"testing"
-	"fmt"
-
+	
 	"github.com/xeipuuv/gojsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/odpf/entropy/pkg/errors"
