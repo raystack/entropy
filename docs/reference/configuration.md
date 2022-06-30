@@ -7,9 +7,6 @@
 | Config.DBConfig.Name          | db.name          | DB_NAME          | entropy     |                                          |
 | Config.DBConfig.Port          | db.port          | DB_PORT          | 27017       | 0-65535                                  |
 | Config.DBConfig.Host          | db.host          | DB_HOST          | localhost   | valid hostname name or IP address        |
-| Config.NewRelicConfig.Enabled | newrelic.enabled | NEWRELIC_ENABLED | false       | bool                                     |
-| Config.NewRelicConfig.License | newrelic.license | NEWRELIC_LICENSE |             | 40 char NewRelic license key             |
-| Config.NewRelicConfig.AppName | newrelic.appname | NEWRELIC_APPNAME | entropy-dev | string                                   |
 | Config.LogConfig.Level        | log.level        | LOG_LEVEL        | info        | debug,info,warn,error,dpanic,panic,fatal |
 
 ## How to configure

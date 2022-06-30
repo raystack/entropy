@@ -6,11 +6,6 @@ service:
 # Refer https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
 pg_conn_str: 'postgres://postgres@localhost:5432/entropy?sslmode=disable'
 
-newrelic:
-  enabled: false
-  appname: Entropy
-  license: ____LICENSE_STRING_OF_40_CHARACTERS_____
-
 log:
   level: info
 
@@ -19,3 +14,12 @@ worker:
   queue_spec: 'postgres://postgres@localhost:5432/entropy?sslmode=disable'
   threads: 1
   poll_interval: 1s
+
+telemetry:
+  debug_addr: "localhost:8081"
+  enable_cpu: true
+  enable_memory: true
+  sampling_fraction: 1
+  service_name: "entropy"
+  enable_exporters: true
+  otel_agent_addr: "localhost:8088"

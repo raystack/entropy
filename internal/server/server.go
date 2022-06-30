@@ -2,105 +2,106 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
+	gorillamux "github.com/gorilla/mux"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/newrelic/go-agent/v3/integrations/nrgrpc"
-	"github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/odpf/salt/common"
-	"github.com/odpf/salt/server"
 	commonv1 "go.buf.build/odpf/gw/odpf/proton/odpf/common/v1"
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
+	"go.opencensus.io/plugin/ocgrpc"
 	"go.uber.org/zap"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	handlersv1 "github.com/odpf/entropy/internal/server/v1"
 	"github.com/odpf/entropy/pkg/version"
 )
 
-type Config struct {
-	Host string `mapstructure:"host" default:""`
-	Port int    `mapstructure:"port" default:"8080"`
-}
+const defaultGracePeriod = 5 * time.Second
 
-func (cfg Config) addr() string { return fmt.Sprintf("%s:%d", cfg.Host, cfg.Port) }
-
-func Serve(ctx context.Context, cfg Config, logger *zap.Logger, nr *newrelic.Application,
-	resourceSvc handlersv1.ResourceService,
-) error {
-	serverCfg := server.Config{
-		Host: cfg.Host,
-		Port: cfg.Port,
+func Serve(ctx context.Context, addr string, logger *zap.Logger, resourceSvc handlersv1.ResourceService) error {
+	grpcOpts := []grpc.ServerOption{
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			grpc_recovery.UnaryServerInterceptor(),
+			grpc_ctxtags.UnaryServerInterceptor(),
+			grpc_zap.UnaryServerInterceptor(logger),
+		)),
+		grpc.StatsHandler(&ocgrpc.ServerHandler{}),
 	}
-	grpcOpts := server.WithMuxGRPCServerOptions(grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-		grpc_recovery.UnaryServerInterceptor(),
-		grpc_ctxtags.UnaryServerInterceptor(),
-		grpc_zap.UnaryServerInterceptor(logger),
-		nrgrpc.UnaryServerInterceptor(nr),
-	)))
+	grpcServer := grpc.NewServer(grpcOpts...)
+	rpcHTTPGateway := runtime.NewServeMux()
+	reflection.Register(grpcServer)
 
-	muxServer, err := server.NewMux(serverCfg, grpcOpts)
-	if err != nil {
+	commonServiceRPC := common.New(version.GetVersionAndBuildInfo())
+	grpcServer.RegisterService(&commonv1.CommonService_ServiceDesc, commonServiceRPC)
+	if err := commonv1.RegisterCommonServiceHandlerServer(ctx, rpcHTTPGateway, commonServiceRPC); err != nil {
 		return err
 	}
 
-	gw, err := server.NewGateway(serverCfg.Host, serverCfg.Port)
-	if err != nil {
+	resourceServiceRPC := handlersv1.NewAPIServer(resourceSvc)
+	grpcServer.RegisterService(&entropyv1beta1.ResourceService_ServiceDesc, resourceServiceRPC)
+	if err := entropyv1beta1.RegisterResourceServiceHandlerServer(ctx, rpcHTTPGateway, resourceServiceRPC); err != nil {
 		return err
 	}
 
-	err = gw.RegisterHandler(ctx, commonv1.RegisterCommonServiceHandlerFromEndpoint)
-	if err != nil {
-		return err
-	}
-
-	err = gw.RegisterHandler(ctx, entropyv1beta1.RegisterResourceServiceHandlerFromEndpoint)
-	if err != nil {
-		return err
-	}
-
-	muxServer.SetGateway("/api", gw)
-	muxServer.RegisterHandler("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprintf(w, "pong")
+	httpRouter := gorillamux.NewRouter()
+	httpRouter.PathPrefix("/api/").Handler(http.StripPrefix("/api", rpcHTTPGateway))
+	httpRouter.Handle("/ping", http.HandlerFunc(func(wr http.ResponseWriter, req *http.Request) {
+		_, _ = fmt.Fprintf(wr, "pong")
 	}))
 
-	muxServer.RegisterService(
-		&commonv1.CommonService_ServiceDesc,
-		common.New(version.GetVersionAndBuildInfo()),
+	logger.Info("starting server", zap.String("addr", addr))
+
+	httpRouter.Use(
+		requestID(),
+		withOpenCensus(),
+		requestLogger(logger), // nolint
 	)
-
-	v1Handler := handlersv1.NewAPIServer(resourceSvc)
-
-	muxServer.RegisterService(
-		&entropyv1beta1.ResourceService_ServiceDesc,
-		v1Handler,
-	)
-
-	logger.Info("starting server", zap.String("addr", cfg.addr()))
-	return gracefulServe(ctx, muxServer)
+	h := grpcHandlerFunc(grpcServer, httpRouter)
+	return gracefulServe(ctx, logger, defaultGracePeriod, addr, h)
 }
 
-func gracefulServe(ctx context.Context, mux *server.MuxServer) error {
-	const gracefulTimeout = 30 * time.Second
+func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
+	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
+			grpcServer.ServeHTTP(w, r)
+		} else {
+			otherHandler.ServeHTTP(w, r)
+		}
+	}), &http2.Server{})
+}
 
-	serverErrorChan := make(chan error)
+func gracefulServe(ctx context.Context, lg *zap.Logger, gracePeriod time.Duration, addr string, h http.Handler) error {
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: h,
+	}
+
 	go func() {
-		serverErrorChan <- mux.Serve()
+		<-ctx.Done()
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), gracePeriod)
+		defer cancel()
+
+		if err := srv.Shutdown(shutdownCtx); err != nil { // nolint
+			lg.Error("graceful shutdown failed", zap.Error(err))
+			return
+		}
 	}()
 
-	select {
-	case <-ctx.Done():
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), gracefulTimeout)
-		defer shutdownCancel()
-		mux.Shutdown(shutdownCtx) //nolint
-		return nil
-
-	case serverError := <-serverErrorChan:
-		return serverError
+	if err := srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+		return err
 	}
+	return nil
 }
