@@ -1,94 +1,94 @@
 package kubernetes
 
 import (
+	"errors"
 	"testing"
-	
-	"github.com/xeipuuv/gojsonschema"
+
 	"github.com/stretchr/testify/assert"
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 func TestModule_KubernetesJSONSchema(t *testing.T) {
-	tests := []struct{
-		Case string
+	tests := []struct {
+		Case    string
 		wantErr error
-		want bool
+		want    bool
 	}{
 		{
-			Case : `{
-				"host": "http:0.0.0.0:1234",
+			Case: `{
+				"host": "http://0.0.0.0:1234",
 				"insecure": true,
 				"token": "token"
 			}`,
 			wantErr: nil,
-			want: true,
+			want:    true,
 		},
 		{
-			Case : `{
-				"host": "http:0.0.0.0:1234",
+			Case: `{
+				"host": "http://0.0.0.0:1234",
 				"insecure": false,
 				"token": "token"
 			  }`,
 			wantErr: nil,
-			want: false,
+			want:    false,
 		},
 		{
-			Case : `{
-				"host": "http:0.0.0.0:1234",
+			Case: `{
+				"host": "http://0.0.0.0:1234",
 				"insecure": false,
 				"cluster_ca_certificate": "c_ca_cert",
 				"token": "token"
 			  }`,
 			wantErr: nil,
-			want: true,
+			want:    true,
 		},
 		{
-			Case : `{
-				"host": "http:0.0.0.0:1234",
+			Case: `{
+				"host": "http://0.0.0.0:1234",
 				"cluster_ca_certificate": "c_ca_cert",
 				"token": "token"
 			  }`,
 			wantErr: nil,
-			want: true,
+			want:    true,
 		},
 		{
-			Case : `{
-				"host": "http:0.0.0.0:1234",
+			Case: `{
+				"host": "http://0.0.0.0:1234",
 				"insecure": true,
 				"client_key": "c_key",
 				"client_certificate": "c_cert"
 			  }`,
 			wantErr: nil,
-			want: true,
+			want:    true,
 		},
 		{
-			Case : `  "host": "http:0.0.0.0:1234",
+			Case: `  "host": "http://0.0.0.0:1234",
 			"insecure": true,
 			"client_key": "c_key"
 		  }`,
 			wantErr: nil,
-			want: false,
+			want:    false,
 		},
 		{
-			Case : `{
-				"host": "http:0.0.0.0:1234",
+			Case: `{
+				"host": "http://0.0.0.0:1234",
 				"insecure": true,
 				"token": "token",
 				"client_key": "c_key",
 				"client_certificate": "c_cert"
 			  }`,
 			wantErr: nil,
-			want: false,
+			want:    false,
 		},
 		{
-			Case : `{
-				"host": "http:0.0.0.0:1234",
+			Case: `{
+				"host": "http://0.0.0.0:1234",
 				"insecure": true,
 				"token": "token",
 				"client_key": "c_key"
 			  }`,
 			wantErr: nil,
-			want: true,
+			want:    true,
 		},
 	}
 	loader := gojsonschema.NewStringLoader(configSchema)

@@ -4,7 +4,9 @@
   "type": "object",
   "properties": {
     "host": {
-      "type": "string"
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://"
     },
     "insecure": {
       "type": "boolean",
