@@ -5,7 +5,7 @@ on:
       - "v*.*.*"
 
 jobs:
-  docker:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
