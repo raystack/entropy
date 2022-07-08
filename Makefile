@@ -47,6 +47,7 @@ build: clean
 	@CGO_ENABLED=0 go build -ldflags '-X "${NAME}/pkg/version.Version=${VERSION}" -X "${NAME}/pkg/version.Commit=${COMMIT}" -X "${NAME}/pkg/version.BuildTime=${BUILD_TIME}"' -o ${BUILD_DIR}/${EXE}
 
 download:
-	go mod download
+	@go mod download
 
-
+setup:
+	@go install github.com/vektra/mockery/v2@v2.10.4

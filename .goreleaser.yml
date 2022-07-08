@@ -4,10 +4,6 @@ release:
   prerelease: auto
   draft: true
 
-before:
-  hooks:
-    - make clean
-
 builds:
   - main: ./main.go
     id: "entropy"
@@ -23,8 +19,6 @@ builds:
       - windows
     goarch: 
       - amd64
-      - 386
-      - arm
       - arm64
     env:
       - CGO_ENABLED=0
@@ -50,10 +44,10 @@ changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
-      - '^build:'
-      - '^ci:'
+      - '^docs'
+      - '^test'
+      - '^build'
+      - '^ci'
 
 dockers:
   - goos: linux
