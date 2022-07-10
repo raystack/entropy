@@ -14,7 +14,7 @@ import (
 
 func cmdAction() *cobra.Command {
 	var urn, file, output string
-	var params *structpb.Value
+	var params structpb.Value
 	cmd := &cobra.Command{
 		Use:     "action <action-name>",
 		Aliases: []string{"action"},
@@ -33,10 +33,10 @@ func cmdAction() *cobra.Command {
 
 			var reqBody entropyv1beta1.ApplyActionRequest
 			if file != "" {
-				if err := parseFile(file, params); err != nil {
+				if err := parseFile(file, &params); err != nil {
 					return err
 				}
-				reqBody.Params = params
+				reqBody.Params = &params
 			}
 
 			reqBody.Urn = urn
