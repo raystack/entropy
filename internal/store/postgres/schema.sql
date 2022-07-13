@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS resources
     state_output      bytea     NOT NULL,
     state_module_data bytea     NOT NULL
 );
+
 CREATE INDEX IF NOT EXISTS idx_resources_kind ON resources (kind);
 CREATE INDEX IF NOT EXISTS idx_resources_name ON resources (name);
 CREATE INDEX IF NOT EXISTS idx_resources_project ON resources (project);
@@ -33,3 +34,23 @@ CREATE TABLE IF NOT EXISTS resource_tags
 );
 CREATE INDEX IF NOT EXISTS idx_resource_tags_resource_id ON resource_tags (resource_id);
 CREATE INDEX IF NOT EXISTS idx_resource_tags_tag ON resource_tags (tag);
+
+CREATE TABLE IF NOT EXISTS revisions
+(
+    id                BIGSERIAL NOT NULL PRIMARY KEY,
+    urn               TEXT      NOT NULL,
+    spec_configs      bytea     NOT NULL,
+    created_at        timestamp NOT NULL DEFAULT current_timestamp
+);
+
+CREATE INDEX IF NOT EXISTS idx_revisions_urn ON revisions (urn);
+CREATE INDEX IF NOT EXISTS idx_revisions_created_at ON revisions (created_at);
+
+CREATE TABLE IF NOT EXISTS revision_tags
+(
+    revision_id BIGINT NOT NULL REFERENCES revisions (id),
+    tag         TEXT   NOT NULL,
+    UNIQUE (revision_id, tag)
+);
+CREATE INDEX IF NOT EXISTS idx_revision_tags_revision_id ON revision_tags (revision_id);
+CREATE INDEX IF NOT EXISTS idx_revision_tags_tag ON revision_tags (tag);

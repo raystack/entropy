@@ -11,6 +11,11 @@ const (
 	tableResources            = "resources"
 	tableResourceTags         = "resource_tags"
 	tableResourceDependencies = "resource_dependencies"
+	columnResourceID          = "resource_id"
+
+	tableRevisions    = "revisions"
+	tableRevisionTags = "revision_tags"
+	columnRevisionID  = "revision_id"
 )
 
 // schema represents the storage schema.

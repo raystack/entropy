@@ -14,8 +14,8 @@ require (
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.7.1
 	github.com/xeipuuv/gojsonschema v1.2.0
-	go.buf.build/odpf/gw/odpf/proton v1.1.95
-	go.buf.build/odpf/gwv/odpf/proton v1.1.95
+	go.buf.build/odpf/gw/odpf/proton v1.1.106
+	go.buf.build/odpf/gwv/odpf/proton v1.1.106
 	go.uber.org/zap v1.21.0
 	google.golang.org/grpc v1.46.2
 	google.golang.org/protobuf v1.28.0
@@ -145,7 +145,7 @@ require (
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
 	github.com/yuin/goldmark v1.4.1 // indirect
 	github.com/yuin/goldmark-emoji v1.0.1 // indirect
-	go.buf.build/odpf/gw/grpc-ecosystem/grpc-gateway v1.1.37 // indirect
+	go.buf.build/odpf/gw/grpc-ecosystem/grpc-gateway v1.1.44 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect

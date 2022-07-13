@@ -26,6 +26,7 @@ func cmdResource() *cobra.Command {
 			$ entropy resource view <resource-urn>
 			$ entropy resource delete <resource-urn>
 			$ entropy resource edit <resource-urn>
+			$ entropy resource revisions <resource-urn>
 		`),
 	}
 
@@ -35,6 +36,7 @@ func cmdResource() *cobra.Command {
 		viewResourceCommand(),
 		editResourceCommand(),
 		deleteResourceCommand(),
+		getRevisionsCommand(),
 	)
 
 	return cmd
@@ -303,5 +305,66 @@ func deleteResourceCommand() *cobra.Command {
 			return nil
 		}),
 	}
+	return cmd
+}
+
+func getRevisionsCommand() *cobra.Command {
+	var output string
+	cmd := &cobra.Command{
+		Use:   "revisions",
+		Short: "get revisions of a resource",
+		Example: heredoc.Doc(`
+			$ entropy resource revisions <resource-urn> --out=json
+		`),
+		Annotations: map[string]string{
+			"action:core": "true",
+		},
+		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
+			spinner := printer.Spin("")
+			defer spinner.Stop()
+			cs := term.NewColorScheme()
+
+			var reqBody entropyv1beta1.GetResourceRevisionsRequest
+			reqBody.Urn = args[0]
+
+			client, cancel, err := createClient(cmd)
+			if err != nil {
+				return err
+			}
+			defer cancel()
+
+			res, err := client.GetResourceRevisions(cmd.Context(), &reqBody)
+			if err != nil {
+				return err
+			}
+			spinner.Stop()
+
+			if output == outputJSON || output == outputYAML || output == outputYML {
+				for _, rev := range res.GetRevisions() {
+					formattedOutput, err := formatOutput(rev, output)
+					if err != nil {
+						return err
+					}
+					fmt.Println(cs.Bluef(formattedOutput))
+				}
+			} else {
+				report := [][]string{}
+				report = append(report, []string{"ID", "URN", "CREATED AT"})
+				count := 0
+				for _, rev := range res.GetRevisions() {
+					report = append(report, []string{rev.GetId(), rev.GetUrn(), rev.GetCreatedAt().AsTime().String()})
+					count++
+				}
+				printer.Table(os.Stdout, report)
+				fmt.Println("\nTotal: ", count)
+
+				fmt.Println(cs.Cyanf("To view all the data in JSON/YAML format, use flag `-o json | yaml`"))
+			}
+			return nil
+		}),
+	}
+
+	cmd.Flags().StringVarP(&output, "out", "o", "", "output format, `-o json | yaml`")
+
 	return cmd
 }

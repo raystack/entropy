@@ -45,3 +45,11 @@ func (s *Service) GetLog(ctx context.Context, urn string, filter map[string]stri
 
 	return moduleLogStream.Log(ctx, *modSpec, filter)
 }
+
+func (s *Service) GetRevisions(ctx context.Context, selector resource.RevisionsSelector) ([]resource.Revision, error) {
+	revs, err := s.store.Revisions(ctx, selector)
+	if err != nil {
+		return nil, errors.ErrInternal.WithCausef(err.Error())
+	}
+	return revs, nil
+}
