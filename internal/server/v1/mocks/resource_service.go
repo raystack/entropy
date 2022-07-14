@@ -253,6 +253,53 @@ func (_c *ResourceService_GetResource_Call) Return(_a0 *resource.Resource, _a1 e
 	return _c
 }
 
+// GetRevisions provides a mock function with given fields: ctx, selector
+func (_m *ResourceService) GetRevisions(ctx context.Context, selector resource.RevisionsSelector) ([]resource.Revision, error) {
+	ret := _m.Called(ctx, selector)
+
+	var r0 []resource.Revision
+	if rf, ok := ret.Get(0).(func(context.Context, resource.RevisionsSelector) []resource.Revision); ok {
+		r0 = rf(ctx, selector)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]resource.Revision)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, resource.RevisionsSelector) error); ok {
+		r1 = rf(ctx, selector)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ResourceService_GetRevisions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRevisions'
+type ResourceService_GetRevisions_Call struct {
+	*mock.Call
+}
+
+// GetRevisions is a helper method to define mock.On call
+//  - ctx context.Context
+//  - selector resource.RevisionsSelector
+func (_e *ResourceService_Expecter) GetRevisions(ctx interface{}, selector interface{}) *ResourceService_GetRevisions_Call {
+	return &ResourceService_GetRevisions_Call{Call: _e.mock.On("GetRevisions", ctx, selector)}
+}
+
+func (_c *ResourceService_GetRevisions_Call) Run(run func(ctx context.Context, selector resource.RevisionsSelector)) *ResourceService_GetRevisions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(resource.RevisionsSelector))
+	})
+	return _c
+}
+
+func (_c *ResourceService_GetRevisions_Call) Return(_a0 []resource.Revision, _a1 error) *ResourceService_GetRevisions_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // ListResources provides a mock function with given fields: ctx, filter
 func (_m *ResourceService) ListResources(ctx context.Context, filter resource.Filter) ([]resource.Resource, error) {
 	ret := _m.Called(ctx, filter)

@@ -23,6 +23,8 @@ type Store interface {
 	Create(ctx context.Context, r Resource, hooks ...MutationHook) error
 	Update(ctx context.Context, r Resource, hooks ...MutationHook) error
 	Delete(ctx context.Context, urn string, hooks ...MutationHook) error
+
+	Revisions(ctx context.Context, selector RevisionsSelector) ([]Revision, error)
 }
 
 // MutationHook values are passed to mutation operations of resource storage
@@ -52,6 +54,19 @@ type Filter struct {
 	Kind    string            `json:"kind"`
 	Project string            `json:"project"`
 	Labels  map[string]string `json:"labels"`
+}
+
+type RevisionsSelector struct {
+	URN string `json:"urn"`
+}
+
+type Revision struct {
+	ID        int64             `json:"id"`
+	URN       string            `json:"urn"`
+	Labels    map[string]string `json:"labels"`
+	CreatedAt time.Time         `json:"created_at"`
+
+	Spec Spec `json:"spec"`
 }
 
 func (res *Resource) Validate() error {

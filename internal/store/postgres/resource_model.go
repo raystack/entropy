@@ -47,25 +47,7 @@ func readResourceRecord(ctx context.Context, r sqlx.QueryerContext, urn string, 
 }
 
 func readResourceTags(ctx context.Context, r sq.BaseRunner, id int64, into *[]string) error {
-	builder := sq.Select("tag").From(tableResourceTags).Where(sq.Eq{"resource_id": id})
-
-	rows, err := builder.PlaceholderFormat(sq.Dollar).RunWith(r).QueryContext(ctx)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
-		return err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var tag string
-		if err := rows.Scan(&tag); err != nil {
-			return err
-		}
-		*into = append(*into, tag)
-	}
-	return rows.Err()
+	return readTags(ctx, r, tableResourceTags, columnResourceID, id, into)
 }
 
 func readResourceDeps(ctx context.Context, r sq.BaseRunner, id int64, into map[string]string) error {

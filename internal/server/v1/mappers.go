@@ -2,6 +2,7 @@ package handlersv1
 
 import (
 	"encoding/json"
+	"strconv"
 
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -9,6 +10,10 @@ import (
 
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
+)
+
+const (
+	decimalBase = 10
 )
 
 func resourceToProto(res resource.Resource) (*entropyv1beta1.Resource, error) {
@@ -123,5 +128,20 @@ func resourceSpecFromProto(spec *entropyv1beta1.ResourceSpec) (*resource.Spec, e
 	return &resource.Spec{
 		Configs:      confJSON,
 		Dependencies: deps,
+	}, nil
+}
+
+func revisionToProto(revision resource.Revision) (*entropyv1beta1.ResourceRevision, error) {
+	spec, err := resourceSpecToProto(revision.Spec)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entropyv1beta1.ResourceRevision{
+		Id:        strconv.FormatInt(revision.ID, decimalBase),
+		Urn:       revision.URN,
+		Labels:    revision.Labels,
+		CreatedAt: timestamppb.New(revision.CreatedAt),
+		Spec:      spec,
 	}, nil
 }

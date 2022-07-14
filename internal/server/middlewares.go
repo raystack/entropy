@@ -14,8 +14,10 @@ import (
 	"go.uber.org/zap"
 )
 
-const grpcGatewayPrefix = "/api"
-const headerRequestID = "X-Request-Id"
+const (
+	grpcGatewayPrefix = "/api"
+	headerRequestID   = "X-Request-Id"
+)
 
 type wrappedWriter struct {
 	http.ResponseWriter

@@ -23,6 +23,8 @@ type ResourceService interface {
 
 	ApplyAction(ctx context.Context, urn string, action module.ActionRequest) (*resource.Resource, error)
 	GetLog(ctx context.Context, urn string, filter map[string]string) (<-chan module.LogChunk, error)
+
+	GetRevisions(ctx context.Context, selector resource.RevisionsSelector) ([]resource.Revision, error)
 }
 
 type APIServer struct {
@@ -186,6 +188,27 @@ func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream ent
 			}
 		}
 	}
+}
+
+func (server APIServer) GetResourceRevisions(ctx context.Context, request *entropyv1beta1.GetResourceRevisionsRequest) (*entropyv1beta1.GetResourceRevisionsResponse, error) {
+	revisions, err := server.resourceService.GetRevisions(ctx, resource.RevisionsSelector{URN: request.GetUrn()})
+	if err != nil {
+		return nil, generateRPCErr(err)
+	}
+
+	var responseRevisions []*entropyv1beta1.ResourceRevision
+	for _, res := range revisions {
+		responseRevision, err := revisionToProto(res)
+		if err != nil {
+			return nil, generateRPCErr(err)
+		}
+
+		responseRevisions = append(responseRevisions, responseRevision)
+	}
+
+	return &entropyv1beta1.GetResourceRevisionsResponse{
+		Revisions: responseRevisions,
+	}, nil
 }
 
 func generateRPCErr(e error) error {

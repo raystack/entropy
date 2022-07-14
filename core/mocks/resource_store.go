@@ -222,6 +222,53 @@ func (_c *ResourceStore_List_Call) Return(_a0 []resource.Resource, _a1 error) *R
 	return _c
 }
 
+// Revisions provides a mock function with given fields: ctx, selector
+func (_m *ResourceStore) Revisions(ctx context.Context, selector resource.RevisionsSelector) ([]resource.Revision, error) {
+	ret := _m.Called(ctx, selector)
+
+	var r0 []resource.Revision
+	if rf, ok := ret.Get(0).(func(context.Context, resource.RevisionsSelector) []resource.Revision); ok {
+		r0 = rf(ctx, selector)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]resource.Revision)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, resource.RevisionsSelector) error); ok {
+		r1 = rf(ctx, selector)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ResourceStore_Revisions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Revisions'
+type ResourceStore_Revisions_Call struct {
+	*mock.Call
+}
+
+// Revisions is a helper method to define mock.On call
+//  - ctx context.Context
+//  - selector resource.RevisionsSelector
+func (_e *ResourceStore_Expecter) Revisions(ctx interface{}, selector interface{}) *ResourceStore_Revisions_Call {
+	return &ResourceStore_Revisions_Call{Call: _e.mock.On("Revisions", ctx, selector)}
+}
+
+func (_c *ResourceStore_Revisions_Call) Run(run func(ctx context.Context, selector resource.RevisionsSelector)) *ResourceStore_Revisions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(resource.RevisionsSelector))
+	})
+	return _c
+}
+
+func (_c *ResourceStore_Revisions_Call) Return(_a0 []resource.Revision, _a1 error) *ResourceStore_Revisions_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // Update provides a mock function with given fields: ctx, r, hooks
 func (_m *ResourceStore) Update(ctx context.Context, r resource.Resource, hooks ...resource.MutationHook) error {
 	_va := make([]interface{}, len(hooks))

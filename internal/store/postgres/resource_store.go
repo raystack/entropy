@@ -57,7 +57,7 @@ func (st *Store) GetByURN(ctx context.Context, urn string) (*resource.Resource, 
 }
 
 func (st *Store) List(ctx context.Context, filter resource.Filter) ([]resource.Resource, error) {
-	q := sq.Select("urn").From("resources")
+	q := sq.Select("urn").From(tableResources)
 	if filter.Kind != "" {
 		q = q.Where(sq.Eq{"kind": filter.Kind})
 	}
@@ -114,6 +114,17 @@ func (st *Store) Create(ctx context.Context, r resource.Resource, hooks ...resou
 			return translateErr(err)
 		}
 
+		// TODO: Add labels for revisions
+		rev := resource.Revision{
+			URN:    r.URN,
+			Spec:   r.Spec,
+			Labels: map[string]string{},
+		}
+
+		if err := insertRevision(ctx, tx, rev); err != nil {
+			return translateErr(err)
+		}
+
 		return runAllHooks(ctx, hooks)
 	}
 
@@ -152,6 +163,17 @@ func (st *Store) Update(ctx context.Context, r resource.Resource, hooks ...resou
 
 		if err := setDependencies(ctx, tx, id, r.Spec.Dependencies); err != nil {
 			return err
+		}
+
+		// TODO: Add labels for revisions
+		rev := resource.Revision{
+			URN:    r.URN,
+			Spec:   r.Spec,
+			Labels: map[string]string{},
+		}
+
+		if err := insertRevision(ctx, tx, rev); err != nil {
+			return translateErr(err)
 		}
 
 		return runAllHooks(ctx, hooks)

@@ -86,7 +86,7 @@ func setupViews() error {
 }
 
 func setupServerViews() error {
-	var serverViewTags = []tag.Key{
+	serverViewTags := []tag.Key{
 		ochttp.KeyServerRoute,
 		ochttp.Method,
 	}
@@ -135,7 +135,7 @@ func setupClientViews() error {
 		return err
 	}
 
-	var clientViewTags = []tag.Key{
+	clientViewTags := []tag.Key{
 		ochttp.KeyClientMethod,
 		ochttp.KeyClientStatus,
 		ochttp.KeyClientHost,
