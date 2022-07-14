@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/odpf/entropy/modules/firehose"
 	"github.com/odpf/entropy/modules/kubernetes"
 	"github.com/odpf/entropy/pkg/logger"
-	"github.com/odpf/entropy/pkg/metric"
+	"github.com/odpf/entropy/pkg/telemetry"
 	"github.com/odpf/entropy/pkg/worker"
 	"github.com/odpf/entropy/pkg/worker/pgq"
 )
@@ -45,7 +46,11 @@ func cmdServe() *cobra.Command {
 			return err
 		}
 
-		asyncWorker := setupWorker(zapLog, cfg.Worker)
+		telemetry.Init(cmd.Context(), cfg.Telemetry, zapLog)
+		nrApp, err := newrelic.NewApplication(
+			newrelic.ConfigAppName(cfg.Telemetry.ServiceName),
+			newrelic.ConfigLicense(cfg.Telemetry.NewRelicAPIKey),
+		)
 
 		if migrate {
 			if migrateErr := runMigrations(cmd.Context(), zapLog, cfg); migrateErr != nil {
@@ -53,6 +58,7 @@ func cmdServe() *cobra.Command {
 			}
 		}
 
+		asyncWorker := setupWorker(zapLog, cfg.Worker)
 		if spawnWorker {
 			go func() {
 				if runErr := asyncWorker.Run(cmd.Context()); runErr != nil {
@@ -61,20 +67,15 @@ func cmdServe() *cobra.Command {
 			}()
 		}
 
-		return runServer(cmd.Context(), zapLog, cfg, asyncWorker)
+		return runServer(cmd.Context(), nrApp, zapLog, cfg, asyncWorker)
 	})
 
 	return cmd
 }
 
-func runServer(baseCtx context.Context, zapLog *zap.Logger, cfg Config, asyncWorker *worker.Worker) error {
+func runServer(baseCtx context.Context, nrApp *newrelic.Application, zapLog *zap.Logger, cfg Config, asyncWorker *worker.Worker) error {
 	ctx, cancel := context.WithCancel(baseCtx)
 	defer cancel()
-
-	nr, err := metric.New(&cfg.NewRelic)
-	if err != nil {
-		return err
-	}
 
 	modules := []module.Descriptor{
 		kubernetes.Module,
@@ -89,7 +90,7 @@ func runServer(baseCtx context.Context, zapLog *zap.Logger, cfg Config, asyncWor
 		return err
 	}
 
-	return entropyserver.Serve(ctx, cfg.Service, zapLog, nr, service)
+	return entropyserver.Serve(ctx, cfg.Service.addr(), nrApp, zapLog, service)
 }
 
 func setupRegistry(logger *zap.Logger, modules ...module.Descriptor) *module.Registry {

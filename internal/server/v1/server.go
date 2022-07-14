@@ -4,10 +4,8 @@ package handlersv1
 
 import (
 	"context"
-	"log"
 
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
-	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -215,8 +213,6 @@ func (server APIServer) GetResourceRevisions(ctx context.Context, request *entro
 
 func generateRPCErr(e error) error {
 	err := errors.E(e)
-	zap.L().Error("failed", zap.Error(err))
-	log.Printf("failed: %v", err.Cause)
 
 	var code codes.Code
 	switch {

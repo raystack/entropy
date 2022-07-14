@@ -23,3 +23,5 @@ config.yaml
 tmp/
 
 expt/
+
+entropy.dev.yaml

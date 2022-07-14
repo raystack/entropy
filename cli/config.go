@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -9,21 +10,25 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 
-	"github.com/odpf/entropy/internal/server"
 	"github.com/odpf/entropy/pkg/errors"
 	"github.com/odpf/entropy/pkg/logger"
-	"github.com/odpf/entropy/pkg/metric"
+	"github.com/odpf/entropy/pkg/telemetry"
 )
 
 const configFlag = "config"
 
 // Config contains the application configuration.
 type Config struct {
-	Log       logger.LogConfig      `mapstructure:"log"`
-	Service   server.Config         `mapstructure:"service"`
-	NewRelic  metric.NewRelicConfig `mapstructure:"newrelic"`
-	PGConnStr string                `mapstructure:"pg_conn_str" default:"postgres://postgres@localhost:5432/entropy?sslmode=disable"`
-	Worker    workerConf            `mapstructure:"worker"`
+	Log       logger.LogConfig `mapstructure:"log"`
+	Worker    workerConf       `mapstructure:"worker"`
+	Service   serveConfig      `mapstructure:"service"`
+	PGConnStr string           `mapstructure:"pg_conn_str" default:"postgres://postgres@localhost:5432/entropy?sslmode=disable"`
+	Telemetry telemetry.Config `mapstructure:"telemetry"`
+}
+
+type serveConfig struct {
+	Host string `mapstructure:"host" default:""`
+	Port int    `mapstructure:"port" default:"8080"`
 }
 
 type workerConf struct {
@@ -32,6 +37,10 @@ type workerConf struct {
 
 	Threads      int           `mapstructure:"threads" default:"1"`
 	PollInterval time.Duration `mapstructure:"poll_interval" default:"100ms"`
+}
+
+func (serveCfg serveConfig) addr() string {
+	return fmt.Sprintf("%s:%d", serveCfg.Host, serveCfg.Port)
 }
 
 func cmdShowConfigs() *cobra.Command {
