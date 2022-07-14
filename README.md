@@ -36,10 +36,7 @@ in your PATH for easy use. `/usr/local/bin` is the most probable location.
 
 ```sh
 # Install entropy (requires homebrew installed)
-$ brew install odpf/taps/entropy
-
-# Upgrade entropy (requires homebrew installed)
-$ brew upgrade entropy
+$ brew install odpf/tap/entropy
 
 # Check for installed entropy version
 $ entropy version
@@ -47,7 +44,7 @@ $ entropy version
 
 ## Usage
 
-Entropy typically runs as a service and requires a MongoDB to store its state.
+Entropy typically runs as a service and requires a Postgres to store its state.
 
 ## Running locally
 
@@ -62,7 +59,7 @@ $ make build
 $ docker-compose up
 
 # Run entropy on a recipe file
-$ ./entropy serve
+$ ./dist/entropy serve
 
 ```
 
