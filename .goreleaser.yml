@@ -48,6 +48,8 @@ changelog:
       - '^test'
       - '^build'
       - '^ci'
+      - '^chore'
+      - '^refactor'
 
 dockers:
   - goos: linux
