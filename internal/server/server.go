@@ -14,6 +14,9 @@ import (
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/newrelic/go-agent/v3/integrations/nrgorilla"
+	"github.com/newrelic/go-agent/v3/integrations/nrgrpc"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/odpf/salt/common"
 	commonv1 "go.buf.build/odpf/gw/odpf/proton/odpf/common/v1"
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
@@ -30,12 +33,13 @@ import (
 
 const defaultGracePeriod = 5 * time.Second
 
-func Serve(ctx context.Context, addr string, logger *zap.Logger, resourceSvc handlersv1.ResourceService) error {
+func Serve(ctx context.Context, addr string, nrApp *newrelic.Application, logger *zap.Logger, resourceSvc handlersv1.ResourceService) error {
 	grpcOpts := []grpc.ServerOption{
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			grpc_recovery.UnaryServerInterceptor(),
 			grpc_ctxtags.UnaryServerInterceptor(),
 			grpc_zap.UnaryServerInterceptor(logger),
+			nrgrpc.UnaryServerInterceptor(nrApp),
 		)),
 		grpc.StatsHandler(&ocgrpc.ServerHandler{}),
 	}
@@ -56,6 +60,7 @@ func Serve(ctx context.Context, addr string, logger *zap.Logger, resourceSvc han
 	}
 
 	httpRouter := gorillamux.NewRouter()
+	httpRouter.Use(nrgorilla.Middleware(nrApp))
 	httpRouter.PathPrefix("/api/").Handler(http.StripPrefix("/api", rpcHTTPGateway))
 	httpRouter.Handle("/ping", http.HandlerFunc(func(wr http.ResponseWriter, req *http.Request) {
 		_, _ = fmt.Fprintf(wr, "pong")

@@ -18,8 +18,14 @@ type Config struct {
 	SamplingFraction float64 `mapstructure:"sampling_fraction"`
 
 	// OpenCensus exporter configurations.
-	ServiceName      string `mapstructure:"service_name"`
-	EnableExporters  bool   `mapstructure:"enable_exporters"`
+	ServiceName string `mapstructure:"service_name"`
+
+	// NewRelic exporter.
+	EnableNewrelic bool   `mapstructure:"enable_newrelic"`
+	NewRelicAPIKey string `mapstructure:"newrelic_api_key"`
+
+	// OpenTelemetry Agent exporter.
+	EnableOtelAgent  bool   `mapstructure:"enable_otel_agent"`
 	OpenTelAgentAddr string `mapstructure:"otel_agent_addr"`
 }
 

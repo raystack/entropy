@@ -21,5 +21,7 @@ telemetry:
   enable_memory: true
   sampling_fraction: 1
   service_name: "entropy"
-  enable_exporters: true
+  enable_newrelic: false
+  newrelic_api_key: ""
+  enable_otel_agent: false
   otel_agent_addr: "localhost:8088"

@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
@@ -44,7 +45,12 @@ func cmdServe() *cobra.Command {
 		if err != nil {
 			return err
 		}
+
 		telemetry.Init(cmd.Context(), cfg.Telemetry, zapLog)
+		nrApp, err := newrelic.NewApplication(
+			newrelic.ConfigAppName(cfg.Telemetry.ServiceName),
+			newrelic.ConfigLicense(cfg.Telemetry.NewRelicAPIKey),
+		)
 
 		if migrate {
 			if migrateErr := runMigrations(cmd.Context(), zapLog, cfg); migrateErr != nil {
@@ -61,13 +67,13 @@ func cmdServe() *cobra.Command {
 			}()
 		}
 
-		return runServer(cmd.Context(), zapLog, cfg, asyncWorker)
+		return runServer(cmd.Context(), nrApp, zapLog, cfg, asyncWorker)
 	})
 
 	return cmd
 }
 
-func runServer(baseCtx context.Context, zapLog *zap.Logger, cfg Config, asyncWorker *worker.Worker) error {
+func runServer(baseCtx context.Context, nrApp *newrelic.Application, zapLog *zap.Logger, cfg Config, asyncWorker *worker.Worker) error {
 	ctx, cancel := context.WithCancel(baseCtx)
 	defer cancel()
 
@@ -84,7 +90,7 @@ func runServer(baseCtx context.Context, zapLog *zap.Logger, cfg Config, asyncWor
 		return err
 	}
 
-	return entropyserver.Serve(ctx, cfg.Service.addr(), zapLog, service)
+	return entropyserver.Serve(ctx, cfg.Service.addr(), nrApp, zapLog, service)
 }
 
 func setupRegistry(logger *zap.Logger, modules ...module.Descriptor) *module.Registry {

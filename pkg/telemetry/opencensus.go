@@ -6,6 +6,7 @@ import (
 
 	"contrib.go.opencensus.io/exporter/ocagent"
 	"contrib.go.opencensus.io/exporter/prometheus"
+	"github.com/newrelic/newrelic-opencensus-exporter-go/nrcensus"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/plugin/runmetrics"
@@ -16,10 +17,6 @@ import (
 )
 
 func setupOpenCensus(ctx context.Context, mux *http.ServeMux, cfg Config) error {
-	if !cfg.EnableExporters {
-		return nil
-	}
-
 	trace.ApplyConfig(trace.Config{
 		DefaultSampler: trace.ProbabilitySampler(cfg.SamplingFraction),
 	})
@@ -38,18 +35,31 @@ func setupOpenCensus(ctx context.Context, mux *http.ServeMux, cfg Config) error 
 		return err
 	}
 
-	ocExporter, err := ocagent.NewExporter(
-		ocagent.WithServiceName(cfg.ServiceName),
-		ocagent.WithInsecure(),
-		ocagent.WithAddress(cfg.OpenTelAgentAddr),
-	)
-	if err != nil {
-		return err
+	if cfg.EnableNewrelic {
+		exporter, err := nrcensus.NewExporter(cfg.ServiceName, cfg.NewRelicAPIKey)
+		if err != nil {
+			return err
+		}
+		view.RegisterExporter(exporter)
+		trace.RegisterExporter(exporter)
 	}
-	go func() {
-		<-ctx.Done()
-		_ = ocExporter.Stop()
-	}()
+
+	if cfg.EnableOtelAgent {
+		ocExporter, err := ocagent.NewExporter(
+			ocagent.WithServiceName(cfg.ServiceName),
+			ocagent.WithInsecure(),
+			ocagent.WithAddress(cfg.OpenTelAgentAddr),
+		)
+		if err != nil {
+			return err
+		}
+		go func() {
+			<-ctx.Done()
+			_ = ocExporter.Stop()
+		}()
+		trace.RegisterExporter(ocExporter)
+		view.RegisterExporter(ocExporter)
+	}
 
 	pe, err := prometheus.NewExporter(prometheus.Options{
 		Namespace: cfg.ServiceName,
@@ -58,9 +68,6 @@ func setupOpenCensus(ctx context.Context, mux *http.ServeMux, cfg Config) error 
 		return err
 	}
 	mux.Handle("/metrics", pe)
-
-	trace.RegisterExporter(ocExporter)
-	view.RegisterExporter(ocExporter)
 
 	zpages.Handle(mux, "/debug")
 	return nil
