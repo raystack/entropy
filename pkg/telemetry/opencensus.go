@@ -67,6 +67,7 @@ func setupOpenCensus(ctx context.Context, mux *http.ServeMux, cfg Config) error 
 	if err != nil {
 		return err
 	}
+	view.RegisterExporter(pe)
 	mux.Handle("/metrics", pe)
 
 	zpages.Handle(mux, "/debug")
