@@ -1,27 +1,70 @@
+# HTTP/gRPC server configurations.
 service:
+  # host forms the bind address along with port. In container environments
+  # it might be necessary to set this to 0.0.0.0 (leaving this config empty
+  # has the same effect)
   host: localhost
+
+  # port forms the bind address along with host.
   port: 8080
 
-# Postgres Connection String
+# pg_conn_str is the PostgresDB connection string for entropy state storage.
 # Refer https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
 pg_conn_str: 'postgres://postgres@localhost:5432/entropy?sslmode=disable'
 
 log:
+  # level can be one of debug, info, warn, error.
+  # This configuration is case-insensitive.
   level: info
 
 worker:
+  # unique name for the job queue for async jobs. when using postgres-queue
+  # implementation, this forms the table name.
   queue_name: entropy_jobs
+
+  # specification of the queuing backend. currently only postgres is supported.
+  # So this must be a valid PG connection string.
   queue_spec: 'postgres://postgres@localhost:5432/entropy?sslmode=disable'
+
+  # number of worker threads (goroutines) to launch. each thread will poll the
+  # queueing backend for pending jobs.
   threads: 1
+
+  # Interval between successive polls by a single worker thread. be careful when
+  # reducing this since it can cause contention when combined high threads value
+  # and lot of entropy instances.
   poll_interval: 1s
 
+# instrumentation/metrics related configurations.
 telemetry:
+  # debug_addr is used for exposing the pprof, zpages & `/metrics` endpoints. if
+  # not set, all of the above are disabled.
   debug_addr: "localhost:8081"
+
+  # enable_cpu enables collection of runtime CPU metrics. available in `/metrics`.
   enable_cpu: true
+
+  # enable_memory enables collection of runtime memory metrics. availbale via `/metrics`.
   enable_memory: true
+
+  # sampling_fraction indicates the sampling rate for tracing. 1 indicates all traces
+  # are collected and 0 means no traces.
   sampling_fraction: 1
+
+  # service_name is the identifier used in trace exports, NewRelic, etc for the
+  # entropy instance.
   service_name: "entropy"
+
+  # enable_newrelic enables exporting NewRelic instrumentation in addition to the
+  # OpenCensus.
   enable_newrelic: false
+
+  # newrelic_api_key must be a valid NewRelic License key.
   newrelic_api_key: ""
+
+  # enable_otel_agent enables the OpenTelemetry Exporter for both traces and views.
   enable_otel_agent: false
+
+  # otel_agent_addr is the addr of OpenTelemetry Collector/Agent. This is where the
+  # opene-telemetry exporter will publish the collected traces/views to.
   otel_agent_addr: "localhost:8088"
