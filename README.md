@@ -15,11 +15,7 @@ dry runs etc.
 - **Extensible:** Entropy provides framework to easily write and deploy applications to your choice of cloud
 - **Runtime:** Entropy can run inside VMs or containers with minimal memory footprint.
 
-## Documentation
-
-Explore the following resources to get started with Entropy:
-
-- [Configuration](./docs/reference/configuration.md) to get familar with configuring Entropy.
+Refer [docs](./docs) for more on capabilites, internals, etc.
 
 ## Installation
 
