@@ -46,7 +46,19 @@ $ entropy version
 
 Entropy typically runs as a service and requires a Postgres to store its state.
 
-## Running locally
+Refer [entropy.yaml](./entropy.yaml) for sample configuration values. 
+
+* You can override the configurations by directly editing the `entropy.yaml` file or by setting environment variables.
+* Environment variable name will be uppercased version of the complete path in YAML along with `.` replaced with `_` character. For example, the `service.host` can be overriden by setting `SERVICE_HOST`.
+* It is also possible to create a copy of the sample configuration file with different name and provide that path to entropy.
+
+```shell
+$ entropy serve --config ./my_config.yaml
+```
+
+## Development
+
+### Running locally
 
 ```sh
 # Clone the repo
@@ -63,7 +75,7 @@ $ ./dist/entropy serve
 
 ```
 
-## Running tests
+### Running tests
 
 ```sh
 # Running all unit tests, excluding extractors
