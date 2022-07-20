@@ -49,7 +49,7 @@ For instance, a [firehose](https://github.com/odpf/firehose) resource looks like
                 "log_level": "INFO"
             },
             "dependencies": {
-                "deployment_cluster": "urn:odpf:entropy:kubernetes:godata"
+                "deployment_cluster": "orn:entropy:kubernetes:godata"
             }
     },
     "state": {
@@ -75,7 +75,7 @@ POST /api/v1beta1/resources
         "log_level": "INFO"
     },
     "dependencies": {
-        "deployment_cluster": "urn:odpf:entropy:kubernetes:godata"
+        "deployment_cluster": "orn:entropy:kubernetes:godata"
     }
 }
 ```
@@ -88,7 +88,7 @@ Here is the resource returned
 
 ```
 {
-    "urn": "urn:odpf:entropy:firehose:bar:foo",
+    "urn": "orn:entropy:firehose:bar:foo",
     "created_at": "2022-04-28T11:00:00.000Z",
     "updated_at": "2022-04-28T11:00:00.000Z",
     "name": "foo",
@@ -98,7 +98,7 @@ Here is the resource returned
         "log_level": "INFO"
     },
     "dependencies": {
-        "deployment_cluster": "urn:odpf:entropy:kubernetes:godata"
+        "deployment_cluster": "orn:entropy:kubernetes:godata"
     },
     "state": {
         "status": "STATUS_PENDING",
@@ -120,7 +120,7 @@ A job-queue model is used to handle sync operations. Every mutation (create/upda
 
 ```
 {
-    "urn": "urn:odpf:entropy:firehose:bar:foo",
+    "urn": "orn:entropy:firehose:bar:foo",
     "kind": "firehose",
     "name": "foo",
     "project": "bar",
@@ -130,7 +130,7 @@ A job-queue model is used to handle sync operations. Every mutation (create/upda
         "log_level": "INFO"
     },
     "dependencies": {
-        "deployment_cluster": "urn:odpf:entropy:kubernetes:godata"
+        "deployment_cluster": "orn:entropy:kubernetes:godata"
     },
     "state": {
         "status": "COMPLETED",
@@ -144,7 +144,7 @@ A job-queue model is used to handle sync operations. Every mutation (create/upda
 ### 5. Execute Action
 
 ```
-POST /api/v1beta1/resources/urn:odpf:entropy:firehose:bar:foo/execute
+POST /api/v1beta1/resources/orn:entropy:firehose:bar:foo/execute
 
 {
     "action": "increase_log_level"
@@ -155,7 +155,7 @@ This will trigger Plan again, and leave the resource in `STATUS_PENDING` state. 
 
 ```
 {
-    "urn": "urn:odpf:entropy:firehose:bar:foo",
+    "urn": "orn:entropy:firehose:bar:foo",
     "kind": "firehose",
     "name": "foo",
     "project": "bar",
@@ -165,7 +165,7 @@ This will trigger Plan again, and leave the resource in `STATUS_PENDING` state. 
         "log_level": "WARN"
     },
     "dependencies": {
-        "deployment_cluster": "urn:odpf:entropy:kubernetes:godata"
+        "deployment_cluster": "orn:entropy:kubernetes:godata"
     },
     "state": {
         "status": "PENDING",
