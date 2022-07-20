@@ -133,7 +133,7 @@ func TestService_CreateResource(t *testing.T) {
 					Enqueue(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, jobs ...worker.Job) {
 						assert.Len(t, jobs, 1)
-						assert.Equal(t, "sync-urn:odpf:entropy:mock:project:child-1650536955", jobs[0].ID)
+						assert.Equal(t, "sync-orn:entropy:mock:project:child-1650536955", jobs[0].ID)
 					}).
 					Return(nil)
 
@@ -145,7 +145,7 @@ func TestService_CreateResource(t *testing.T) {
 				Project: "project",
 			},
 			want: &resource.Resource{
-				URN:       "urn:odpf:entropy:mock:project:child",
+				URN:       "orn:entropy:mock:project:child",
 				Kind:      "mock",
 				Name:      "child",
 				Project:   "project",
@@ -179,7 +179,7 @@ func TestService_UpdateResource(t *testing.T) {
 	t.Parallel()
 	testErr := errors.New("failed")
 	testResource := resource.Resource{
-		URN:       "urn:odpf:entropy:mock:project:child",
+		URN:       "orn:entropy:mock:project:child",
 		Kind:      "mock",
 		Name:      "child",
 		Project:   "project",
@@ -201,13 +201,13 @@ func TestService_UpdateResource(t *testing.T) {
 				t.Helper()
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:project:child").
+					GetByURN(mock.Anything, "orn:entropy:mock:project:child").
 					Return(nil, errors.ErrNotFound).
 					Once()
 
 				return core.New(resourceRepo, nil, &mocks.AsyncWorker{}, deadClock, nil)
 			},
-			urn:     "urn:odpf:entropy:mock:project:child",
+			urn:     "orn:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
 			want:    nil,
 			wantErr: errors.ErrNotFound,
@@ -223,13 +223,13 @@ func TestService_UpdateResource(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:project:child").
+					GetByURN(mock.Anything, "orn:entropy:mock:project:child").
 					Return(&testResource, nil).
 					Once()
 
 				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
 			},
-			urn:     "urn:odpf:entropy:mock:project:child",
+			urn:     "orn:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
 			want:    nil,
 			wantErr: errors.ErrInvalid,
@@ -245,7 +245,7 @@ func TestService_UpdateResource(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:project:child").
+					GetByURN(mock.Anything, "orn:entropy:mock:project:child").
 					Return(&testResource, nil).
 					Once()
 
@@ -262,7 +262,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Enqueue(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, jobs ...worker.Job) {
 						assert.Len(t, jobs, 1)
-						assert.Equal(t, jobs[0].ID, "sync-urn:odpf:entropy:mock:project:child-1650536955")
+						assert.Equal(t, jobs[0].ID, "sync-orn:entropy:mock:project:child-1650536955")
 						assert.Equal(t, jobs[0].Kind, "sync_resource")
 					}).
 					Return(nil).
@@ -270,7 +270,7 @@ func TestService_UpdateResource(t *testing.T) {
 
 				return core.New(resourceRepo, mod, mockWorker, deadClock, nil)
 			},
-			urn:     "urn:odpf:entropy:mock:project:child",
+			urn:     "orn:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
 			want:    nil,
 			wantErr: testErr,
@@ -283,7 +283,7 @@ func TestService_UpdateResource(t *testing.T) {
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
 					Return(&resource.Resource{
-						URN:     "urn:odpf:entropy:mock:project:child",
+						URN:     "orn:entropy:mock:project:child",
 						Kind:    "mock",
 						Name:    "child",
 						Project: "project",
@@ -296,7 +296,7 @@ func TestService_UpdateResource(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:project:child").
+					GetByURN(mock.Anything, "orn:entropy:mock:project:child").
 					Return(&testResource, nil).Once()
 
 				resourceRepo.EXPECT().
@@ -314,17 +314,17 @@ func TestService_UpdateResource(t *testing.T) {
 					Return(nil).
 					Run(func(ctx context.Context, jobs ...worker.Job) {
 						assert.Len(t, jobs, 1)
-						assert.Equal(t, jobs[0].ID, "sync-urn:odpf:entropy:mock:project:child-1650536955")
+						assert.Equal(t, jobs[0].ID, "sync-orn:entropy:mock:project:child-1650536955")
 						assert.Equal(t, jobs[0].Kind, "sync_resource")
 					}).
 					Once()
 
 				return core.New(resourceRepo, mod, mockWorker, deadClock, nil)
 			},
-			urn:     "urn:odpf:entropy:mock:project:child",
+			urn:     "orn:entropy:mock:project:child",
 			newSpec: resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
 			want: &resource.Resource{
-				URN:       "urn:odpf:entropy:mock:project:child",
+				URN:       "orn:entropy:mock:project:child",
 				Kind:      "mock",
 				Name:      "child",
 				Project:   "project",
@@ -374,13 +374,13 @@ func TestService_DeleteResource(t *testing.T) {
 				t.Helper()
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
+					GetByURN(mock.Anything, "orn:entropy:mock:foo:bar").
 					Return(nil, testErr).
 					Once()
 
 				return core.New(resourceRepo, nil, &mocks.AsyncWorker{}, deadClock, nil)
 			},
-			urn:     "urn:odpf:entropy:mock:foo:bar",
+			urn:     "orn:entropy:mock:foo:bar",
 			wantErr: testErr,
 		},
 		{
@@ -391,7 +391,7 @@ func TestService_DeleteResource(t *testing.T) {
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
 					Return(&resource.Resource{
-						URN:       "urn:odpf:entropy:mock:project:child",
+						URN:       "orn:entropy:mock:project:child",
 						Kind:      "mock",
 						Name:      "child",
 						Project:   "project",
@@ -402,9 +402,9 @@ func TestService_DeleteResource(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
+					GetByURN(mock.Anything, "orn:entropy:mock:foo:bar").
 					Return(&resource.Resource{
-						URN:       "urn:odpf:entropy:mock:project:child",
+						URN:       "orn:entropy:mock:project:child",
 						Kind:      "mock",
 						Name:      "child",
 						Project:   "project",
@@ -421,7 +421,7 @@ func TestService_DeleteResource(t *testing.T) {
 
 				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
 			},
-			urn:     "urn:odpf:entropy:mock:foo:bar",
+			urn:     "orn:entropy:mock:foo:bar",
 			wantErr: errors.ErrInternal,
 		},
 		{
@@ -432,7 +432,7 @@ func TestService_DeleteResource(t *testing.T) {
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
 					Return(&resource.Resource{
-						URN:       "urn:odpf:entropy:mock:project:child",
+						URN:       "orn:entropy:mock:project:child",
 						Kind:      "mock",
 						Name:      "child",
 						Project:   "project",
@@ -443,9 +443,9 @@ func TestService_DeleteResource(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
+					GetByURN(mock.Anything, "orn:entropy:mock:foo:bar").
 					Return(&resource.Resource{
-						URN:       "urn:odpf:entropy:mock:project:child",
+						URN:       "orn:entropy:mock:project:child",
 						Kind:      "mock",
 						Name:      "child",
 						Project:   "project",
@@ -462,7 +462,7 @@ func TestService_DeleteResource(t *testing.T) {
 
 				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
 			},
-			urn:     "urn:odpf:entropy:mock:foo:bar",
+			urn:     "orn:entropy:mock:foo:bar",
 			wantErr: nil,
 		},
 	}
@@ -506,13 +506,13 @@ func TestService_ApplyAction(t *testing.T) {
 				t.Helper()
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
+					GetByURN(mock.Anything, "orn:entropy:mock:foo:bar").
 					Return(nil, errors.ErrNotFound).
 					Once()
 
 				return core.New(resourceRepo, nil, &mocks.AsyncWorker{}, deadClock, nil)
 			},
-			urn:     "urn:odpf:entropy:mock:foo:bar",
+			urn:     "orn:entropy:mock:foo:bar",
 			action:  sampleAction,
 			want:    nil,
 			wantErr: errors.ErrNotFound,
@@ -523,9 +523,9 @@ func TestService_ApplyAction(t *testing.T) {
 				t.Helper()
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
+					GetByURN(mock.Anything, "orn:entropy:mock:foo:bar").
 					Return(&resource.Resource{
-						URN:     "urn:odpf:entropy:mock:foo:bar",
+						URN:     "orn:entropy:mock:foo:bar",
 						Kind:    "mock",
 						Project: "foo",
 						Name:    "bar",
@@ -534,7 +534,7 @@ func TestService_ApplyAction(t *testing.T) {
 
 				return core.New(resourceRepo, nil, &mocks.AsyncWorker{}, deadClock, nil)
 			},
-			urn:     "urn:odpf:entropy:mock:foo:bar",
+			urn:     "orn:entropy:mock:foo:bar",
 			action:  sampleAction,
 			want:    nil,
 			wantErr: errors.ErrInvalid,
@@ -551,9 +551,9 @@ func TestService_ApplyAction(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
+					GetByURN(mock.Anything, "orn:entropy:mock:foo:bar").
 					Return(&resource.Resource{
-						URN:     "urn:odpf:entropy:mock:foo:bar",
+						URN:     "orn:entropy:mock:foo:bar",
 						Kind:    "mock",
 						Project: "foo",
 						Name:    "bar",
@@ -563,7 +563,7 @@ func TestService_ApplyAction(t *testing.T) {
 
 				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
 			},
-			urn:     "urn:odpf:entropy:mock:foo:bar",
+			urn:     "orn:entropy:mock:foo:bar",
 			action:  sampleAction,
 			want:    nil,
 			wantErr: errors.ErrInternal,
@@ -576,7 +576,7 @@ func TestService_ApplyAction(t *testing.T) {
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, sampleAction).
 					Return(&resource.Resource{
-						URN:     "urn:odpf:entropy:mock:foo:bar",
+						URN:     "orn:entropy:mock:foo:bar",
 						Kind:    "mock",
 						Project: "foo",
 						Name:    "bar",
@@ -586,9 +586,9 @@ func TestService_ApplyAction(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
-					GetByURN(mock.Anything, "urn:odpf:entropy:mock:foo:bar").
+					GetByURN(mock.Anything, "orn:entropy:mock:foo:bar").
 					Return(&resource.Resource{
-						URN:       "urn:odpf:entropy:mock:foo:bar",
+						URN:       "orn:entropy:mock:foo:bar",
 						Kind:      "mock",
 						Project:   "foo",
 						Name:      "bar",
@@ -603,10 +603,10 @@ func TestService_ApplyAction(t *testing.T) {
 
 				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
 			},
-			urn:    "urn:odpf:entropy:mock:foo:bar",
+			urn:    "orn:entropy:mock:foo:bar",
 			action: sampleAction,
 			want: &resource.Resource{
-				URN:       "urn:odpf:entropy:mock:foo:bar",
+				URN:       "orn:entropy:mock:foo:bar",
 				Kind:      "mock",
 				Project:   "foo",
 				Name:      "bar",

@@ -16,7 +16,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 	t.Parallel()
 
 	res := resource.Resource{
-		URN:     "urn:odpf:entropy:firehose:test",
+		URN:     "orn:entropy:firehose:test",
 		Kind:    "firehose",
 		Name:    "test",
 		Project: "demo",
@@ -50,7 +50,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Params: []byte(`{"state":"RUNNING","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 			},
 			want: &resource.Resource{
-				URN:     "urn:odpf:entropy:firehose:test",
+				URN:     "orn:entropy:firehose:test",
 				Kind:    "firehose",
 				Name:    "test",
 				Project: "demo",
@@ -80,7 +80,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Params: []byte(`{"replicas": 5}`),
 			},
 			want: &resource.Resource{
-				URN:     "urn:odpf:entropy:firehose:test",
+				URN:     "orn:entropy:firehose:test",
 				Kind:    "firehose",
 				Name:    "test",
 				Project: "demo",
@@ -101,7 +101,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Params: []byte(`{"to":"DATETIME","datetime":"2022-06-22T00:00:00+00:00"}`),
 			},
 			want: &resource.Resource{
-				URN:     "urn:odpf:entropy:firehose:test",
+				URN:     "orn:entropy:firehose:test",
 				Kind:    "firehose",
 				Name:    "test",
 				Project: "demo",

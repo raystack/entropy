@@ -119,6 +119,6 @@ func (f Filter) isMatch(r Resource) bool {
 }
 
 func generateURN(res Resource) string {
-	parts := []string{"urn", "odpf", "entropy", res.Kind, res.Project, res.Name}
+	parts := []string{"orn", "entropy", res.Kind, res.Project, res.Name}
 	return strings.Join(parts, urnSeparator)
 }

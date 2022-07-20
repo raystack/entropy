@@ -66,7 +66,7 @@ curl --location --request POST '{{HOST}}/api/v1beta1/resources' \
 		"dependencies": [
 			{
 				"key": "kube_cluster",
-				"value": "urn:odpf:entropy:kubernetes:test:p-godata-pilot"
+				"value": "orn:entropy:kubernetes:test:p-godata-pilot"
 			}
 		],
 		"configs": {
