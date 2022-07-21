@@ -48,6 +48,102 @@ func TestService_CreateResource(t *testing.T) {
 			wantErr: errSample,
 		},
 		{
+			name: "DependencyError_NotFound",
+			setup: func(t *testing.T) *core.Service {
+				t.Helper()
+				mod := &mocks.Module{}
+
+				resourceRepo := &mocks.ResourceStore{}
+				resourceRepo.EXPECT().
+					GetByURN(mock.Anything, "orn:entropy:foo:bar").
+					Return(nil, errors.ErrNotFound).
+					Once()
+
+				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+			},
+			res: resource.Resource{
+				Kind:    "mock",
+				Name:    "child",
+				Project: "project",
+				Spec: resource.Spec{
+					Dependencies: map[string]string{
+						"cluster": "orn:entropy:foo:bar",
+					},
+				},
+				State: resource.State{Status: resource.StatusCompleted},
+			},
+			want:    nil,
+			wantErr: errors.ErrInvalid,
+		},
+
+		{
+			name: "DependencyError_InvalidState",
+			setup: func(t *testing.T) *core.Service {
+				t.Helper()
+				mod := &mocks.Module{}
+
+				resourceRepo := &mocks.ResourceStore{}
+				resourceRepo.EXPECT().
+					GetByURN(mock.Anything, "orn:entropy:project-y:mock:child").
+					Return(&resource.Resource{
+						Kind:    "mock",
+						Name:    "child",
+						Project: "project-y",
+						URN:     "orn:entropy:project-y:mock:child",
+						State:   resource.State{Status: resource.StatusPending},
+					}, nil).
+					Once()
+
+				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+			},
+			res: resource.Resource{
+				Kind:    "mock",
+				Name:    "child",
+				Project: "project",
+				Spec: resource.Spec{
+					Dependencies: map[string]string{
+						"cluster": "orn:entropy:project-y:mock:child",
+					},
+				},
+				State: resource.State{Status: resource.StatusPending},
+			},
+			want:    nil,
+			wantErr: errors.ErrInvalid,
+		},
+		{
+			name: "DependencyError_CrossProjectReference",
+			setup: func(t *testing.T) *core.Service {
+				t.Helper()
+				mod := &mocks.Module{}
+
+				resourceRepo := &mocks.ResourceStore{}
+				resourceRepo.EXPECT().
+					GetByURN(mock.Anything, "orn:entropy:project-y:mock:child").
+					Return(&resource.Resource{
+						Kind:    "mock",
+						Name:    "child",
+						Project: "project-y",
+						URN:     "orn:entropy:project-y:mock:child",
+						State:   resource.State{Status: resource.StatusCompleted},
+					}, nil).
+					Once()
+
+				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+			},
+			res: resource.Resource{
+				Kind:    "mock",
+				Name:    "child",
+				Project: "project-x",
+				Spec: resource.Spec{
+					Dependencies: map[string]string{
+						"cluster": "orn:entropy:project-y:mock:child",
+					},
+				},
+			},
+			want:    nil,
+			wantErr: errors.ErrInvalid,
+		},
+		{
 			name: "CreateResourceFailure",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
@@ -120,6 +216,17 @@ func TestService_CreateResource(t *testing.T) {
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
+					GetByURN(mock.Anything, "orn:entropy:project:mock:child").
+					Return(&resource.Resource{
+						Kind:    "mock",
+						Name:    "child",
+						Project: "project",
+						URN:     "orn:entropy:project:mock:child",
+						State:   resource.State{Status: resource.StatusCompleted},
+					}, nil).
+					Once()
+
+				resourceRepo.EXPECT().
 					Create(mock.Anything, mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, r resource.Resource, hooks ...resource.MutationHook) {
 						assert.Len(t, hooks, 1)
@@ -143,6 +250,11 @@ func TestService_CreateResource(t *testing.T) {
 				Kind:    "mock",
 				Name:    "child",
 				Project: "project",
+				Spec: resource.Spec{
+					Dependencies: map[string]string{
+						"fake_dependency": "orn:entropy:project:mock:child",
+					},
+				},
 			},
 			want: &resource.Resource{
 				URN:       "orn:entropy:mock:project:child",
