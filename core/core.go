@@ -57,6 +57,10 @@ func (s *Service) generateModuleSpec(ctx context.Context, res resource.Resource)
 		} else if d.State.Status != resource.StatusCompleted {
 			return nil, errors.ErrInvalid.
 				WithMsgf("dependency '%s' is in incomplete state (%s)", resURN, d.State.Status)
+		} else if d.Project != res.Project {
+			return nil, errors.ErrInvalid.
+				WithMsgf("dependency '%s' not found", resURN).
+				WithCausef("cross-project references not allowed")
 		}
 
 		modSpec.Dependencies[key] = module.ResolvedDependency{
