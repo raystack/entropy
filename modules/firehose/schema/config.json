@@ -169,6 +169,45 @@
         "kafka_topic",
         "kafka_consumer_id"
       ]
+    },
+    "telegraf": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "config": {
+          "type": "object",
+          "properties": {
+            "output": {
+              "type": "object",
+              "properties": {
+                "prometheus_remote_write": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "enabled",
+                    "url",
+                    "version"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "required": [

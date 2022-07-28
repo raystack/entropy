@@ -31,8 +31,9 @@ var (
 )
 
 type moduleConfig struct {
-	State        string `json:"state"`
-	ChartVersion string `json:"chart_version"`
+	State        string                 `json:"state"`
+	ChartVersion string                 `json:"chart_version"`
+	Telegraf     map[string]interface{} `json:"telegraf"`
 	Firehose     struct {
 		Replicas           int               `json:"replicas"`
 		KafkaBrokerAddress string            `json:"kafka_broker_address"`
@@ -72,6 +73,9 @@ func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) *helm.ReleaseCo
 			},
 			"config": fc.EnvVariables,
 		},
+	}
+	if len(mc.Telegraf) > 0 {
+		hv["telegraf"] = mc.Telegraf
 	}
 	rc.Values = hv
 
