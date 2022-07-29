@@ -92,7 +92,7 @@ func (m *firehoseModule) Sync(ctx context.Context, spec module.Spec) (*resource.
 func (*firehoseModule) releaseSync(isCreate bool, conf moduleConfig, r resource.Resource, kube kubernetes.Output) error {
 	helmCl := helm.NewClient(&helm.Config{Kubernetes: kube.Configs})
 
-	if conf.State == stateStopped {
+	if conf.State == stateStopped || (conf.StopByTime != nil && conf.StopByTime.Before(time.Now())) {
 		conf.Firehose.Replicas = 0
 	}
 

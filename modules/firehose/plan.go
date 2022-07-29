@@ -27,7 +27,9 @@ func (*firehoseModule) planCreate(spec module.Spec, act module.ActionRequest) (*
 	if err := json.Unmarshal(act.Params, &reqConf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 	}
-	reqConf.sanitiseAndValidate()
+	if err := reqConf.sanitiseAndValidate(); err != nil {
+		return nil, err
+	}
 
 	r.Spec.Configs = reqConf.JSON()
 	r.State = resource.State{
@@ -53,7 +55,9 @@ func (*firehoseModule) planChange(spec module.Spec, act module.ActionRequest) (*
 		if err := json.Unmarshal(act.Params, &reqConf); err != nil {
 			return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 		}
-		reqConf.sanitiseAndValidate()
+		if err := reqConf.sanitiseAndValidate(); err != nil {
+			return nil, err
+		}
 		conf = reqConf
 
 	case ScaleAction:
