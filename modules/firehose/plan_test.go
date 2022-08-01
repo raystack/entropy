@@ -55,7 +55,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Name:    "test",
 				Project: "demo",
 				Spec: resource.Spec{
-					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_by_time":null,"telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 				},
 				State: resource.State{
 					Status:     resource.StatusPending,
@@ -85,7 +85,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Name:    "test",
 				Project: "demo",
 				Spec: resource.Spec{
-					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","telegraf":null,"firehose":{"replicas":5,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_by_time":null,"telegraf":null,"firehose":{"replicas":5,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 				},
 				State: resource.State{
 					Status:     resource.StatusPending,
@@ -106,7 +106,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Name:    "test",
 				Project: "demo",
 				Spec: resource.Spec{
-					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_by_time":null,"telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 				},
 				State: resource.State{
 					Status:     resource.StatusPending,
