@@ -29,6 +29,7 @@ const (
 )
 
 var (
+	ErrJobExists   = errors.New("job with id exists")
 	ErrInvalidJob  = errors.New("job is not valid")
 	ErrKindExists  = errors.New("handler for given kind exists")
 	ErrUnknownKind = errors.New("job kind is invalid")

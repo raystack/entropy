@@ -10,7 +10,7 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	_ "github.com/lib/pq" // postgres driver.
+	"github.com/lib/pq"
 
 	"github.com/odpf/entropy/pkg/errors"
 	"github.com/odpf/entropy/pkg/worker"
@@ -86,6 +86,10 @@ func (q *Queue) Enqueue(ctx context.Context, jobs ...worker.Job) error {
 
 	_, err := insertQuery.RunWith(q.db).PlaceholderFormat(sq.Dollar).ExecContext(ctx)
 	if err != nil {
+		pqErr := &pq.Error{}
+		if errors.As(err, &pqErr) && pqErr.Code.Name() == "unique_violation" {
+			return worker.ErrJobExists
+		}
 		return err
 	}
 	return nil
