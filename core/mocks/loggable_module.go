@@ -73,15 +73,15 @@ func (_c *LoggableModule_Log_Call) Return(_a0 <-chan module.LogChunk, _a1 error)
 }
 
 // Plan provides a mock function with given fields: ctx, spec, act
-func (_m *LoggableModule) Plan(ctx context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+func (_m *LoggableModule) Plan(ctx context.Context, spec module.Spec, act module.ActionRequest) (*module.Plan, error) {
 	ret := _m.Called(ctx, spec, act)
 
-	var r0 *resource.Resource
-	if rf, ok := ret.Get(0).(func(context.Context, module.Spec, module.ActionRequest) *resource.Resource); ok {
+	var r0 *module.Plan
+	if rf, ok := ret.Get(0).(func(context.Context, module.Spec, module.ActionRequest) *module.Plan); ok {
 		r0 = rf(ctx, spec, act)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*resource.Resource)
+			r0 = ret.Get(0).(*module.Plan)
 		}
 	}
 
@@ -115,7 +115,7 @@ func (_c *LoggableModule_Plan_Call) Run(run func(ctx context.Context, spec modul
 	return _c
 }
 
-func (_c *LoggableModule_Plan_Call) Return(_a0 *resource.Resource, _a1 error) *LoggableModule_Plan_Call {
+func (_c *LoggableModule_Plan_Call) Return(_a0 *module.Plan, _a1 error) *LoggableModule_Plan_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }

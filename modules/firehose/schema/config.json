@@ -14,7 +14,7 @@
     "chart_version": {
       "type": "string"
     },
-    "stop_by_time": {
+    "stop_time": {
       "type": "string",
       "format": "date-time"
     },

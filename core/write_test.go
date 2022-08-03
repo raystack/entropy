@@ -150,10 +150,12 @@ func TestService_CreateResource(t *testing.T) {
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
-					Return(&resource.Resource{
-						Kind:    "mock",
-						Name:    "child",
-						Project: "project",
+					Return(&module.Plan{
+						Resource: &resource.Resource{
+							Kind:    "mock",
+							Name:    "child",
+							Project: "project",
+						},
 					}, nil).Once()
 
 				resourceRepo := &mocks.ResourceStore{}
@@ -179,10 +181,12 @@ func TestService_CreateResource(t *testing.T) {
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
-					Return(&resource.Resource{
-						Kind:    "mock",
-						Name:    "child",
-						Project: "project",
+					Return(&module.Plan{
+						Resource: &resource.Resource{
+							Kind:    "mock",
+							Name:    "child",
+							Project: "project",
+						},
 					}, nil).Once()
 
 				resourceRepo := &mocks.ResourceStore{}
@@ -207,11 +211,13 @@ func TestService_CreateResource(t *testing.T) {
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
-					Return(&resource.Resource{
-						Kind:    "mock",
-						Name:    "child",
-						Project: "project",
-						State:   resource.State{Status: resource.StatusCompleted},
+					Return(&module.Plan{
+						Resource: &resource.Resource{
+							Kind:    "mock",
+							Name:    "child",
+							Project: "project",
+							State:   resource.State{Status: resource.StatusCompleted},
+						},
 					}, nil).Once()
 
 				resourceRepo := &mocks.ResourceStore{}
@@ -353,7 +359,7 @@ func TestService_UpdateResource(t *testing.T) {
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
-					Return(&testResource, nil).Once()
+					Return(&module.Plan{Resource: &testResource}, nil).Once()
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
@@ -394,16 +400,18 @@ func TestService_UpdateResource(t *testing.T) {
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
-					Return(&resource.Resource{
-						URN:     "orn:entropy:mock:project:child",
-						Kind:    "mock",
-						Name:    "child",
-						Project: "project",
-						Spec: resource.Spec{
-							Configs: []byte(`{"foo": "bar"}`),
+					Return(&module.Plan{
+						Resource: &resource.Resource{
+							URN:     "orn:entropy:mock:project:child",
+							Kind:    "mock",
+							Name:    "child",
+							Project: "project",
+							Spec: resource.Spec{
+								Configs: []byte(`{"foo": "bar"}`),
+							},
+							State:     resource.State{Status: resource.StatusPending},
+							CreatedAt: frozenTime,
 						},
-						State:     resource.State{Status: resource.StatusPending},
-						CreatedAt: frozenTime,
 					}, nil).Once()
 
 				resourceRepo := &mocks.ResourceStore{}
@@ -502,14 +510,16 @@ func TestService_DeleteResource(t *testing.T) {
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
-					Return(&resource.Resource{
-						URN:       "orn:entropy:mock:project:child",
-						Kind:      "mock",
-						Name:      "child",
-						Project:   "project",
-						State:     resource.State{Status: resource.StatusPending},
-						CreatedAt: frozenTime,
-						UpdatedAt: frozenTime,
+					Return(&module.Plan{
+						Resource: &resource.Resource{
+							URN:       "orn:entropy:mock:project:child",
+							Kind:      "mock",
+							Name:      "child",
+							Project:   "project",
+							State:     resource.State{Status: resource.StatusPending},
+							CreatedAt: frozenTime,
+							UpdatedAt: frozenTime,
+						},
 					}, nil).Once()
 
 				resourceRepo := &mocks.ResourceStore{}
@@ -543,14 +553,16 @@ func TestService_DeleteResource(t *testing.T) {
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
-					Return(&resource.Resource{
-						URN:       "orn:entropy:mock:project:child",
-						Kind:      "mock",
-						Name:      "child",
-						Project:   "project",
-						State:     resource.State{Status: resource.StatusPending},
-						CreatedAt: frozenTime,
-						UpdatedAt: frozenTime,
+					Return(&module.Plan{
+						Resource: &resource.Resource{
+							URN:       "orn:entropy:mock:project:child",
+							Kind:      "mock",
+							Name:      "child",
+							Project:   "project",
+							State:     resource.State{Status: resource.StatusPending},
+							CreatedAt: frozenTime,
+							UpdatedAt: frozenTime,
+						},
 					}, nil).Once()
 
 				resourceRepo := &mocks.ResourceStore{}
@@ -687,14 +699,15 @@ func TestService_ApplyAction(t *testing.T) {
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, sampleAction).
-					Return(&resource.Resource{
-						URN:     "orn:entropy:mock:foo:bar",
-						Kind:    "mock",
-						Project: "foo",
-						Name:    "bar",
-						State:   resource.State{Status: resource.StatusPending},
-					}, nil).
-					Once()
+					Return(&module.Plan{
+						Resource: &resource.Resource{
+							URN:     "orn:entropy:mock:foo:bar",
+							Kind:    "mock",
+							Project: "foo",
+							Name:    "bar",
+							State:   resource.State{Status: resource.StatusPending},
+						},
+					}, nil).Once()
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().

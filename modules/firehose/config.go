@@ -35,7 +35,7 @@ var (
 type moduleConfig struct {
 	State        string                 `json:"state"`
 	ChartVersion string                 `json:"chart_version"`
-	StopByTime   *time.Time             `json:"stop_by_time"`
+	StopTime     *time.Time             `json:"stop_time"`
 	Telegraf     map[string]interface{} `json:"telegraf"`
 	Firehose     struct {
 		Replicas           int               `json:"replicas"`
@@ -47,9 +47,9 @@ type moduleConfig struct {
 }
 
 func (mc *moduleConfig) sanitiseAndValidate() error {
-	if mc.StopByTime != nil && mc.StopByTime.Before(time.Now()) {
+	if mc.StopTime != nil && mc.StopTime.Before(time.Now()) {
 		return errors.ErrInvalid.
-			WithMsgf("value for stop_by_time must be greater than current time")
+			WithMsgf("value for stop_time must be greater than current time")
 	}
 	if mc.ChartVersion == "" {
 		mc.ChartVersion = defaultVersionString

@@ -5,6 +5,7 @@ package module
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
@@ -16,7 +17,7 @@ type Module interface {
 	// Plan SHOULD validate the action on the current version of the resource,
 	// return the resource with config/status/state changes (if any) applied.
 	// Plan SHOULD NOT have side effects on anything other than the resource.
-	Plan(ctx context.Context, spec Spec, act ActionRequest) (*resource.Resource, error)
+	Plan(ctx context.Context, spec Spec, act ActionRequest) (*Plan, error)
 
 	// Sync is called repeatedly by Entropy core until the returned state is
 	// a terminal status. Module implementation is free to execute an action
@@ -25,6 +26,12 @@ type Module interface {
 	// Sync can return state in resource.StatusDeleted to indicate resource
 	// should be removed from the Entropy storage.
 	Sync(ctx context.Context, spec Spec) (*resource.State, error)
+}
+
+// Plan represents the changes to be staged to be later synced by module
+type Plan struct {
+	Resource      *resource.Resource
+	ScheduleRunAt time.Time
 }
 
 // Spec represents the context for Plan() or Sync() invocations.

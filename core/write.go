@@ -2,10 +2,12 @@ package core
 
 import (
 	"context"
+	"time"
 
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
+	"github.com/odpf/entropy/pkg/worker"
 )
 
 func (s *Service) CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error) {
@@ -55,70 +57,81 @@ func (s *Service) ApplyAction(ctx context.Context, urn string, act module.Action
 }
 
 func (s *Service) execAction(ctx context.Context, res resource.Resource, act module.ActionRequest) (*resource.Resource, error) {
-	plannedRes, err := s.planChange(ctx, res, act)
+	planned, err := s.planChange(ctx, res, act)
 	if err != nil {
 		return nil, err
 	}
 
 	if isCreate(act.Name) {
-		plannedRes.CreatedAt = s.clock()
-		plannedRes.UpdatedAt = plannedRes.CreatedAt
+		planned.Resource.CreatedAt = s.clock()
+		planned.Resource.UpdatedAt = planned.Resource.CreatedAt
 	} else {
-		plannedRes.CreatedAt = res.CreatedAt
-		plannedRes.UpdatedAt = s.clock()
+		planned.Resource.CreatedAt = res.CreatedAt
+		planned.Resource.UpdatedAt = s.clock()
 	}
 
-	if err := s.upsert(ctx, *plannedRes, isCreate(act.Name)); err != nil {
+	if err := s.upsert(ctx, *planned, isCreate(act.Name)); err != nil {
 		return nil, err
 	}
-	return plannedRes, nil
+	return planned.Resource, nil
 }
 
 func isCreate(actionName string) bool {
 	return actionName == module.CreateAction
 }
 
-func (s *Service) planChange(ctx context.Context, res resource.Resource, act module.ActionRequest) (*resource.Resource, error) {
+func (s *Service) planChange(ctx context.Context, res resource.Resource, act module.ActionRequest) (*module.Plan, error) {
 	modSpec, err := s.generateModuleSpec(ctx, res)
 	if err != nil {
 		return nil, err
 	}
 
-	plannedRes, err := s.rootModule.Plan(ctx, *modSpec, act)
+	planned, err := s.rootModule.Plan(ctx, *modSpec, act)
 	if err != nil {
 		if errors.Is(err, errors.ErrInvalid) {
 			return nil, err
 		}
 		return nil, errors.ErrInternal.WithMsgf("plan() failed").WithCausef(err.Error())
-	} else if err := plannedRes.Validate(isCreate(act.Name)); err != nil {
+	} else if err := planned.Resource.Validate(isCreate(act.Name)); err != nil {
 		return nil, err
 	}
 
-	return plannedRes, nil
+	return planned, nil
 }
 
-func (s *Service) upsert(ctx context.Context, res resource.Resource, isCreate bool) error {
-	hook := func(ctx context.Context) error {
-		if res.State.IsTerminal() {
+func (s *Service) upsert(ctx context.Context, plan module.Plan, isCreate bool) error {
+	var hooks []resource.MutationHook
+	hooks = append(hooks, func(ctx context.Context) error {
+		if plan.Resource.State.IsTerminal() {
 			// no need to enqueue if resource has reached terminal state.
 			return nil
 		}
 
-		return s.enqueueSyncJob(ctx, res)
+		return s.enqueueSyncJob(ctx, *plan.Resource, time.Now(), syncJobType)
+	})
+
+	if !plan.ScheduleRunAt.IsZero() {
+		hooks = append(hooks, func(ctx context.Context) error {
+			err := s.enqueueSyncJob(ctx, *plan.Resource, plan.ScheduleRunAt, scheduledSyncJobType)
+			if err != nil && !errors.Is(err, worker.ErrJobExists) {
+				return err
+			}
+			return nil
+		})
 	}
 
 	var err error
 	if isCreate {
-		err = s.store.Create(ctx, res, hook)
+		err = s.store.Create(ctx, *plan.Resource, hooks...)
 	} else {
-		err = s.store.Update(ctx, res, hook)
+		err = s.store.Update(ctx, *plan.Resource, hooks...)
 	}
 
 	if err != nil {
 		if isCreate && errors.Is(err, errors.ErrConflict) {
-			return errors.ErrConflict.WithMsgf("resource with urn '%s' already exists", res.URN)
+			return errors.ErrConflict.WithMsgf("resource with urn '%s' already exists", plan.Resource.URN)
 		} else if !isCreate && errors.Is(err, errors.ErrNotFound) {
-			return errors.ErrNotFound.WithMsgf("resource with urn '%s' does not exist", res.URN)
+			return errors.ErrNotFound.WithMsgf("resource with urn '%s' does not exist", plan.Resource.URN)
 		}
 		return errors.ErrInternal.WithCausef(err.Error())
 	}

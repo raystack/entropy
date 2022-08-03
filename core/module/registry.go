@@ -59,7 +59,7 @@ func (mr *Registry) get(kind string) (Descriptor, bool) {
 	return desc, found
 }
 
-func (mr *Registry) Plan(ctx context.Context, spec Spec, act ActionRequest) (*resource.Resource, error) {
+func (mr *Registry) Plan(ctx context.Context, spec Spec, act ActionRequest) (*Plan, error) {
 	kind := spec.Resource.Kind
 
 	desc, found := mr.get(kind)

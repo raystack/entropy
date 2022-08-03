@@ -3,6 +3,7 @@ package firehose
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +31,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		title   string
 		spec    module.Spec
 		act     module.ActionRequest
-		want    *resource.Resource
+		want    *module.Plan
 		wantErr error
 	}{
 		{
@@ -49,17 +50,19 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Name:   module.CreateAction,
 				Params: []byte(`{"state":"RUNNING","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 			},
-			want: &resource.Resource{
-				URN:     "orn:entropy:firehose:test",
-				Kind:    "firehose",
-				Name:    "test",
-				Project: "demo",
-				Spec: resource.Spec{
-					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_by_time":null,"telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
-				},
-				State: resource.State{
-					Status:     resource.StatusPending,
-					ModuleData: []byte(`{"pending_steps":["release_create"]}`),
+			want: &module.Plan{
+				Resource: &resource.Resource{
+					URN:     "orn:entropy:firehose:test",
+					Kind:    "firehose",
+					Name:    "test",
+					Project: "demo",
+					Spec: resource.Spec{
+						Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_time":null,"telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+					},
+					State: resource.State{
+						Status:     resource.StatusPending,
+						ModuleData: []byte(`{"pending_steps":["release_create"]}`),
+					},
 				},
 			},
 		},
@@ -79,17 +82,19 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Name:   ScaleAction,
 				Params: []byte(`{"replicas": 5}`),
 			},
-			want: &resource.Resource{
-				URN:     "orn:entropy:firehose:test",
-				Kind:    "firehose",
-				Name:    "test",
-				Project: "demo",
-				Spec: resource.Spec{
-					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_by_time":null,"telegraf":null,"firehose":{"replicas":5,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
-				},
-				State: resource.State{
-					Status:     resource.StatusPending,
-					ModuleData: []byte(`{"pending_steps":["release_update"]}`),
+			want: &module.Plan{
+				Resource: &resource.Resource{
+					URN:     "orn:entropy:firehose:test",
+					Kind:    "firehose",
+					Name:    "test",
+					Project: "demo",
+					Spec: resource.Spec{
+						Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_time":null,"telegraf":null,"firehose":{"replicas":5,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+					},
+					State: resource.State{
+						Status:     resource.StatusPending,
+						ModuleData: []byte(`{"pending_steps":["release_update"]}`),
+					},
 				},
 			},
 		},
@@ -100,18 +105,44 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Name:   ResetAction,
 				Params: []byte(`{"to":"DATETIME","datetime":"2022-06-22T00:00:00+00:00"}`),
 			},
-			want: &resource.Resource{
-				URN:     "orn:entropy:firehose:test",
-				Kind:    "firehose",
-				Name:    "test",
-				Project: "demo",
-				Spec: resource.Spec{
-					Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_by_time":null,"telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+			want: &module.Plan{
+				Resource: &resource.Resource{
+					URN:     "orn:entropy:firehose:test",
+					Kind:    "firehose",
+					Name:    "test",
+					Project: "demo",
+					Spec: resource.Spec{
+						Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_time":null,"telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+					},
+					State: resource.State{
+						Status:     resource.StatusPending,
+						ModuleData: []byte(`{"pending_steps":["release_update","consumer_reset","release_update"],"reset_to":"2022-06-22T00:00:00+00:00","state_override":"STOPPED"}`),
+					},
 				},
-				State: resource.State{
-					Status:     resource.StatusPending,
-					ModuleData: []byte(`{"pending_steps":["release_update","consumer_reset","release_update"],"reset_to":"2022-06-22T00:00:00+00:00","state_override":"STOPPED"}`),
+			},
+		},
+		{
+			title: "WithStopTimeConfiguration",
+			spec:  module.Spec{Resource: res},
+			act: module.ActionRequest{
+				Name:   module.CreateAction,
+				Params: []byte(`{"state":"RUNNING","stop_time":"3022-07-13T00:40:14.028016Z","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+			},
+			want: &module.Plan{
+				Resource: &resource.Resource{
+					URN:     "orn:entropy:firehose:test",
+					Kind:    "firehose",
+					Name:    "test",
+					Project: "demo",
+					Spec: resource.Spec{
+						Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_time":"3022-07-13T00:40:14.028016Z","telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+					},
+					State: resource.State{
+						Status:     resource.StatusPending,
+						ModuleData: []byte(`{"pending_steps":["release_create"]}`),
+					},
 				},
+				ScheduleRunAt: parseTime("3022-07-13T00:40:14.028016Z"),
 			},
 		},
 	}
@@ -123,7 +154,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 			m := firehoseModule{}
 
 			got, err := m.Plan(context.Background(), tt.spec, tt.act)
-			if tt.wantErr != nil {
+			if tt.wantErr != nil || err != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))
 				assert.Nil(t, got)
@@ -133,4 +164,12 @@ func TestFirehoseModule_Plan(t *testing.T) {
 			}
 		})
 	}
+}
+
+func parseTime(timeString string) time.Time {
+	t, err := time.Parse(time.RFC3339, timeString)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }
