@@ -29,20 +29,15 @@ func (m *firehoseModule) Sync(ctx context.Context, spec module.Spec) (*resource.
 	r := spec.Resource
 
 	var data moduleData
+	var pendingStep string
 	if err := json.Unmarshal(r.State.ModuleData, &data); err != nil {
 		return nil, err
 	}
 
-	if len(data.PendingSteps) == 0 {
-		return &resource.State{
-			Status:     resource.StatusCompleted,
-			Output:     r.State.Output,
-			ModuleData: r.State.ModuleData,
-		}, nil
+	if len(data.PendingSteps) != 0 {
+		pendingStep = data.PendingSteps[0]
+		data.PendingSteps = data.PendingSteps[1:]
 	}
-
-	pendingStep := data.PendingSteps[0]
-	data.PendingSteps = data.PendingSteps[1:]
 
 	var conf moduleConfig
 	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
@@ -72,6 +67,10 @@ func (m *firehoseModule) Sync(ctx context.Context, spec module.Spec) (*resource.
 			return nil, err
 		}
 		data.StateOverride = ""
+	default:
+		if err := m.releaseSync(pendingStep == releaseCreate, conf, r, kubeOut); err != nil {
+			return nil, err
+		}
 	}
 
 	finalStatus := resource.StatusCompleted

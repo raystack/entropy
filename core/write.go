@@ -107,12 +107,12 @@ func (s *Service) upsert(ctx context.Context, plan module.Plan, isCreate bool) e
 			return nil
 		}
 
-		return s.enqueueSyncJob(ctx, *plan.Resource, time.Now(), syncJobType)
+		return s.enqueueSyncJob(ctx, *plan.Resource, time.Now(), JobKindSyncResource)
 	})
 
 	if !plan.ScheduleRunAt.IsZero() {
 		hooks = append(hooks, func(ctx context.Context) error {
-			err := s.enqueueSyncJob(ctx, *plan.Resource, plan.ScheduleRunAt, scheduledSyncJobType)
+			err := s.enqueueSyncJob(ctx, *plan.Resource, plan.ScheduleRunAt, JobKindScheduledSyncResource)
 			if err != nil && !errors.Is(err, worker.ErrJobExists) {
 				return err
 			}

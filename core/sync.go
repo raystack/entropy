@@ -13,9 +13,8 @@ import (
 )
 
 const (
-	JobKindSyncResource  = "sync_resource"
-	syncJobType          = "sync"
-	scheduledSyncJobType = "sched-sync"
+	JobKindSyncResource          = "sync_resource"
+	JobKindScheduledSyncResource = "sched_sync_resource"
 )
 
 type syncJobPayload struct {
@@ -36,7 +35,7 @@ func (s *Service) enqueueSyncJob(ctx context.Context, res resource.Resource, run
 
 	return s.worker.Enqueue(ctx, worker.Job{
 		ID:      fmt.Sprintf(jobType+"-%s-%d", res.URN, res.UpdatedAt.Unix()),
-		Kind:    JobKindSyncResource,
+		Kind:    jobType,
 		RunAt:   runAt,
 		Payload: payload,
 	})

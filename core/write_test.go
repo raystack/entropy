@@ -434,7 +434,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Return(nil).
 					Run(func(ctx context.Context, jobs ...worker.Job) {
 						assert.Len(t, jobs, 1)
-						assert.Equal(t, jobs[0].ID, "sync-orn:entropy:mock:project:child-1650536955")
+						assert.Equal(t, jobs[0].ID, "sync_resource-orn:entropy:mock:project:child-1650536955")
 						assert.Equal(t, jobs[0].Kind, "sync_resource")
 					}).
 					Once()
