@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Service) CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error) {
-	if err := res.Validate(); err != nil {
+	if err := res.Validate(true); err != nil {
 		return nil, err
 	}
 
@@ -60,8 +60,7 @@ func (s *Service) execAction(ctx context.Context, res resource.Resource, act mod
 		return nil, err
 	}
 
-	isCreate := act.Name == module.CreateAction
-	if isCreate {
+	if isCreate(act.Name) {
 		plannedRes.CreatedAt = s.clock()
 		plannedRes.UpdatedAt = plannedRes.CreatedAt
 	} else {
@@ -69,10 +68,14 @@ func (s *Service) execAction(ctx context.Context, res resource.Resource, act mod
 		plannedRes.UpdatedAt = s.clock()
 	}
 
-	if err := s.upsert(ctx, *plannedRes, isCreate); err != nil {
+	if err := s.upsert(ctx, *plannedRes, isCreate(act.Name)); err != nil {
 		return nil, err
 	}
 	return plannedRes, nil
+}
+
+func isCreate(actionName string) bool {
+	return actionName == module.CreateAction
 }
 
 func (s *Service) planChange(ctx context.Context, res resource.Resource, act module.ActionRequest) (*resource.Resource, error) {
@@ -87,7 +90,7 @@ func (s *Service) planChange(ctx context.Context, res resource.Resource, act mod
 			return nil, err
 		}
 		return nil, errors.ErrInternal.WithMsgf("plan() failed").WithCausef(err.Error())
-	} else if err := plannedRes.Validate(); err != nil {
+	} else if err := plannedRes.Validate(isCreate(act.Name)); err != nil {
 		return nil, err
 	}
 

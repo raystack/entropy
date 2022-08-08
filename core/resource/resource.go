@@ -69,7 +69,7 @@ type Revision struct {
 	Spec Spec `json:"spec"`
 }
 
-func (res *Resource) Validate() error {
+func (res *Resource) Validate(isCreate bool) error {
 	res.Kind = strings.TrimSpace(res.Kind)
 	res.Name = strings.TrimSpace(res.Name)
 	res.Project = strings.TrimSpace(res.Project)
@@ -88,7 +88,9 @@ func (res *Resource) Validate() error {
 		res.State.Status = StatusUnspecified
 	}
 
-	res.URN = generateURN(*res)
+	if isCreate {
+		res.URN = generateURN(*res)
+	}
 	return nil
 }
 

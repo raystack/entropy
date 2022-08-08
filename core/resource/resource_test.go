@@ -60,7 +60,7 @@ func TestResource_Validate(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got := tt.res.Validate()
+			got := tt.res.Validate(true)
 			assert.Truef(t, errors.Is(got, tt.want), "want=%v, got=%v", tt.want, got)
 		})
 	}
