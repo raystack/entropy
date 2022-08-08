@@ -98,7 +98,7 @@ func (s *Service) syncChange(ctx context.Context, urn string) (*resource.Resourc
 			return nil, err
 		}
 	} else {
-		if err := s.upsert(ctx, module.Plan{Resource: res}, false); err != nil {
+		if err := s.upsert(ctx, module.Plan{Resource: *res}, false); err != nil {
 			return nil, err
 		}
 	}

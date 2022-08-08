@@ -51,7 +51,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Params: []byte(`{"state":"RUNNING","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 			},
 			want: &module.Plan{
-				Resource: &resource.Resource{
+				Resource: resource.Resource{
 					URN:     "orn:entropy:firehose:test",
 					Kind:    "firehose",
 					Name:    "test",
@@ -83,7 +83,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Params: []byte(`{"replicas": 5}`),
 			},
 			want: &module.Plan{
-				Resource: &resource.Resource{
+				Resource: resource.Resource{
 					URN:     "orn:entropy:firehose:test",
 					Kind:    "firehose",
 					Name:    "test",
@@ -106,7 +106,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Params: []byte(`{"to":"DATETIME","datetime":"2022-06-22T00:00:00+00:00"}`),
 			},
 			want: &module.Plan{
-				Resource: &resource.Resource{
+				Resource: resource.Resource{
 					URN:     "orn:entropy:firehose:test",
 					Kind:    "firehose",
 					Name:    "test",
@@ -129,7 +129,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				Params: []byte(`{"state":"RUNNING","stop_time":"3022-07-13T00:40:14.028016Z","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 			},
 			want: &module.Plan{
-				Resource: &resource.Resource{
+				Resource: resource.Resource{
 					URN:     "orn:entropy:firehose:test",
 					Kind:    "firehose",
 					Name:    "test",

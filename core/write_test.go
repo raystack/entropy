@@ -151,7 +151,7 @@ func TestService_CreateResource(t *testing.T) {
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{
-						Resource: &resource.Resource{
+						Resource: resource.Resource{
 							Kind:    "mock",
 							Name:    "child",
 							Project: "project",
@@ -182,7 +182,7 @@ func TestService_CreateResource(t *testing.T) {
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{
-						Resource: &resource.Resource{
+						Resource: resource.Resource{
 							Kind:    "mock",
 							Name:    "child",
 							Project: "project",
@@ -212,7 +212,7 @@ func TestService_CreateResource(t *testing.T) {
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{
-						Resource: &resource.Resource{
+						Resource: resource.Resource{
 							Kind:    "mock",
 							Name:    "child",
 							Project: "project",
@@ -359,7 +359,7 @@ func TestService_UpdateResource(t *testing.T) {
 				mod := &mocks.Module{}
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
-					Return(&module.Plan{Resource: &testResource}, nil).Once()
+					Return(&module.Plan{Resource: testResource}, nil).Once()
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
@@ -401,7 +401,7 @@ func TestService_UpdateResource(t *testing.T) {
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{
-						Resource: &resource.Resource{
+						Resource: resource.Resource{
 							URN:     "orn:entropy:mock:project:child",
 							Kind:    "mock",
 							Name:    "child",
@@ -511,7 +511,7 @@ func TestService_DeleteResource(t *testing.T) {
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{
-						Resource: &resource.Resource{
+						Resource: resource.Resource{
 							URN:       "orn:entropy:mock:project:child",
 							Kind:      "mock",
 							Name:      "child",
@@ -554,7 +554,7 @@ func TestService_DeleteResource(t *testing.T) {
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{
-						Resource: &resource.Resource{
+						Resource: resource.Resource{
 							URN:       "orn:entropy:mock:project:child",
 							Kind:      "mock",
 							Name:      "child",
@@ -700,7 +700,7 @@ func TestService_ApplyAction(t *testing.T) {
 				mod.EXPECT().
 					Plan(mock.Anything, mock.Anything, sampleAction).
 					Return(&module.Plan{
-						Resource: &resource.Resource{
+						Resource: resource.Resource{
 							URN:     "orn:entropy:mock:foo:bar",
 							Kind:    "mock",
 							Project: "foo",

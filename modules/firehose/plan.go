@@ -40,7 +40,7 @@ func (*firehoseModule) planCreate(spec module.Spec, act module.ActionRequest) (*
 		}.JSON(),
 	}
 
-	plan.Resource = &r
+	plan.Resource = r
 	if reqConf.StopTime != nil {
 		plan.ScheduleRunAt = *reqConf.StopTime
 	}
@@ -94,7 +94,7 @@ func (*firehoseModule) planChange(spec module.Spec, act module.ActionRequest) (*
 			PendingSteps: []string{releaseUpdate},
 		}.JSON(),
 	}
-	plan.Resource = &r
+	plan.Resource = r
 	return &plan, nil
 }
 
@@ -132,5 +132,5 @@ func (*firehoseModule) planReset(spec module.Spec, act module.ActionRequest) (*m
 		}.JSON(),
 	}
 
-	return &module.Plan{Resource: &r}, nil
+	return &module.Plan{Resource: r}, nil
 }

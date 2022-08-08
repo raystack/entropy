@@ -73,7 +73,7 @@ func (s *Service) execAction(ctx context.Context, res resource.Resource, act mod
 	if err := s.upsert(ctx, *planned, isCreate(act.Name)); err != nil {
 		return nil, err
 	}
-	return planned.Resource, nil
+	return &planned.Resource, nil
 }
 
 func isCreate(actionName string) bool {
@@ -107,12 +107,12 @@ func (s *Service) upsert(ctx context.Context, plan module.Plan, isCreate bool) e
 			return nil
 		}
 
-		return s.enqueueSyncJob(ctx, *plan.Resource, time.Now(), JobKindSyncResource)
+		return s.enqueueSyncJob(ctx, plan.Resource, time.Now(), JobKindSyncResource)
 	})
 
 	if !plan.ScheduleRunAt.IsZero() {
 		hooks = append(hooks, func(ctx context.Context) error {
-			err := s.enqueueSyncJob(ctx, *plan.Resource, plan.ScheduleRunAt, JobKindScheduledSyncResource)
+			err := s.enqueueSyncJob(ctx, plan.Resource, plan.ScheduleRunAt, JobKindScheduledSyncResource)
 			if err != nil && !errors.Is(err, worker.ErrJobExists) {
 				return err
 			}
@@ -122,9 +122,9 @@ func (s *Service) upsert(ctx context.Context, plan module.Plan, isCreate bool) e
 
 	var err error
 	if isCreate {
-		err = s.store.Create(ctx, *plan.Resource, hooks...)
+		err = s.store.Create(ctx, plan.Resource, hooks...)
 	} else {
-		err = s.store.Update(ctx, *plan.Resource, hooks...)
+		err = s.store.Update(ctx, plan.Resource, hooks...)
 	}
 
 	if err != nil {

@@ -28,9 +28,9 @@ type Module interface {
 	Sync(ctx context.Context, spec Spec) (*resource.State, error)
 }
 
-// Plan represents the changes to be staged to be later synced by module.
+// Plan represents the changes to be staged and later synced by module.
 type Plan struct {
-	Resource      *resource.Resource
+	Resource      resource.Resource
 	ScheduleRunAt time.Time
 }
 

@@ -68,7 +68,7 @@ func (*kubeModule) Plan(_ context.Context, spec module.Spec, act module.ActionRe
 			ServerInfo: *info,
 		}.JSON(),
 	}
-	return &module.Plan{Resource: &res}, nil
+	return &module.Plan{Resource: res}, nil
 }
 
 func (*kubeModule) Sync(_ context.Context, spec module.Spec) (*resource.State, error) {
