@@ -98,12 +98,12 @@ func runServer(baseCtx context.Context, nrApp *newrelic.Application, zapLog *zap
 }
 
 func setupRegistry(logger *zap.Logger, modules ...module.Descriptor) *module.Registry {
-	moduleRegistry := module.NewRegistry()
+	moduleRegistry := module.NewRegistry(nil)
 	for _, desc := range modules {
 		if err := moduleRegistry.Register(desc); err != nil {
 			logger.Fatal("failed to register module",
 				zap.String("module_kind", desc.Kind),
-				zap.String("go_type", reflect.TypeOf(desc.Module).String()),
+				zap.String("go_type", reflect.TypeOf(desc.DriverFactory).String()),
 				zap.Error(err),
 			)
 		}

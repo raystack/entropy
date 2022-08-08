@@ -1,6 +1,7 @@
 package module_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,13 +13,15 @@ import (
 
 func TestRegistry_Register(t *testing.T) {
 	t.Parallel()
-	reg := module.NewRegistry()
+	reg := module.NewRegistry(nil)
 
 	t.Run("FirstRegistration_NoError", func(t *testing.T) {
 		t.Parallel()
 		desc := module.Descriptor{
-			Kind:   "foo",
-			Module: &mocks.Module{},
+			Kind: "foo",
+			DriverFactory: func(conf json.RawMessage) (module.Driver, error) {
+				return &mocks.ModuleDriver{}, nil
+			},
 		}
 		assert.NoError(t, reg.Register(desc))
 	})
@@ -26,8 +29,10 @@ func TestRegistry_Register(t *testing.T) {
 	t.Run("SecondRegistration_Conflict", func(t *testing.T) {
 		t.Parallel()
 		desc := module.Descriptor{
-			Kind:   "foo",
-			Module: &mocks.Module{},
+			Kind: "foo",
+			DriverFactory: func(conf json.RawMessage) (module.Driver, error) {
+				return &mocks.ModuleDriver{}, nil
+			},
 		}
 
 		err := reg.Register(desc)

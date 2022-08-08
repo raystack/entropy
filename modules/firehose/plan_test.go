@@ -29,14 +29,14 @@ func TestFirehoseModule_Plan(t *testing.T) {
 
 	table := []struct {
 		title   string
-		spec    module.Spec
+		spec    module.ExpandedResource
 		act     module.ActionRequest
 		want    *module.Plan
 		wantErr error
 	}{
 		{
 			title: "InvalidConfiguration",
-			spec:  module.Spec{Resource: res},
+			spec:  module.ExpandedResource{Resource: res},
 			act: module.ActionRequest{
 				Name:   module.CreateAction,
 				Params: []byte(`{`),
@@ -45,7 +45,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		},
 		{
 			title: "ValidConfiguration",
-			spec:  module.Spec{Resource: res},
+			spec:  module.ExpandedResource{Resource: res},
 			act: module.ActionRequest{
 				Name:   module.CreateAction,
 				Params: []byte(`{"state":"RUNNING","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
@@ -68,7 +68,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		},
 		{
 			title: "InvalidActionParams",
-			spec:  module.Spec{Resource: res},
+			spec:  module.ExpandedResource{Resource: res},
 			act: module.ActionRequest{
 				Name:   ScaleAction,
 				Params: []byte(`{`),
@@ -77,7 +77,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		},
 		{
 			title: "ValidScaleRequest",
-			spec:  module.Spec{Resource: res},
+			spec:  module.ExpandedResource{Resource: res},
 			act: module.ActionRequest{
 				Name:   ScaleAction,
 				Params: []byte(`{"replicas": 5}`),
@@ -100,7 +100,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		},
 		{
 			title: "ValidResetRequest",
-			spec:  module.Spec{Resource: res},
+			spec:  module.ExpandedResource{Resource: res},
 			act: module.ActionRequest{
 				Name:   ResetAction,
 				Params: []byte(`{"to":"DATETIME","datetime":"2022-06-22T00:00:00+00:00"}`),

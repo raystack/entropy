@@ -2,7 +2,9 @@ package module
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/xeipuuv/gojsonschema"
@@ -13,13 +15,15 @@ import (
 
 // Registry maintains a list of supported/enabled modules.
 type Registry struct {
-	mu         sync.RWMutex
-	collection map[string]Descriptor
+	mu          sync.RWMutex
+	store       Store
+	descriptors map[string]Descriptor
 }
 
-func NewRegistry() *Registry {
+func NewRegistry(store Store) *Registry {
 	return &Registry{
-		collection: map[string]Descriptor{},
+		store:       store,
+		descriptors: map[string]Descriptor{},
 	}
 }
 
@@ -27,7 +31,7 @@ func NewRegistry() *Registry {
 func (mr *Registry) Register(desc Descriptor) error {
 	mr.mu.Lock()
 	defer mr.mu.Unlock()
-	if v, exists := mr.collection[desc.Kind]; exists {
+	if v, exists := mr.descriptors[desc.Kind]; exists {
 		return errors.ErrConflict.
 			WithMsgf("module '%s' is already registered for kind '%s'", reflect.TypeOf(v), desc.Kind)
 	}
@@ -48,57 +52,78 @@ func (mr *Registry) Register(desc Descriptor) error {
 		desc.Actions[i].schema = schema
 	}
 
-	mr.collection[desc.Kind] = desc
+	mr.descriptors[desc.Kind] = desc
 	return nil
 }
 
-func (mr *Registry) get(kind string) (Descriptor, bool) {
-	mr.mu.RLock()
-	defer mr.mu.RUnlock()
-	desc, found := mr.collection[kind]
-	return desc, found
-}
-
-func (mr *Registry) Plan(ctx context.Context, spec Spec, act ActionRequest) (*Plan, error) {
+func (mr *Registry) Plan(ctx context.Context, spec ExpandedResource, act ActionRequest) (*Plan, error) {
 	kind := spec.Resource.Kind
 
-	desc, found := mr.get(kind)
-	if !found {
-		return nil, errors.ErrInvalid.WithMsgf("kind '%s' is not valid", kind)
+	driver, desc, err := mr.initDriver(ctx, kind, spec.Project)
+	if err != nil {
+		return nil, err
 	} else if err := desc.validateDependencies(spec.Dependencies); err != nil {
 		return nil, err
 	} else if err := desc.validateActionReq(spec, act); err != nil {
 		return nil, err
 	}
 
-	return desc.Module.Plan(ctx, spec, act)
+	return driver.Plan(ctx, spec, act)
 }
 
-func (mr *Registry) Sync(ctx context.Context, spec Spec) (*resource.State, error) {
+func (mr *Registry) Sync(ctx context.Context, spec ExpandedResource) (*resource.State, error) {
 	kind := spec.Resource.Kind
 
-	desc, found := mr.get(kind)
-	if !found {
-		return nil, errors.ErrInvalid.WithMsgf("kind '%s' is not valid", kind)
+	driver, desc, err := mr.initDriver(ctx, kind, spec.Project)
+	if err != nil {
+		return nil, err
 	} else if err := desc.validateDependencies(spec.Dependencies); err != nil {
 		return nil, err
 	}
 
-	return desc.Module.Sync(ctx, spec)
+	return driver.Sync(ctx, spec)
 }
 
-func (mr *Registry) Log(ctx context.Context, spec Spec, filter map[string]string) (<-chan LogChunk, error) {
+func (mr *Registry) Log(ctx context.Context, spec ExpandedResource, filter map[string]string) (<-chan LogChunk, error) {
 	kind := spec.Resource.Kind
 
-	desc, found := mr.get(kind)
-	if !found {
-		return nil, errors.ErrInvalid.WithMsgf("kind '%s' is not valid", kind)
+	driver, _, err := mr.initDriver(ctx, kind, spec.Project)
+	if err != nil {
+		return nil, err
 	}
 
-	lg, supported := desc.Module.(Loggable)
+	lg, supported := driver.(Loggable)
 	if !supported {
 		return nil, errors.ErrUnsupported.WithMsgf("log streaming not supported for kind '%s'", kind)
 	}
 
 	return lg.Log(ctx, spec, filter)
+}
+
+func (mr *Registry) initDriver(ctx context.Context, kind, project string) (Driver, Descriptor, error) {
+	urn := generateURN(kind, project)
+	m, err := mr.store.GetModule(ctx, urn)
+	if err != nil {
+		return nil, Descriptor{}, err
+	}
+
+	mr.mu.RLock()
+	defer mr.mu.RUnlock()
+	desc, found := mr.descriptors[m.Name]
+	if !found {
+		return nil, Descriptor{}, errors.ErrInvalid.WithMsgf("kind '%s' is not valid", kind)
+	}
+
+	driver, err := desc.DriverFactory(m.Spec.Configs)
+	if err != nil {
+		return nil, Descriptor{}, errors.ErrInternal.WithCausef(err.Error())
+	}
+	return driver, desc, nil
+}
+
+func generateURN(name, project string) string {
+	if strings.HasPrefix(name, "orn:entropy:module") {
+		return name
+	}
+	return fmt.Sprintf("orn:entropy:module:%s:%s", project, name)
 }

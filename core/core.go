@@ -19,14 +19,14 @@ type Service struct {
 	clock      func() time.Time
 	store      resource.Store
 	worker     AsyncWorker
-	rootModule module.Module
+	rootModule module.Driver
 }
 
 type AsyncWorker interface {
 	Enqueue(ctx context.Context, jobs ...worker.Job) error
 }
 
-func New(repo resource.Store, rootModule module.Module, asyncWorker AsyncWorker, clockFn func() time.Time, lg *zap.Logger) *Service {
+func New(repo resource.Store, rootModule module.Driver, asyncWorker AsyncWorker, clockFn func() time.Time, lg *zap.Logger) *Service {
 	if clockFn == nil {
 		clockFn = time.Now
 	}
@@ -40,8 +40,8 @@ func New(repo resource.Store, rootModule module.Module, asyncWorker AsyncWorker,
 	}
 }
 
-func (s *Service) generateModuleSpec(ctx context.Context, res resource.Resource) (*module.Spec, error) {
-	modSpec := module.Spec{
+func (s *Service) generateModuleSpec(ctx context.Context, res resource.Resource) (*module.ExpandedResource, error) {
+	modSpec := module.ExpandedResource{
 		Resource:     res,
 		Dependencies: map[string]module.ResolvedDependency{},
 	}

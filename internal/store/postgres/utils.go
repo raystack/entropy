@@ -42,6 +42,9 @@ func translateErr(err error) error {
 		switch pgErr.Code.Name() {
 		case "unique_violation":
 			return errors.ErrConflict.WithCausef(err.Error())
+
+		default:
+			return errors.ErrInternal.WithCausef(err.Error())
 		}
 	}
 

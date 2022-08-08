@@ -1,57 +1,44 @@
 package module
 
-//go:generate mockery --name=Module -r --case underscore --with-expecter --structname Module --filename=module.go --output=../mocks
+//go:generate mockery --name=Store -r --case underscore --with-expecter --structname ModuleStore --filename=module_store.go --output=../mocks
 
 import (
 	"context"
 	"encoding/json"
 	"time"
 
-	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-// Module is responsible for achieving desired external system states based
-// on a resource in Entropy.
-type Module interface {
-	// Plan SHOULD validate the action on the current version of the resource,
-	// return the resource with config/status/state changes (if any) applied.
-	// Plan SHOULD NOT have side effects on anything other than the resource.
-	Plan(ctx context.Context, spec Spec, act ActionRequest) (*Plan, error)
-
-	// Sync is called repeatedly by Entropy core until the returned state is
-	// a terminal status. Module implementation is free to execute an action
-	// in a single Sync() call or split into steps for better feedback to the
-	// end-user about the progress.
-	// Sync can return state in resource.StatusDeleted to indicate resource
-	// should be removed from the Entropy storage.
-	Sync(ctx context.Context, spec Spec) (*resource.State, error)
+type Store interface {
+	GetModule(ctx context.Context, urn string) (*Module, error)
+	ListModules(ctx context.Context, project string) ([]Module, error)
+	CreateModule(ctx context.Context, m Module) error
+	UpdateModule(ctx context.Context, m Module) error
+	DeleteModule(ctx context.Context, urn string) error
 }
 
-// Plan represents the changes to be staged and later synced by module.
-type Plan struct {
-	Resource      resource.Resource
-	ScheduleRunAt time.Time
+// Module represents all the data needed to initialize a particular module.
+type Module struct {
+	URN       string    `json:"urn"`
+	Name      string    `json:"name"`
+	Project   string    `json:"project"`
+	Spec      Spec      `json:"spec"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// Spec represents the context for Plan() or Sync() invocations.
 type Spec struct {
-	Resource     resource.Resource             `json:"resource"`
-	Dependencies map[string]ResolvedDependency `json:"dependencies"`
-}
-
-type ResolvedDependency struct {
-	Kind   string          `json:"kind"`
-	Output json.RawMessage `json:"output"`
+	Configs json.RawMessage `json:"configs"`
 }
 
 // Descriptor is a module descriptor that represents supported actions, resource-kind
 // the module can operate on, etc.
 type Descriptor struct {
-	Kind         string            `json:"kind"`
-	Actions      []ActionDesc      `json:"actions"`
-	Dependencies map[string]string `json:"dependencies"`
-	Module       Module            `json:"-"`
+	Kind          string                                     `json:"kind"`
+	Actions       []ActionDesc                               `json:"actions"`
+	Dependencies  map[string]string                          `json:"dependencies"`
+	DriverFactory func(conf json.RawMessage) (Driver, error) `json:"-"`
 }
 
 func (desc Descriptor) validateDependencies(dependencies map[string]ResolvedDependency) error {
@@ -68,7 +55,7 @@ func (desc Descriptor) validateDependencies(dependencies map[string]ResolvedDepe
 	return nil
 }
 
-func (desc Descriptor) validateActionReq(spec Spec, req ActionRequest) error {
+func (desc Descriptor) validateActionReq(spec ExpandedResource, req ActionRequest) error {
 	kind := spec.Resource.Kind
 
 	actDesc := desc.findAction(req.Name)

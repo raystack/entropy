@@ -9,7 +9,7 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-func (m *firehoseModule) Plan(_ context.Context, spec module.Spec, act module.ActionRequest) (*module.Plan, error) {
+func (m *firehoseModule) Plan(_ context.Context, spec module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
 	switch act.Name {
 	case module.CreateAction:
 		return m.planCreate(spec, act)
@@ -20,7 +20,7 @@ func (m *firehoseModule) Plan(_ context.Context, spec module.Spec, act module.Ac
 	}
 }
 
-func (*firehoseModule) planCreate(spec module.Spec, act module.ActionRequest) (*module.Plan, error) {
+func (*firehoseModule) planCreate(spec module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
 	var plan module.Plan
 	r := spec.Resource
 
@@ -47,7 +47,7 @@ func (*firehoseModule) planCreate(spec module.Spec, act module.ActionRequest) (*
 	return &plan, nil
 }
 
-func (*firehoseModule) planChange(spec module.Spec, act module.ActionRequest) (*module.Plan, error) {
+func (*firehoseModule) planChange(spec module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
 	var plan module.Plan
 	r := spec.Resource
 
@@ -98,7 +98,7 @@ func (*firehoseModule) planChange(spec module.Spec, act module.ActionRequest) (*
 	return &plan, nil
 }
 
-func (*firehoseModule) planReset(spec module.Spec, act module.ActionRequest) (*module.Plan, error) {
+func (*firehoseModule) planReset(spec module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
 	r := spec.Resource
 
 	var conf moduleConfig

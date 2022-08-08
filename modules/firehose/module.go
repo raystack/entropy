@@ -2,6 +2,7 @@ package firehose
 
 import (
 	_ "embed"
+	"encoding/json"
 
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/modules/kubernetes"
@@ -71,7 +72,9 @@ var Module = module.Descriptor{
 			ParamSchema: resetActionSchema,
 		},
 	},
-	Module: &firehoseModule{},
+	DriverFactory: func(conf json.RawMessage) (module.Driver, error) {
+		return &firehoseModule{}, nil
+	},
 }
 
 type firehoseModule struct{}
