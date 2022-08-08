@@ -54,3 +54,15 @@ CREATE TABLE IF NOT EXISTS revision_tags
 );
 CREATE INDEX IF NOT EXISTS idx_revision_tags_revision_id ON revision_tags (revision_id);
 CREATE INDEX IF NOT EXISTS idx_revision_tags_tag ON revision_tags (tag);
+
+--
+CREATE TABLE IF NOT EXISTS modules (
+   urn          TEXT NOT NULL PRIMARY KEY,
+   name         TEXT NOT NULL,
+   project      TEXT NOT NULL,
+   created_at   timestamp NOT NULL DEFAULT current_timestamp,
+   updated_at   timestamp NOT NULL DEFAULT current_timestamp,
+   spec_loader  TEXT NOT NULL,
+   spec_path    TEXT NOT NULL,
+   spec_config  bytea NOT NULL,
+);
