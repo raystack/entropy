@@ -56,7 +56,7 @@ func (mr *Registry) Register(desc Descriptor) error {
 	return nil
 }
 
-func (mr *Registry) Plan(ctx context.Context, spec ExpandedResource, act ActionRequest) (*Plan, error) {
+func (mr *Registry) PlanAction(ctx context.Context, spec ExpandedResource, act ActionRequest) (*Plan, error) {
 	kind := spec.Resource.Kind
 
 	driver, desc, err := mr.initDriver(ctx, kind, spec.Project)
@@ -71,7 +71,7 @@ func (mr *Registry) Plan(ctx context.Context, spec ExpandedResource, act ActionR
 	return driver.Plan(ctx, spec, act)
 }
 
-func (mr *Registry) Sync(ctx context.Context, spec ExpandedResource) (*resource.State, error) {
+func (mr *Registry) SyncState(ctx context.Context, spec ExpandedResource) (*resource.State, error) {
 	kind := spec.Resource.Kind
 
 	driver, desc, err := mr.initDriver(ctx, kind, spec.Project)
@@ -84,7 +84,7 @@ func (mr *Registry) Sync(ctx context.Context, spec ExpandedResource) (*resource.
 	return driver.Sync(ctx, spec)
 }
 
-func (mr *Registry) Log(ctx context.Context, spec ExpandedResource, filter map[string]string) (<-chan LogChunk, error) {
+func (mr *Registry) StreamLogs(ctx context.Context, spec ExpandedResource, filter map[string]string) (<-chan LogChunk, error) {
 	kind := spec.Resource.Kind
 
 	driver, _, err := mr.initDriver(ctx, kind, spec.Project)
@@ -98,6 +98,41 @@ func (mr *Registry) Log(ctx context.Context, spec ExpandedResource, filter map[s
 	}
 
 	return lg.Log(ctx, spec, filter)
+}
+
+func (mr *Registry) GetModule(ctx context.Context, urn string) (*Module, error) {
+	return mr.store.GetModule(ctx, urn)
+}
+
+func (mr *Registry) ListModules(ctx context.Context, project string) ([]Module, error) {
+	return mr.store.ListModules(ctx, project)
+}
+
+func (mr *Registry) CreateModule(ctx context.Context, mod Module) (*Module, error) {
+	if err := mod.Validate(); err != nil {
+		return nil, err
+	}
+	if err := mr.store.CreateModule(ctx, mod); err != nil {
+		return nil, err
+	}
+	return &mod, nil
+}
+
+func (mr *Registry) UpdateModule(ctx context.Context, urn string, spec Spec) (*Module, error) {
+	mod, err := mr.store.GetModule(ctx, urn)
+	if err != nil {
+		return nil, err
+	}
+	mod.Spec.Configs = spec.Configs
+
+	if err := mr.store.UpdateModule(ctx, *mod); err != nil {
+		return nil, err
+	}
+	return mod, nil
+}
+
+func (mr *Registry) DeleteModule(ctx context.Context, urn string) error {
+	return mr.store.DeleteModule(ctx, urn)
 }
 
 func (mr *Registry) initDriver(ctx context.Context, kind, project string) (Driver, Descriptor, error) {

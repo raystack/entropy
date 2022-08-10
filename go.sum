@@ -908,12 +908,12 @@ go.buf.build/odpf/gw/grpc-ecosystem/grpc-gateway v1.1.35/go.mod h1:/LuddrGPi0fwj
 go.buf.build/odpf/gw/grpc-ecosystem/grpc-gateway v1.1.44 h1:ya+Pdx7IBc+Uf+UImPPecJbdI7gpMz9gJI6/LUNjsbE=
 go.buf.build/odpf/gw/grpc-ecosystem/grpc-gateway v1.1.44/go.mod h1:/LuddrGPi0fwj7ay6Orutt8oFfPz8Y3c8qdBkacJq1A=
 go.buf.build/odpf/gw/odpf/proton v1.1.9/go.mod h1:I9E8CF7w/690vRNWqBU6qDcUbi3Pi2THdn1yycBVTDQ=
-go.buf.build/odpf/gw/odpf/proton v1.1.106 h1:Z25fhrqm7cTZ6q0SeoBH92JC+s1jQDHY965RE6bPeik=
-go.buf.build/odpf/gw/odpf/proton v1.1.106/go.mod h1:FySqyI0YPPldpzXULKDcIC/bMJIdGaO6j36i1ZKJSvE=
+go.buf.build/odpf/gw/odpf/proton v1.1.118 h1:pxLjXbslsDOVRS0T9sija/iYdPQI9kCYf1BKsZ+GJro=
+go.buf.build/odpf/gw/odpf/proton v1.1.118/go.mod h1:FySqyI0YPPldpzXULKDcIC/bMJIdGaO6j36i1ZKJSvE=
 go.buf.build/odpf/gwv/envoyproxy/protoc-gen-validate v1.1.6/go.mod h1:2Tg6rYIoDhpl39Zd2+WBOF9uG4XxAOs0bK2Z2/bwTOc=
 go.buf.build/odpf/gwv/grpc-ecosystem/grpc-gateway v1.1.44/go.mod h1:UrBCdmHgaY/pLapYUMOq01c1yuzwT8AEBTsgpmzq2zo=
-go.buf.build/odpf/gwv/odpf/proton v1.1.106 h1:cCfuSpq5Tk/9PvBfxP+kkWPQRxZy5rMsioIPl4sdud0=
-go.buf.build/odpf/gwv/odpf/proton v1.1.106/go.mod h1:C6UK2lo5NgqaE9/ulChofR/5QRmjY9IXLb4BtGTlr3c=
+go.buf.build/odpf/gwv/odpf/proton v1.1.118 h1:+94S8eYhgEN8O2ACcoxdSQZ9TIdgsRIsLpZowcFNQ9k=
+go.buf.build/odpf/gwv/odpf/proton v1.1.118/go.mod h1:C6UK2lo5NgqaE9/ulChofR/5QRmjY9IXLb4BtGTlr3c=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.6/go.mod h1:qXsaaIqmgQH0T+OPdb99Bf+PKfBBQVAdyD6TY9G8XM4=
 go.etcd.io/etcd/api/v3 v3.5.0/go.mod h1:cbVKeC6lCfl7j/8jBhAK6aIYO9XOjdptoxU/nLQcPvs=

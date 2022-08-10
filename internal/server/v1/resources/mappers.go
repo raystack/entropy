@@ -1,4 +1,4 @@
-package handlersv1
+package resources
 
 import (
 	"encoding/json"
@@ -12,9 +12,7 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-const (
-	decimalBase = 10
-)
+const decimalBase = 10
 
 func resourceToProto(res resource.Resource) (*entropyv1beta1.Resource, error) {
 	protoState, err := resourceStateToProto(res.State)

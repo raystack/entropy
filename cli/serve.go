@@ -84,17 +84,17 @@ func runServer(baseCtx context.Context, nrApp *newrelic.Application, zapLog *zap
 
 	store := setupStorage(zapLog, cfg.PGConnStr)
 	moduleRegistry := setupRegistry(zapLog, modules...)
-	service := core.New(store, moduleRegistry, asyncWorker, time.Now, zapLog)
+	resourceService := core.New(store, moduleRegistry, asyncWorker, time.Now, zapLog)
 
-	if err := asyncWorker.Register(core.JobKindSyncResource, service.HandleSyncJob); err != nil {
+	if err := asyncWorker.Register(core.JobKindSyncResource, resourceService.HandleSyncJob); err != nil {
 		return err
 	}
 
-	if err := asyncWorker.Register(core.JobKindScheduledSyncResource, service.HandleSyncJob); err != nil {
+	if err := asyncWorker.Register(core.JobKindScheduledSyncResource, resourceService.HandleSyncJob); err != nil {
 		return err
 	}
 
-	return entropyserver.Serve(ctx, cfg.Service.addr(), nrApp, zapLog, service)
+	return entropyserver.Serve(ctx, cfg.Service.addr(), nrApp, zapLog, resourceService, moduleRegistry)
 }
 
 func setupRegistry(logger *zap.Logger, modules ...module.Descriptor) *module.Registry {

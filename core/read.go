@@ -33,17 +33,19 @@ func (s *Service) GetLog(ctx context.Context, urn string, filter map[string]stri
 		return nil, err
 	}
 
-	moduleLogStream, supported := s.rootModule.(module.Loggable)
-	if !supported {
-		return nil, errors.ErrUnsupported.WithMsgf("log streaming not supported for kind '%s'", res.Kind)
-	}
-
 	modSpec, err := s.generateModuleSpec(ctx, *res)
 	if err != nil {
 		return nil, err
 	}
 
-	return moduleLogStream.Log(ctx, *modSpec, filter)
+	logCh, err := s.moduleSvc.StreamLogs(ctx, *modSpec, filter)
+	if err != nil {
+		if errors.Is(err, errors.ErrUnsupported) {
+			return nil, errors.ErrUnsupported.WithMsgf("log streaming not supported for kind '%s'", res.Kind)
+		}
+		return nil, err
+	}
+	return logCh, nil
 }
 
 func (s *Service) GetRevisions(ctx context.Context, selector resource.RevisionsSelector) ([]resource.Revision, error) {

@@ -1,4 +1,4 @@
-package handlersv1
+package resources
 
 import (
 	"context"

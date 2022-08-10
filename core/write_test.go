@@ -32,9 +32,9 @@ func TestService_CreateResource(t *testing.T) {
 			name: "ModuleValidationError",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 				mod.EXPECT().
-					Plan(mock.Anything, mock.Anything, mock.Anything).
+					PlanAction(mock.Anything, mock.Anything, mock.Anything).
 					Return(nil, errSample).Once()
 
 				return core.New(nil, mod, &mocks.AsyncWorker{}, deadClock, nil)
@@ -51,7 +51,7 @@ func TestService_CreateResource(t *testing.T) {
 			name: "DependencyError_NotFound",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
@@ -80,7 +80,7 @@ func TestService_CreateResource(t *testing.T) {
 			name: "DependencyError_InvalidState",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
@@ -114,7 +114,7 @@ func TestService_CreateResource(t *testing.T) {
 			name: "DependencyError_CrossProjectReference",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
@@ -147,9 +147,9 @@ func TestService_CreateResource(t *testing.T) {
 			name: "CreateResourceFailure",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 				mod.EXPECT().
-					Plan(mock.Anything, mock.Anything, mock.Anything).
+					PlanAction(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{
 						Resource: resource.Resource{
 							Kind:    "mock",
@@ -178,9 +178,9 @@ func TestService_CreateResource(t *testing.T) {
 			name: "AlreadyExists",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 				mod.EXPECT().
-					Plan(mock.Anything, mock.Anything, mock.Anything).
+					PlanAction(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{
 						Resource: resource.Resource{
 							Kind:    "mock",
@@ -208,9 +208,9 @@ func TestService_CreateResource(t *testing.T) {
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 				mod.EXPECT().
-					Plan(mock.Anything, mock.Anything, mock.Anything).
+					PlanAction(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{
 						Resource: resource.Resource{
 							Kind:    "mock",
@@ -334,9 +334,9 @@ func TestService_UpdateResource(t *testing.T) {
 			name: "ModuleValidationError",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 				mod.EXPECT().
-					Plan(mock.Anything, mock.Anything, mock.Anything).
+					PlanAction(mock.Anything, mock.Anything, mock.Anything).
 					Return(nil, errors.ErrInvalid).Once()
 
 				resourceRepo := &mocks.ResourceStore{}
@@ -356,9 +356,9 @@ func TestService_UpdateResource(t *testing.T) {
 			name: "UpdateFailure",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 				mod.EXPECT().
-					Plan(mock.Anything, mock.Anything, mock.Anything).
+					PlanAction(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{Resource: testResource}, nil).Once()
 
 				resourceRepo := &mocks.ResourceStore{}
@@ -397,9 +397,9 @@ func TestService_UpdateResource(t *testing.T) {
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 				mod.EXPECT().
-					Plan(mock.Anything, mock.Anything, mock.Anything).
+					PlanAction(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{
 						Resource: resource.Resource{
 							URN:     "orn:entropy:mock:project:child",
@@ -507,9 +507,9 @@ func TestService_DeleteResource(t *testing.T) {
 			name: "UpdateFailure",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 				mod.EXPECT().
-					Plan(mock.Anything, mock.Anything, mock.Anything).
+					PlanAction(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{
 						Resource: resource.Resource{
 							URN:       "orn:entropy:mock:project:child",
@@ -550,9 +550,9 @@ func TestService_DeleteResource(t *testing.T) {
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 				mod.EXPECT().
-					Plan(mock.Anything, mock.Anything, mock.Anything).
+					PlanAction(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{
 						Resource: resource.Resource{
 							URN:       "orn:entropy:mock:project:child",
@@ -667,9 +667,9 @@ func TestService_ApplyAction(t *testing.T) {
 			name: "PlanFailure",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 				mod.EXPECT().
-					Plan(mock.Anything, mock.Anything, sampleAction).
+					PlanAction(mock.Anything, mock.Anything, sampleAction).
 					Return(nil, errors.New("failed")).
 					Once()
 
@@ -696,9 +696,9 @@ func TestService_ApplyAction(t *testing.T) {
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
-				mod := &mocks.Module{}
+				mod := &mocks.ModuleService{}
 				mod.EXPECT().
-					Plan(mock.Anything, mock.Anything, sampleAction).
+					PlanAction(mock.Anything, mock.Anything, sampleAction).
 					Return(&module.Plan{
 						Resource: resource.Resource{
 							URN:     "orn:entropy:mock:foo:bar",

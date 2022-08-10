@@ -41,6 +41,10 @@ type Descriptor struct {
 	DriverFactory func(conf json.RawMessage) (Driver, error) `json:"-"`
 }
 
+func (Module) Validate() error {
+	return nil
+}
+
 func (desc Descriptor) validateDependencies(dependencies map[string]ResolvedDependency) error {
 	for key, wantKind := range desc.Dependencies {
 		resolvedDep, found := dependencies[key]
