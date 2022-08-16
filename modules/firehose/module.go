@@ -18,7 +18,6 @@ const (
 const (
 	releaseCreate = "release_create"
 	releaseUpdate = "release_update"
-
 	consumerReset = "consumer_reset"
 )
 
@@ -33,9 +32,7 @@ const (
 	ResetToLatest   = "LATEST"
 )
 
-const (
-	keyKubeDependency = "kube_cluster"
-)
+const keyKubeDependency = "kube_cluster"
 
 var Module = module.Descriptor{
 	Kind: "firehose",

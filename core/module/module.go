@@ -5,6 +5,7 @@ package module
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/odpf/entropy/pkg/errors"
@@ -20,16 +21,12 @@ type Store interface {
 
 // Module represents all the data needed to initialize a particular module.
 type Module struct {
-	URN       string    `json:"urn"`
-	Name      string    `json:"name"`
-	Project   string    `json:"project"`
-	Spec      Spec      `json:"spec"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-type Spec struct {
-	Configs json.RawMessage `json:"configs"`
+	URN       string          `json:"urn"`
+	Name      string          `json:"name"`
+	Project   string          `json:"project"`
+	Configs   json.RawMessage `json:"configs"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
 }
 
 // Descriptor is a module descriptor that represents supported actions, resource-kind
@@ -41,7 +38,21 @@ type Descriptor struct {
 	DriverFactory func(conf json.RawMessage) (Driver, error) `json:"-"`
 }
 
-func (Module) Validate() error {
+func (mod *Module) sanitise(isCreate bool) error {
+	if mod.Name == "" {
+		return errors.ErrInvalid.WithMsgf("name must be set")
+	}
+
+	if mod.Project == "" {
+		return errors.ErrInvalid.WithMsgf("project must be set")
+	}
+
+	if isCreate {
+		mod.URN = generateURN(mod.Name, mod.Project)
+		mod.CreatedAt = time.Now()
+		mod.UpdatedAt = mod.CreatedAt
+	}
+	mod.URN = strings.TrimSpace(mod.URN)
 	return nil
 }
 
@@ -56,6 +67,7 @@ func (desc Descriptor) validateDependencies(dependencies map[string]ResolvedDepe
 				WithMsgf("value for '%s' must be of kind '%s', not '%s'", key, wantKind, resolvedDep.Kind)
 		}
 	}
+
 	return nil
 }
 

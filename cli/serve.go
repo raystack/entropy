@@ -83,7 +83,7 @@ func runServer(baseCtx context.Context, nrApp *newrelic.Application, zapLog *zap
 	}
 
 	store := setupStorage(zapLog, cfg.PGConnStr)
-	moduleRegistry := setupRegistry(zapLog, modules...)
+	moduleRegistry := setupRegistry(zapLog, store, modules...)
 	resourceService := core.New(store, moduleRegistry, asyncWorker, time.Now, zapLog)
 
 	if err := asyncWorker.Register(core.JobKindSyncResource, resourceService.HandleSyncJob); err != nil {
@@ -97,8 +97,8 @@ func runServer(baseCtx context.Context, nrApp *newrelic.Application, zapLog *zap
 	return entropyserver.Serve(ctx, cfg.Service.addr(), nrApp, zapLog, resourceService, moduleRegistry)
 }
 
-func setupRegistry(logger *zap.Logger, modules ...module.Descriptor) *module.Registry {
-	moduleRegistry := module.NewRegistry(nil)
+func setupRegistry(logger *zap.Logger, store module.Store, modules ...module.Descriptor) *module.Registry {
+	moduleRegistry := module.NewRegistry(store)
 	for _, desc := range modules {
 		if err := moduleRegistry.Register(desc); err != nil {
 			logger.Fatal("failed to register module",

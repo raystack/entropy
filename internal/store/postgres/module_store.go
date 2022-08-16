@@ -16,14 +16,10 @@ func (st *Store) GetModule(ctx context.Context, urn string) (*module.Module, err
 		return nil, err
 	}
 	return &module.Module{
-		URN:     rec.URN,
-		Name:    rec.Name,
-		Project: rec.Project,
-		Spec: module.Spec{
-			Path:    rec.SpecPath,
-			Loader:  rec.SpecLoader,
-			Configs: rec.SpecConfigs,
-		},
+		URN:       rec.URN,
+		Name:      rec.Name,
+		Project:   rec.Project,
+		Configs:   rec.Configs,
 		CreatedAt: rec.CreatedAt,
 		UpdatedAt: rec.UpdatedAt,
 	}, nil
@@ -73,10 +69,8 @@ func (st *Store) UpdateModule(ctx context.Context, m module.Module) error {
 	updateSpec := sq.Update(tableModules).
 		Where(sq.Eq{"urn": m.URN}).
 		SetMap(map[string]interface{}{
-			"updated_at":   sq.Expr("current_timestamp"),
-			"spec_configs": m.Spec.Configs,
-			"spec_loader":  m.Spec.Loader,
-			"spec_path":    m.Spec.Path,
+			"configs":    m.Configs,
+			"updated_at": sq.Expr("current_timestamp"),
 		}).
 		PlaceholderFormat(sq.Dollar)
 

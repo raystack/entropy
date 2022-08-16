@@ -2,9 +2,9 @@ package module
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
 	"sync"
 
 	"github.com/xeipuuv/gojsonschema"
@@ -61,6 +61,11 @@ func (mr *Registry) PlanAction(ctx context.Context, spec ExpandedResource, act A
 
 	driver, desc, err := mr.initDriver(ctx, kind, spec.Project)
 	if err != nil {
+		if errors.Is(err, errors.ErrNotFound) {
+			return nil, errors.ErrInvalid.WithMsgf(
+				"kind '%s' is not valid in project '%s'",
+				kind, spec.Project)
+		}
 		return nil, err
 	} else if err := desc.validateDependencies(spec.Dependencies); err != nil {
 		return nil, err
@@ -109,21 +114,40 @@ func (mr *Registry) ListModules(ctx context.Context, project string) ([]Module, 
 }
 
 func (mr *Registry) CreateModule(ctx context.Context, mod Module) (*Module, error) {
-	if err := mod.Validate(); err != nil {
+	if err := mod.sanitise(true); err != nil {
 		return nil, err
 	}
+
+	if desc, exists := mr.descriptors[mod.Name]; !exists {
+		return nil, errors.ErrInvalid.WithMsgf("driver not found for kind '%s'", mod.Name)
+	} else if _, err := desc.DriverFactory(mod.Configs); err != nil {
+		if errors.Is(err, errors.ErrInvalid) {
+			return nil, errors.ErrInvalid.WithMsgf("driver init failed with given configs").WithCausef(err.Error())
+		}
+		return nil, err
+	}
+
 	if err := mr.store.CreateModule(ctx, mod); err != nil {
+		if errors.Is(err, errors.ErrConflict) {
+			return nil, errors.ErrConflict.
+				WithMsgf("module with given name and project already exists").
+				WithCausef(err.Error())
+		}
 		return nil, err
 	}
 	return &mod, nil
 }
 
-func (mr *Registry) UpdateModule(ctx context.Context, urn string, spec Spec) (*Module, error) {
+func (mr *Registry) UpdateModule(ctx context.Context, urn string, newConfigs json.RawMessage) (*Module, error) {
 	mod, err := mr.store.GetModule(ctx, urn)
 	if err != nil {
 		return nil, err
 	}
-	mod.Spec.Configs = spec.Configs
+	mod.Configs = newConfigs
+
+	if err := mod.sanitise(false); err != nil {
+		return nil, err
+	}
 
 	if err := mr.store.UpdateModule(ctx, *mod); err != nil {
 		return nil, err
@@ -137,6 +161,7 @@ func (mr *Registry) DeleteModule(ctx context.Context, urn string) error {
 
 func (mr *Registry) initDriver(ctx context.Context, kind, project string) (Driver, Descriptor, error) {
 	urn := generateURN(kind, project)
+
 	m, err := mr.store.GetModule(ctx, urn)
 	if err != nil {
 		return nil, Descriptor{}, err
@@ -149,7 +174,7 @@ func (mr *Registry) initDriver(ctx context.Context, kind, project string) (Drive
 		return nil, Descriptor{}, errors.ErrInvalid.WithMsgf("kind '%s' is not valid", kind)
 	}
 
-	driver, err := desc.DriverFactory(m.Spec.Configs)
+	driver, err := desc.DriverFactory(m.Configs)
 	if err != nil {
 		return nil, Descriptor{}, errors.ErrInternal.WithCausef(err.Error())
 	}
@@ -157,8 +182,5 @@ func (mr *Registry) initDriver(ctx context.Context, kind, project string) (Drive
 }
 
 func generateURN(name, project string) string {
-	if strings.HasPrefix(name, "orn:entropy:module") {
-		return name
-	}
 	return fmt.Sprintf("orn:entropy:module:%s:%s", project, name)
 }

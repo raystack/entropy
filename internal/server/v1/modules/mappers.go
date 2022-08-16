@@ -8,48 +8,30 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/odpf/entropy/core/module"
+	"github.com/odpf/entropy/pkg/errors"
 )
 
 func moduleToProto(mod module.Module) (*entropyv1beta1.Module, error) {
-	spec, err := moduleSpecToProto(mod.Spec)
-	if err != nil {
-		return nil, err
+	var conf *structpb.Value
+	if len(mod.Configs) > 0 {
+		conf = &structpb.Value{}
+		if err := json.Unmarshal(mod.Configs, &conf); err != nil {
+			return nil, err
+		}
 	}
 
 	return &entropyv1beta1.Module{
 		Urn:       mod.URN,
 		Name:      mod.Name,
-		Spec:      spec,
+		Configs:   conf,
 		Project:   mod.Project,
 		CreatedAt: timestamppb.New(mod.CreatedAt),
 		UpdatedAt: timestamppb.New(mod.UpdatedAt),
 	}, nil
 }
 
-func moduleSpecToProto(spec module.Spec) (*entropyv1beta1.ModuleSpec, error) {
-	conf := structpb.Value{}
-	if err := json.Unmarshal(spec.Configs, &conf); err != nil {
-		return nil, err
-	}
-
-	var loaderType entropyv1beta1.ModuleSpec_LoaderType
-	switch spec.Loader {
-	case "go":
-		loaderType = entropyv1beta1.ModuleSpec_LOADER_TYPE_GO
-
-	default:
-		loaderType = entropyv1beta1.ModuleSpec_LOADER_TYPE_UNSPECIFIED
-	}
-
-	return &entropyv1beta1.ModuleSpec{
-		Path:    spec.Path,
-		Loader:  loaderType,
-		Configs: &conf,
-	}, nil
-}
-
 func moduleFromProto(res *entropyv1beta1.Module) (*module.Module, error) {
-	spec, err := moduleSpecFromProto(res.Spec)
+	confJSON, err := getConfigsAsRawJSON(res)
 	if err != nil {
 		return nil, err
 	}
@@ -57,22 +39,25 @@ func moduleFromProto(res *entropyv1beta1.Module) (*module.Module, error) {
 	return &module.Module{
 		URN:       res.GetUrn(),
 		Name:      res.GetName(),
-		Spec:      *spec,
+		Configs:   confJSON,
 		Project:   res.GetProject(),
 		CreatedAt: res.GetCreatedAt().AsTime(),
 		UpdatedAt: res.GetUpdatedAt().AsTime(),
 	}, nil
 }
 
-func moduleSpecFromProto(spec *entropyv1beta1.ModuleSpec) (*module.Spec, error) {
-	confJSON, err := spec.GetConfigs().MarshalJSON()
-	if err != nil {
-		return nil, err
-	}
+func getConfigsAsRawJSON(v interface{ GetConfigs() *structpb.Value }) ([]byte, error) {
+	var errInvalidJSON = errors.ErrInvalid.WithMsgf("'configs' field must be specified and must be valid JSON")
 
-	return &module.Spec{
-		Path:    spec.Path,
-		Loader:  spec.Loader.String(),
-		Configs: confJSON,
-	}, nil
+	var confJSON []byte
+	if confVal := v.GetConfigs(); confVal != nil {
+		var err error
+		confJSON, err = confVal.MarshalJSON()
+		if err != nil {
+			return nil, errInvalidJSON.WithCausef(err.Error())
+		}
+	} else {
+		return nil, errInvalidJSON
+	}
+	return confJSON, nil
 }

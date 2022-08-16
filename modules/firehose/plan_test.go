@@ -123,7 +123,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		},
 		{
 			title: "WithStopTimeConfiguration",
-			spec:  module.Spec{Resource: res},
+			spec:  module.ExpandedResource{Resource: res},
 			act: module.ActionRequest{
 				Name:   module.CreateAction,
 				Params: []byte(`{"state":"RUNNING","stop_time":"3022-07-13T00:40:14.028016Z","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),

@@ -57,12 +57,12 @@ CREATE INDEX IF NOT EXISTS idx_revision_tags_tag ON revision_tags (tag);
 
 --
 CREATE TABLE IF NOT EXISTS modules (
-   urn          TEXT NOT NULL PRIMARY KEY,
-   name         TEXT NOT NULL,
-   project      TEXT NOT NULL,
+   urn          TEXT  NOT NULL PRIMARY KEY,
+   name         TEXT  NOT NULL,
+   project      TEXT  NOT NULL,
+   configs      jsonb NOT NULL,
    created_at   timestamp with time zone NOT NULL DEFAULT current_timestamp,
-   updated_at   timestamp with time zone NOT NULL DEFAULT current_timestamp,
-   spec_loader  TEXT NOT NULL,
-   spec_path    TEXT NOT NULL,
-   spec_configs bytea NOT NULL
+   updated_at   timestamp with time zone NOT NULL DEFAULT current_timestamp
 );
+
+CREATE INDEX IF NOT EXISTS idx_modules_project ON modules (project);
