@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -28,14 +27,20 @@ func parseFile(filePath string, v protoreflect.ProtoMessage) error {
 		return err
 	}
 
+	unmarshalOpts := protojson.UnmarshalOptions{}
+
 	switch filepath.Ext(filePath) {
 	case ".json":
-		if err := json.Unmarshal(b, v); err != nil {
+		if err := unmarshalOpts.Unmarshal(b, v); err != nil {
 			return fmt.Errorf("invalid json: %w", err)
 		}
 
 	case ".yaml", ".yml":
-		if err := yaml.Unmarshal(b, v); err != nil {
+		j, err := yaml.YAMLToJSON(b)
+		if err != nil {
+			return fmt.Errorf("invalid yaml: %w", err)
+		}
+		if err := unmarshalOpts.Unmarshal(j, v); err != nil {
 			return fmt.Errorf("invalid yaml: %w", err)
 		}
 
@@ -48,8 +53,9 @@ func parseFile(filePath string, v protoreflect.ProtoMessage) error {
 
 func formatOutput(i protoreflect.ProtoMessage, format string) (string, error) {
 	marshalOpts := protojson.MarshalOptions{
-		Indent:    "\t",
-		Multiline: true,
+		Indent:        "\t",
+		Multiline:     true,
+		UseProtoNames: true,
 	}
 
 	b, e := marshalOpts.Marshal(i)
