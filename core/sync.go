@@ -33,12 +33,17 @@ func (s *Service) enqueueSyncJob(ctx context.Context, res resource.Resource, run
 		return err
 	}
 
-	return s.worker.Enqueue(ctx, worker.Job{
-		ID:      fmt.Sprintf(jobType+"-%s-%d", res.URN, res.UpdatedAt.Unix()),
+	job := worker.Job{
+		ID:      fmt.Sprintf(jobType+"-%s-%d", res.URN, runAt.Unix()),
 		Kind:    jobType,
 		RunAt:   runAt,
 		Payload: payload,
-	})
+	}
+
+	if err := s.worker.Enqueue(ctx, job); err != nil && !errors.Is(err, worker.ErrJobExists) {
+		return err
+	}
+	return nil
 }
 
 // HandleSyncJob is meant to be invoked by asyncWorker when an enqueued job is

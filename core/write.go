@@ -2,12 +2,10 @@ package core
 
 import (
 	"context"
-	"time"
 
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
-	"github.com/odpf/entropy/pkg/worker"
 )
 
 func (s *Service) CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error) {
@@ -107,16 +105,12 @@ func (s *Service) upsert(ctx context.Context, plan module.Plan, isCreate bool) e
 			return nil
 		}
 
-		return s.enqueueSyncJob(ctx, plan.Resource, time.Now(), JobKindSyncResource)
+		return s.enqueueSyncJob(ctx, plan.Resource, s.clock(), JobKindSyncResource)
 	})
 
 	if !plan.ScheduleRunAt.IsZero() {
 		hooks = append(hooks, func(ctx context.Context) error {
-			err := s.enqueueSyncJob(ctx, plan.Resource, plan.ScheduleRunAt, JobKindScheduledSyncResource)
-			if err != nil && !errors.Is(err, worker.ErrJobExists) {
-				return err
-			}
-			return nil
+			return s.enqueueSyncJob(ctx, plan.Resource, plan.ScheduleRunAt, JobKindScheduledSyncResource)
 		})
 	}
 
