@@ -112,7 +112,7 @@ func (w *Worker) runWorker(ctx context.Context) {
 			if len(kinds) == 0 {
 				w.logger.Warn("no job-handler registered, skipping dequeue")
 			} else {
-				w.logger.Info("looking for a job", zap.Strings("kinds", kinds))
+				w.logger.Debug("looking for a job", zap.Strings("kinds", kinds))
 				if err := w.queue.Dequeue(ctx, kinds, w.handleJob); err != nil {
 					w.logger.Error("dequeue failed", zap.Error(err))
 				}

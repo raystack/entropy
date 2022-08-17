@@ -90,6 +90,10 @@ func runServer(baseCtx context.Context, nrApp *newrelic.Application, zapLog *zap
 		return err
 	}
 
+	if err := asyncWorker.Register(core.JobKindScheduledSyncResource, service.HandleSyncJob); err != nil {
+		return err
+	}
+
 	return entropyserver.Serve(ctx, cfg.Service.addr(), nrApp, zapLog, service)
 }
 

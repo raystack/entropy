@@ -25,3 +25,5 @@ tmp/
 expt/
 
 entropy.dev.yaml
+
+requests.http

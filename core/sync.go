@@ -6,19 +6,23 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
 	"github.com/odpf/entropy/pkg/worker"
 )
 
-const JobKindSyncResource = "sync_resource"
+const (
+	JobKindSyncResource          = "sync_resource"
+	JobKindScheduledSyncResource = "sched_sync_resource"
+)
 
 type syncJobPayload struct {
 	ResourceURN string    `json:"resource_urn"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-func (s *Service) enqueueSyncJob(ctx context.Context, res resource.Resource) error {
+func (s *Service) enqueueSyncJob(ctx context.Context, res resource.Resource, runAt time.Time, jobType string) error {
 	data := syncJobPayload{
 		ResourceURN: res.URN,
 		UpdatedAt:   res.UpdatedAt,
@@ -29,12 +33,17 @@ func (s *Service) enqueueSyncJob(ctx context.Context, res resource.Resource) err
 		return err
 	}
 
-	return s.worker.Enqueue(ctx, worker.Job{
-		ID:      fmt.Sprintf("sync-%s-%d", res.URN, res.UpdatedAt.Unix()),
-		Kind:    JobKindSyncResource,
-		RunAt:   time.Now(),
+	job := worker.Job{
+		ID:      fmt.Sprintf(jobType+"-%s-%d", res.URN, runAt.Unix()),
+		Kind:    jobType,
+		RunAt:   runAt,
 		Payload: payload,
-	})
+	}
+
+	if err := s.worker.Enqueue(ctx, job); err != nil && !errors.Is(err, worker.ErrJobExists) {
+		return err
+	}
+	return nil
 }
 
 // HandleSyncJob is meant to be invoked by asyncWorker when an enqueued job is
@@ -94,7 +103,7 @@ func (s *Service) syncChange(ctx context.Context, urn string) (*resource.Resourc
 			return nil, err
 		}
 	} else {
-		if err := s.upsert(ctx, *res, false); err != nil {
+		if err := s.upsert(ctx, module.Plan{Resource: *res}, false); err != nil {
 			return nil, err
 		}
 	}

@@ -4,8 +4,10 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/odpf/entropy/core/resource"
+	"github.com/odpf/entropy/pkg/errors"
 	"github.com/odpf/entropy/pkg/helm"
 )
 
@@ -33,6 +35,7 @@ var (
 type moduleConfig struct {
 	State        string                 `json:"state"`
 	ChartVersion string                 `json:"chart_version"`
+	StopTime     *time.Time             `json:"stop_time"`
 	Telegraf     map[string]interface{} `json:"telegraf"`
 	Firehose     struct {
 		Replicas           int               `json:"replicas"`
@@ -43,10 +46,15 @@ type moduleConfig struct {
 	} `json:"firehose"`
 }
 
-func (mc *moduleConfig) sanitiseAndValidate() {
+func (mc *moduleConfig) sanitiseAndValidate() error {
+	if mc.StopTime != nil && mc.StopTime.Before(time.Now()) {
+		return errors.ErrInvalid.
+			WithMsgf("value for stop_time must be greater than current time")
+	}
 	if mc.ChartVersion == "" {
 		mc.ChartVersion = defaultVersionString
 	}
+	return nil
 }
 
 func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) *helm.ReleaseConfig {

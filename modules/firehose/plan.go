@@ -9,7 +9,7 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-func (m *firehoseModule) Plan(_ context.Context, spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+func (m *firehoseModule) Plan(_ context.Context, spec module.Spec, act module.ActionRequest) (*module.Plan, error) {
 	switch act.Name {
 	case module.CreateAction:
 		return m.planCreate(spec, act)
@@ -20,14 +20,17 @@ func (m *firehoseModule) Plan(_ context.Context, spec module.Spec, act module.Ac
 	}
 }
 
-func (*firehoseModule) planCreate(spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+func (*firehoseModule) planCreate(spec module.Spec, act module.ActionRequest) (*module.Plan, error) {
+	var plan module.Plan
 	r := spec.Resource
 
 	var reqConf moduleConfig
 	if err := json.Unmarshal(act.Params, &reqConf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 	}
-	reqConf.sanitiseAndValidate()
+	if err := reqConf.sanitiseAndValidate(); err != nil {
+		return nil, err
+	}
 
 	r.Spec.Configs = reqConf.JSON()
 	r.State = resource.State{
@@ -36,10 +39,16 @@ func (*firehoseModule) planCreate(spec module.Spec, act module.ActionRequest) (*
 			PendingSteps: []string{releaseCreate},
 		}.JSON(),
 	}
-	return &r, nil
+
+	plan.Resource = r
+	if reqConf.StopTime != nil {
+		plan.ScheduleRunAt = *reqConf.StopTime
+	}
+	return &plan, nil
 }
 
-func (*firehoseModule) planChange(spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+func (*firehoseModule) planChange(spec module.Spec, act module.ActionRequest) (*module.Plan, error) {
+	var plan module.Plan
 	r := spec.Resource
 
 	var conf moduleConfig
@@ -53,8 +62,14 @@ func (*firehoseModule) planChange(spec module.Spec, act module.ActionRequest) (*
 		if err := json.Unmarshal(act.Params, &reqConf); err != nil {
 			return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 		}
-		reqConf.sanitiseAndValidate()
+		if err := reqConf.sanitiseAndValidate(); err != nil {
+			return nil, err
+		}
 		conf = reqConf
+
+		if conf.StopTime != nil {
+			plan.ScheduleRunAt = *conf.StopTime
+		}
 
 	case ScaleAction:
 		var scaleParams struct {
@@ -79,10 +94,11 @@ func (*firehoseModule) planChange(spec module.Spec, act module.ActionRequest) (*
 			PendingSteps: []string{releaseUpdate},
 		}.JSON(),
 	}
-	return &r, nil
+	plan.Resource = r
+	return &plan, nil
 }
 
-func (*firehoseModule) planReset(spec module.Spec, act module.ActionRequest) (*resource.Resource, error) {
+func (*firehoseModule) planReset(spec module.Spec, act module.ActionRequest) (*module.Plan, error) {
 	r := spec.Resource
 
 	var conf moduleConfig
@@ -115,5 +131,6 @@ func (*firehoseModule) planReset(spec module.Spec, act module.ActionRequest) (*r
 			StateOverride: stateStopped,
 		}.JSON(),
 	}
-	return &r, nil
+
+	return &module.Plan{Resource: r}, nil
 }
