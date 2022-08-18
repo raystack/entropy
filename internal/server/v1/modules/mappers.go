@@ -47,17 +47,16 @@ func moduleFromProto(res *entropyv1beta1.Module) (*module.Module, error) {
 }
 
 func getConfigsAsRawJSON(v interface{ GetConfigs() *structpb.Value }) ([]byte, error) {
-	var errInvalidJSON = errors.ErrInvalid.WithMsgf("'configs' field must be specified and must be valid JSON")
+	errInvalidJSON := errors.ErrInvalid.WithMsgf("'configs' field must be specified and must be valid JSON")
 
-	var confJSON []byte
-	if confVal := v.GetConfigs(); confVal != nil {
-		var err error
-		confJSON, err = confVal.MarshalJSON()
-		if err != nil {
-			return nil, errInvalidJSON.WithCausef(err.Error())
-		}
-	} else {
+	confVal := v.GetConfigs()
+	if confVal == nil {
 		return nil, errInvalidJSON
+	}
+
+	confJSON, err := confVal.MarshalJSON()
+	if err != nil {
+		return nil, errInvalidJSON.WithCausef(err.Error())
 	}
 	return confJSON, nil
 }

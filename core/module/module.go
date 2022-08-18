@@ -1,6 +1,7 @@
 package module
 
 //go:generate mockery --name=Store -r --case underscore --with-expecter --structname ModuleStore --filename=module_store.go --output=../mocks
+//go:generate mockery --name=Registry -r --case underscore --with-expecter --structname ModuleRegistry --filename=module_registry.go --output=../mocks
 
 import (
 	"context"
@@ -10,14 +11,6 @@ import (
 
 	"github.com/odpf/entropy/pkg/errors"
 )
-
-type Store interface {
-	GetModule(ctx context.Context, urn string) (*Module, error)
-	ListModules(ctx context.Context, project string) ([]Module, error)
-	CreateModule(ctx context.Context, m Module) error
-	UpdateModule(ctx context.Context, m Module) error
-	DeleteModule(ctx context.Context, urn string) error
-}
 
 // Module represents all the data needed to initialize a particular module.
 type Module struct {
@@ -36,6 +29,21 @@ type Descriptor struct {
 	Actions       []ActionDesc                               `json:"actions"`
 	Dependencies  map[string]string                          `json:"dependencies"`
 	DriverFactory func(conf json.RawMessage) (Driver, error) `json:"-"`
+}
+
+// Registry is responsible for installing and managing module-drivers as per
+// module definitions provided.
+type Registry interface {
+	GetDriver(ctx context.Context, mod Module) (Driver, Descriptor, error)
+}
+
+// Store is responsible for persisting modules defined for each project.
+type Store interface {
+	GetModule(ctx context.Context, urn string) (*Module, error)
+	ListModules(ctx context.Context, project string) ([]Module, error)
+	CreateModule(ctx context.Context, m Module) error
+	UpdateModule(ctx context.Context, m Module) error
+	DeleteModule(ctx context.Context, urn string) error
 }
 
 func (mod *Module) sanitise(isCreate bool) error {
