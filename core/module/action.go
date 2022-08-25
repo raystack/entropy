@@ -30,6 +30,23 @@ type ActionDesc struct {
 	schema *gojsonschema.Schema
 }
 
+// Sanitise cleans action description by removing whitespaces, checking
+// parameter-schema etc.
+func (ad *ActionDesc) Sanitise() error {
+	if ad.ParamSchema == "" {
+		return nil
+	}
+
+	var err error
+	ad.schema, err = gojsonschema.NewSchema(gojsonschema.NewStringLoader(ad.ParamSchema))
+	if err != nil {
+		return errors.ErrInvalid.
+			WithMsgf("parameter schema for action '%s' is not valid", ad.Name).
+			WithCausef(err.Error())
+	}
+	return nil
+}
+
 func (ad ActionDesc) validateReq(req ActionRequest) error {
 	if ad.schema == nil {
 		return nil

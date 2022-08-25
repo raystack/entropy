@@ -86,7 +86,7 @@ func (s *Service) syncChange(ctx context.Context, urn string) (*resource.Resourc
 	}
 
 	oldState := res.State.Clone()
-	newState, err := s.rootModule.Sync(ctx, *modSpec)
+	newState, err := s.moduleSvc.SyncState(ctx, *modSpec)
 	if err != nil {
 		if errors.Is(err, errors.ErrInvalid) {
 			return nil, err

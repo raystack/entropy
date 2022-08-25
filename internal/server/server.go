@@ -2,10 +2,8 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	gorillamux "github.com/gorilla/mux"
@@ -22,19 +20,23 @@ import (
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.uber.org/zap"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	handlersv1 "github.com/odpf/entropy/internal/server/v1"
+	"github.com/odpf/entropy/internal/server/serverutils"
+	modulesv1 "github.com/odpf/entropy/internal/server/v1/modules"
+	resourcesv1 "github.com/odpf/entropy/internal/server/v1/resources"
 	"github.com/odpf/entropy/pkg/version"
 )
 
 const defaultGracePeriod = 5 * time.Second
 
-func Serve(ctx context.Context, addr string, nrApp *newrelic.Application, logger *zap.Logger, resourceSvc handlersv1.ResourceService) error {
+// Serve initialises all the gRPC+HTTP API routes, starts listening for requests at addr, and blocks until server exits.
+// Server exits gracefully when context is cancelled.
+func Serve(ctx context.Context, addr string, nrApp *newrelic.Application, logger *zap.Logger,
+	resourceSvc resourcesv1.ResourceService, moduleSvc modulesv1.ModuleService,
+) error {
 	grpcOpts := []grpc.ServerOption{
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			grpc_recovery.UnaryServerInterceptor(),
@@ -63,9 +65,15 @@ func Serve(ctx context.Context, addr string, nrApp *newrelic.Application, logger
 		return err
 	}
 
-	resourceServiceRPC := handlersv1.NewAPIServer(resourceSvc)
+	resourceServiceRPC := resourcesv1.NewAPIServer(resourceSvc)
 	grpcServer.RegisterService(&entropyv1beta1.ResourceService_ServiceDesc, resourceServiceRPC)
 	if err := entropyv1beta1.RegisterResourceServiceHandlerServer(ctx, rpcHTTPGateway, resourceServiceRPC); err != nil {
+		return err
+	}
+
+	moduleServiceRPC := modulesv1.NewAPIServer(moduleSvc)
+	grpcServer.RegisterService(&entropyv1beta1.ModuleService_ServiceDesc, moduleServiceRPC)
+	if err := entropyv1beta1.RegisterModuleServiceHandlerServer(ctx, rpcHTTPGateway, moduleServiceRPC); err != nil {
 		return err
 	}
 
@@ -76,47 +84,13 @@ func Serve(ctx context.Context, addr string, nrApp *newrelic.Application, logger
 		_, _ = fmt.Fprintf(wr, "pong")
 	}))
 
-	logger.Info("starting server", zap.String("addr", addr))
-
 	httpRouter.Use(
 		requestID(),
 		withOpenCensus(),
 		requestLogger(logger), // nolint
 	)
-	h := grpcHandlerFunc(grpcServer, httpRouter)
-	return gracefulServe(ctx, logger, defaultGracePeriod, addr, h)
-}
 
-func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
-	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
-			grpcServer.ServeHTTP(w, r)
-		} else {
-			otherHandler.ServeHTTP(w, r)
-		}
-	}), &http2.Server{})
-}
-
-func gracefulServe(ctx context.Context, lg *zap.Logger, gracePeriod time.Duration, addr string, h http.Handler) error {
-	srv := &http.Server{
-		Addr:    addr,
-		Handler: h,
-	}
-
-	go func() {
-		<-ctx.Done()
-
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), gracePeriod)
-		defer cancel()
-
-		if err := srv.Shutdown(shutdownCtx); err != nil { // nolint
-			lg.Error("graceful shutdown failed", zap.Error(err))
-			return
-		}
-	}()
-
-	if err := srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
-		return err
-	}
-	return nil
+	logger.Info("starting server", zap.String("addr", addr))
+	h := serverutils.MultiplexHTTPAndGRPC(grpcServer, httpRouter)
+	return serverutils.GracefulServe(ctx, logger, defaultGracePeriod, addr, h)
 }

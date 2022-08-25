@@ -25,7 +25,7 @@ var (
 	ErrKubeAPI = worker.RetryableError{RetryAfter: kubeAPIRetryBackoffDuration}
 )
 
-func (m *firehoseModule) Sync(ctx context.Context, spec module.Spec) (*resource.State, error) {
+func (m *firehoseModule) Sync(ctx context.Context, spec module.ExpandedResource) (*resource.State, error) {
 	r := spec.Resource
 
 	var data moduleData

@@ -10,7 +10,7 @@ import (
 	"github.com/odpf/entropy/pkg/kube"
 )
 
-func (*firehoseModule) Log(ctx context.Context, spec module.Spec, filter map[string]string) (<-chan module.LogChunk, error) {
+func (*firehoseModule) Log(ctx context.Context, spec module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error) {
 	r := spec.Resource
 
 	var conf moduleConfig

@@ -2,6 +2,7 @@ package firehose
 
 import (
 	_ "embed"
+	"encoding/json"
 
 	"github.com/odpf/entropy/core/module"
 	"github.com/odpf/entropy/modules/kubernetes"
@@ -17,7 +18,6 @@ const (
 const (
 	releaseCreate = "release_create"
 	releaseUpdate = "release_update"
-
 	consumerReset = "consumer_reset"
 )
 
@@ -32,9 +32,7 @@ const (
 	ResetToLatest   = "LATEST"
 )
 
-const (
-	keyKubeDependency = "kube_cluster"
-)
+const keyKubeDependency = "kube_cluster"
 
 var Module = module.Descriptor{
 	Kind: "firehose",
@@ -71,7 +69,9 @@ var Module = module.Descriptor{
 			ParamSchema: resetActionSchema,
 		},
 	},
-	Module: &firehoseModule{},
+	DriverFactory: func(conf json.RawMessage) (module.Driver, error) {
+		return &firehoseModule{}, nil
+	},
 }
 
 type firehoseModule struct{}

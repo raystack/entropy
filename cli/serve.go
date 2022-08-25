@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/newrelic/go-agent/v3/newrelic"
@@ -13,6 +12,7 @@ import (
 	"github.com/odpf/entropy/core/module"
 	entropyserver "github.com/odpf/entropy/internal/server"
 	"github.com/odpf/entropy/internal/store/postgres"
+	"github.com/odpf/entropy/modules"
 	"github.com/odpf/entropy/modules/firehose"
 	"github.com/odpf/entropy/modules/kubernetes"
 	"github.com/odpf/entropy/pkg/logger"
@@ -77,38 +77,37 @@ func runServer(baseCtx context.Context, nrApp *newrelic.Application, zapLog *zap
 	ctx, cancel := context.WithCancel(baseCtx)
 	defer cancel()
 
-	modules := []module.Descriptor{
+	store := setupStorage(zapLog, cfg.PGConnStr)
+	moduleService := module.NewService(setupRegistry(zapLog), store)
+	resourceService := core.New(store, moduleService, asyncWorker, time.Now, zapLog)
+
+	if err := asyncWorker.Register(core.JobKindSyncResource, resourceService.HandleSyncJob); err != nil {
+		return err
+	}
+
+	if err := asyncWorker.Register(core.JobKindScheduledSyncResource, resourceService.HandleSyncJob); err != nil {
+		return err
+	}
+
+	return entropyserver.Serve(ctx, cfg.Service.addr(), nrApp, zapLog, resourceService, moduleService)
+}
+
+func setupRegistry(logger *zap.Logger) module.Registry {
+	supported := []module.Descriptor{
 		kubernetes.Module,
 		firehose.Module,
 	}
 
-	store := setupStorage(zapLog, cfg.PGConnStr)
-	moduleRegistry := setupRegistry(zapLog, modules...)
-	service := core.New(store, moduleRegistry, asyncWorker, time.Now, zapLog)
-
-	if err := asyncWorker.Register(core.JobKindSyncResource, service.HandleSyncJob); err != nil {
-		return err
-	}
-
-	if err := asyncWorker.Register(core.JobKindScheduledSyncResource, service.HandleSyncJob); err != nil {
-		return err
-	}
-
-	return entropyserver.Serve(ctx, cfg.Service.addr(), nrApp, zapLog, service)
-}
-
-func setupRegistry(logger *zap.Logger, modules ...module.Descriptor) *module.Registry {
-	moduleRegistry := module.NewRegistry()
-	for _, desc := range modules {
-		if err := moduleRegistry.Register(desc); err != nil {
+	registry := &modules.Registry{}
+	for _, desc := range supported {
+		if err := registry.Register(desc); err != nil {
 			logger.Fatal("failed to register module",
 				zap.String("module_kind", desc.Kind),
-				zap.String("go_type", reflect.TypeOf(desc.Module).String()),
 				zap.Error(err),
 			)
 		}
 	}
-	return moduleRegistry
+	return registry
 }
 
 func setupWorker(logger *zap.Logger, conf workerConf) *worker.Worker {

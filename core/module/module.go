@@ -1,57 +1,67 @@
 package module
 
-//go:generate mockery --name=Module -r --case underscore --with-expecter --structname Module --filename=module.go --output=../mocks
+//go:generate mockery --name=Store -r --case underscore --with-expecter --structname ModuleStore --filename=module_store.go --output=../mocks
+//go:generate mockery --name=Registry -r --case underscore --with-expecter --structname ModuleRegistry --filename=module_registry.go --output=../mocks
 
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
-	"github.com/odpf/entropy/core/resource"
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-// Module is responsible for achieving desired external system states based
-// on a resource in Entropy.
-type Module interface {
-	// Plan SHOULD validate the action on the current version of the resource,
-	// return the resource with config/status/state changes (if any) applied.
-	// Plan SHOULD NOT have side effects on anything other than the resource.
-	Plan(ctx context.Context, spec Spec, act ActionRequest) (*Plan, error)
-
-	// Sync is called repeatedly by Entropy core until the returned state is
-	// a terminal status. Module implementation is free to execute an action
-	// in a single Sync() call or split into steps for better feedback to the
-	// end-user about the progress.
-	// Sync can return state in resource.StatusDeleted to indicate resource
-	// should be removed from the Entropy storage.
-	Sync(ctx context.Context, spec Spec) (*resource.State, error)
-}
-
-// Plan represents the changes to be staged and later synced by module.
-type Plan struct {
-	Resource      resource.Resource
-	ScheduleRunAt time.Time
-}
-
-// Spec represents the context for Plan() or Sync() invocations.
-type Spec struct {
-	Resource     resource.Resource             `json:"resource"`
-	Dependencies map[string]ResolvedDependency `json:"dependencies"`
-}
-
-type ResolvedDependency struct {
-	Kind   string          `json:"kind"`
-	Output json.RawMessage `json:"output"`
+// Module represents all the data needed to initialize a particular module.
+type Module struct {
+	URN       string          `json:"urn"`
+	Name      string          `json:"name"`
+	Project   string          `json:"project"`
+	Configs   json.RawMessage `json:"configs"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
 }
 
 // Descriptor is a module descriptor that represents supported actions, resource-kind
 // the module can operate on, etc.
 type Descriptor struct {
-	Kind         string            `json:"kind"`
-	Actions      []ActionDesc      `json:"actions"`
-	Dependencies map[string]string `json:"dependencies"`
-	Module       Module            `json:"-"`
+	Kind          string                                     `json:"kind"`
+	Actions       []ActionDesc                               `json:"actions"`
+	Dependencies  map[string]string                          `json:"dependencies"`
+	DriverFactory func(conf json.RawMessage) (Driver, error) `json:"-"`
+}
+
+// Registry is responsible for installing and managing module-drivers as per
+// module definitions provided.
+type Registry interface {
+	GetDriver(ctx context.Context, mod Module) (Driver, Descriptor, error)
+}
+
+// Store is responsible for persisting modules defined for each project.
+type Store interface {
+	GetModule(ctx context.Context, urn string) (*Module, error)
+	ListModules(ctx context.Context, project string) ([]Module, error)
+	CreateModule(ctx context.Context, m Module) error
+	UpdateModule(ctx context.Context, m Module) error
+	DeleteModule(ctx context.Context, urn string) error
+}
+
+func (mod *Module) sanitise(isCreate bool) error {
+	if mod.Name == "" {
+		return errors.ErrInvalid.WithMsgf("name must be set")
+	}
+
+	if mod.Project == "" {
+		return errors.ErrInvalid.WithMsgf("project must be set")
+	}
+
+	if isCreate {
+		mod.URN = generateURN(mod.Name, mod.Project)
+		mod.CreatedAt = time.Now()
+		mod.UpdatedAt = mod.CreatedAt
+	}
+	mod.URN = strings.TrimSpace(mod.URN)
+	return nil
 }
 
 func (desc Descriptor) validateDependencies(dependencies map[string]ResolvedDependency) error {
@@ -65,10 +75,11 @@ func (desc Descriptor) validateDependencies(dependencies map[string]ResolvedDepe
 				WithMsgf("value for '%s' must be of kind '%s', not '%s'", key, wantKind, resolvedDep.Kind)
 		}
 	}
+
 	return nil
 }
 
-func (desc Descriptor) validateActionReq(spec Spec, req ActionRequest) error {
+func (desc Descriptor) validateActionReq(spec ExpandedResource, req ActionRequest) error {
 	kind := spec.Resource.Kind
 
 	actDesc := desc.findAction(req.Name)

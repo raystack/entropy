@@ -29,7 +29,9 @@ var Module = module.Descriptor{
 			ParamSchema: configSchema,
 		},
 	},
-	Module: &kubeModule{},
+	DriverFactory: func(conf json.RawMessage) (module.Driver, error) {
+		return &kubeModule{}, nil
+	},
 }
 
 type kubeModule struct{}
@@ -39,7 +41,7 @@ type Output struct {
 	ServerInfo version.Info `json:"server_info"`
 }
 
-func (*kubeModule) Plan(_ context.Context, spec module.Spec, act module.ActionRequest) (*module.Plan, error) {
+func (*kubeModule) Plan(_ context.Context, spec module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
 	res := spec.Resource
 
 	conf := kube.DefaultClientConfig()
@@ -71,7 +73,7 @@ func (*kubeModule) Plan(_ context.Context, spec module.Spec, act module.ActionRe
 	return &module.Plan{Resource: res}, nil
 }
 
-func (*kubeModule) Sync(_ context.Context, spec module.Spec) (*resource.State, error) {
+func (*kubeModule) Sync(_ context.Context, spec module.ExpandedResource) (*resource.State, error) {
 	return &resource.State{
 		Status:     resource.StatusCompleted,
 		Output:     spec.Resource.State.Output,

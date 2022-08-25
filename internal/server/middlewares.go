@@ -21,12 +21,12 @@ const (
 
 type wrappedWriter struct {
 	http.ResponseWriter
-	status int
-	err    error
+
+	Status int
 }
 
 func (wr *wrappedWriter) WriteHeader(statusCode int) {
-	wr.status = statusCode
+	wr.Status = statusCode
 	wr.ResponseWriter.WriteHeader(statusCode)
 }
 
@@ -97,12 +97,11 @@ func requestLogger(lg *zap.Logger) gorillamux.MiddlewareFunc {
 			next.ServeHTTP(wrapped, req)
 			fields = append(fields,
 				zap.Duration("response_time", time.Since(t)),
-				zap.Int("status", wrapped.status),
-				zap.Error(wrapped.err),
+				zap.Int("status", wrapped.Status),
 			)
 
-			if wrapped.err != nil {
-				lg.Warn("request failed", fields...)
+			if !is2xx(wrapped.Status) {
+				lg.Warn("request handled with non-2xx response", fields...)
 			} else {
 				lg.Info("request handled", fields...)
 			}
@@ -119,4 +118,9 @@ func formatSpanName(req *http.Request) string {
 	}
 
 	return fmt.Sprintf("%s %s", req.Method, pathTpl)
+}
+
+func is2xx(status int) bool {
+	const max2xxCode = 299
+	return status >= http.StatusOK && status < max2xxCode
 }

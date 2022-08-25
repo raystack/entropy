@@ -84,7 +84,7 @@ func (s *Service) planChange(ctx context.Context, res resource.Resource, act mod
 		return nil, err
 	}
 
-	planned, err := s.rootModule.Plan(ctx, *modSpec, act)
+	planned, err := s.moduleSvc.PlanAction(ctx, *modSpec, act)
 	if err != nil {
 		if errors.Is(err, errors.ErrInvalid) {
 			return nil, err
