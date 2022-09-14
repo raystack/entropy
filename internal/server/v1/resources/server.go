@@ -4,6 +4,8 @@ package resources
 
 import (
 	"context"
+	"log"
+	"time"
 
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 
@@ -96,6 +98,10 @@ func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1
 }
 
 func (server APIServer) ListResources(ctx context.Context, request *entropyv1beta1.ListResourcesRequest) (*entropyv1beta1.ListResourcesResponse, error) {
+	for i := 0; i < 10; i++ {
+		time.Sleep(1 * time.Second)
+		log.Printf("waiting...")
+	}
 	filter := resource.Filter{
 		Kind:    request.GetKind(),
 		Project: request.GetProject(),

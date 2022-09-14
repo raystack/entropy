@@ -32,7 +32,6 @@ func cmdLogs() *cobra.Command {
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
-			cs := term.NewColorScheme()
 
 			client, cancel, err := createClient(cmd)
 			if err != nil {
@@ -69,7 +68,7 @@ func cmdLogs() *cobra.Command {
 				}
 
 				log.SetFlags(0)
-				log.Printf(cs.Bluef("%s", resp.GetChunk().GetData())) // nolint
+				log.Printf(term.Bluef("%s", resp.GetChunk().GetData())) // nolint
 			}
 
 			return nil

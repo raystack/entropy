@@ -16,6 +16,7 @@ import (
 	"github.com/newrelic/go-agent/v3/integrations/nrgrpc"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/odpf/salt/common"
+	"github.com/odpf/salt/mux"
 	commonv1 "go.buf.build/odpf/gw/odpf/proton/odpf/common/v1"
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"go.opencensus.io/plugin/ocgrpc"
@@ -24,7 +25,6 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"github.com/odpf/entropy/internal/server/serverutils"
 	modulesv1 "github.com/odpf/entropy/internal/server/v1/modules"
 	resourcesv1 "github.com/odpf/entropy/internal/server/v1/resources"
 	"github.com/odpf/entropy/pkg/version"
@@ -91,6 +91,9 @@ func Serve(ctx context.Context, addr string, nrApp *newrelic.Application, logger
 	)
 
 	logger.Info("starting server", zap.String("addr", addr))
-	h := serverutils.MultiplexHTTPAndGRPC(grpcServer, httpRouter)
-	return serverutils.GracefulServe(ctx, logger, defaultGracePeriod, addr, h)
+	return mux.Serve(ctx, addr,
+		mux.WithHTTP(httpRouter),
+		mux.WithGRPC(grpcServer),
+		mux.WithGracePeriod(defaultGracePeriod),
+	)
 }
