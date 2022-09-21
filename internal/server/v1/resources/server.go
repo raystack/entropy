@@ -4,8 +4,6 @@ package resources
 
 import (
 	"context"
-	"log"
-	"time"
 
 	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 
