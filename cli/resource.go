@@ -56,7 +56,6 @@ func createResourceCommand() *cobra.Command {
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
-			cs := term.NewColorScheme()
 
 			var reqBody entropyv1beta1.CreateResourceRequest
 			if err := parseFile(file, &reqBody); err != nil {
@@ -77,13 +76,13 @@ func createResourceCommand() *cobra.Command {
 			}
 			spinner.Stop()
 
-			fmt.Println("URN: \t", cs.Greenf(res.Resource.Urn))
+			fmt.Println("URN: \t", term.Greenf(res.Resource.Urn))
 			if output == outputJSON || output == outputYAML || output == outputYML {
 				formattedOutput, err := formatOutput(res.GetResource(), output)
 				if err != nil {
 					return err
 				}
-				fmt.Println(cs.Bluef(formattedOutput))
+				fmt.Println(term.Bluef(formattedOutput))
 			}
 
 			return nil
@@ -110,7 +109,6 @@ func listAllResourcesCommand() *cobra.Command {
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
-			cs := term.NewColorScheme()
 
 			var reqBody entropyv1beta1.ListResourcesRequest
 			reqBody.Kind = kind
@@ -134,10 +132,10 @@ func listAllResourcesCommand() *cobra.Command {
 					if err != nil {
 						return err
 					}
-					fmt.Println(cs.Bluef(formattedOutput))
+					fmt.Println(term.Bluef(formattedOutput))
 				}
 			} else {
-				report := [][]string{}
+				var report [][]string
 				report = append(report, []string{"URN", "NAME", "KIND", "PROJECT", "STATUS"})
 				count := 0
 				for _, r := range res.GetResources() {
@@ -147,7 +145,7 @@ func listAllResourcesCommand() *cobra.Command {
 				printer.Table(os.Stdout, report)
 				fmt.Println("\nTotal: ", count)
 
-				fmt.Println(cs.Cyanf("To view all the data in JSON/YAML format, use flag `-o json | yaml`"))
+				fmt.Println(term.Cyanf("To view all the data in JSON/YAML format, use flag `-o json | yaml`"))
 			}
 			return nil
 		}),
@@ -175,7 +173,6 @@ func viewResourceCommand() *cobra.Command {
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
-			cs := term.NewColorScheme()
 
 			var reqBody entropyv1beta1.GetResourceRequest
 			reqBody.Urn = args[0]
@@ -197,7 +194,7 @@ func viewResourceCommand() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				fmt.Println(cs.Bluef(formattedOutput))
+				fmt.Println(term.Bluef(formattedOutput))
 			} else {
 				r := res.GetResource()
 
@@ -206,7 +203,7 @@ func viewResourceCommand() *cobra.Command {
 					{r.Urn, r.Name, r.Kind, r.Project, r.State.Status.String()},
 				})
 
-				fmt.Println(cs.Cyanf("\nTo view all the data in JSON/YAML format, use flag `-o json | yaml`"))
+				fmt.Println(term.Cyanf("\nTo view all the data in JSON/YAML format, use flag `-o json | yaml`"))
 			}
 			return nil
 		}),
@@ -232,7 +229,6 @@ func editResourceCommand() *cobra.Command {
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
-			cs := term.NewColorScheme()
 
 			var newSpec entropyv1beta1.ResourceSpec
 			if err := parseFile(file, &newSpec); err != nil {
@@ -260,7 +256,7 @@ func editResourceCommand() *cobra.Command {
 			}
 			spinner.Stop()
 
-			fmt.Println(cs.Greenf("Successfully updated"))
+			fmt.Println(term.Greenf("Successfully updated"))
 			return nil
 		}),
 	}
@@ -284,7 +280,6 @@ func deleteResourceCommand() *cobra.Command {
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
-			cs := term.NewColorScheme()
 
 			var reqBody entropyv1beta1.DeleteResourceRequest
 			reqBody.Urn = args[0]
@@ -301,7 +296,7 @@ func deleteResourceCommand() *cobra.Command {
 			}
 			spinner.Stop()
 
-			fmt.Println(cs.Greenf("Successfully deleted"))
+			fmt.Println(term.Greenf("Successfully deleted"))
 			return nil
 		}),
 	}
@@ -322,7 +317,6 @@ func getRevisionsCommand() *cobra.Command {
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
 			spinner := printer.Spin("")
 			defer spinner.Stop()
-			cs := term.NewColorScheme()
 
 			var reqBody entropyv1beta1.GetResourceRevisionsRequest
 			reqBody.Urn = args[0]
@@ -345,10 +339,10 @@ func getRevisionsCommand() *cobra.Command {
 					if err != nil {
 						return err
 					}
-					fmt.Println(cs.Bluef(formattedOutput))
+					fmt.Println(term.Bluef(formattedOutput))
 				}
 			} else {
-				report := [][]string{}
+				var report [][]string
 				report = append(report, []string{"ID", "URN", "CREATED AT"})
 				count := 0
 				for _, rev := range res.GetRevisions() {
@@ -358,7 +352,7 @@ func getRevisionsCommand() *cobra.Command {
 				printer.Table(os.Stdout, report)
 				fmt.Println("\nTotal: ", count)
 
-				fmt.Println(cs.Cyanf("To view all the data in JSON/YAML format, use flag `-o json | yaml`"))
+				fmt.Println(term.Cyanf("To view all the data in JSON/YAML format, use flag `-o json | yaml`"))
 			}
 			return nil
 		}),
