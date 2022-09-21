@@ -22,16 +22,17 @@ func (s *Service) CreateResource(ctx context.Context, res resource.Resource) (*r
 	return s.execAction(ctx, res, act)
 }
 
-func (s *Service) UpdateResource(ctx context.Context, urn string, newSpec resource.Spec) (*resource.Resource, error) {
-	if len(newSpec.Dependencies) != 0 {
+func (s *Service) UpdateResource(ctx context.Context, urn string, req resource.UpdateRequest) (*resource.Resource, error) {
+	if len(req.Spec.Dependencies) != 0 {
 		return nil, errors.ErrUnsupported.WithMsgf("updating dependencies is not supported")
-	} else if len(newSpec.Configs) == 0 {
+	} else if len(req.Spec.Configs) == 0 {
 		return nil, errors.ErrInvalid.WithMsgf("no config is being updated, nothing to do")
 	}
 
 	return s.ApplyAction(ctx, urn, module.ActionRequest{
 		Name:   module.UpdateAction,
-		Params: newSpec.Configs,
+		Params: req.Spec.Configs,
+		Labels: req.Labels,
 	})
 }
 
@@ -90,7 +91,10 @@ func (s *Service) planChange(ctx context.Context, res resource.Resource, act mod
 			return nil, err
 		}
 		return nil, errors.ErrInternal.WithMsgf("plan() failed").WithCausef(err.Error())
-	} else if err := planned.Resource.Validate(isCreate(act.Name)); err != nil {
+	}
+
+	planned.Resource.Labels = act.Labels
+	if err := planned.Resource.Validate(isCreate(act.Name)); err != nil {
 		return nil, err
 	}
 

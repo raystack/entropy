@@ -17,8 +17,9 @@ const (
 
 // ActionRequest describes an invocation of action on module.
 type ActionRequest struct {
-	Name   string          `json:"name"`
-	Params json.RawMessage `json:"params"`
+	Name   string            `json:"name"`
+	Params json.RawMessage   `json:"params"`
+	Labels map[string]string `json:"labels"`
 }
 
 // ActionDesc is a descriptor for an action supported by a module.

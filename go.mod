@@ -20,7 +20,7 @@ require (
 	github.com/stretchr/testify v1.7.1
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.buf.build/odpf/gw/odpf/proton v1.1.122
-	go.buf.build/odpf/gwv/odpf/proton v1.1.123
+	go.buf.build/odpf/gwv/odpf/proton v1.1.133
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.21.0
 	google.golang.org/grpc v1.46.2

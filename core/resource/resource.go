@@ -56,6 +56,11 @@ type Filter struct {
 	Labels  map[string]string `json:"labels"`
 }
 
+type UpdateRequest struct {
+	Spec   Spec              `json:"spec"`
+	Labels map[string]string `json:"labels"`
+}
+
 type RevisionsSelector struct {
 	URN string `json:"urn"`
 }

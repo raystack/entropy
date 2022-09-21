@@ -16,7 +16,7 @@ type ResourceService interface {
 	GetResource(ctx context.Context, urn string) (*resource.Resource, error)
 	ListResources(ctx context.Context, filter resource.Filter) ([]resource.Resource, error)
 	CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error)
-	UpdateResource(ctx context.Context, urn string, newSpec resource.Spec) (*resource.Resource, error)
+	UpdateResource(ctx context.Context, urn string, req resource.UpdateRequest) (*resource.Resource, error)
 	DeleteResource(ctx context.Context, urn string) error
 
 	ApplyAction(ctx context.Context, urn string, action module.ActionRequest) (*resource.Resource, error)
@@ -64,7 +64,12 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 		return nil, serverutils.ToRPCError(err)
 	}
 
-	res, err := server.resourceService.UpdateResource(ctx, request.GetUrn(), *newSpec)
+	updateRequest := resource.UpdateRequest{
+		Spec:   *newSpec,
+		Labels: request.Labels,
+	}
+
+	res, err := server.resourceService.UpdateResource(ctx, request.GetUrn(), updateRequest)
 	if err != nil {
 		return nil, serverutils.ToRPCError(err)
 	}
@@ -139,6 +144,7 @@ func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1
 	action := module.ActionRequest{
 		Name:   request.GetAction(),
 		Params: paramsJSON,
+		Labels: request.Labels,
 	}
 
 	updatedRes, err := server.resourceService.ApplyAction(ctx, request.GetUrn(), action)
