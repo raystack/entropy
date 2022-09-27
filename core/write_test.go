@@ -309,7 +309,7 @@ func TestService_UpdateResource(t *testing.T) {
 		name    string
 		setup   func(t *testing.T) *core.Service
 		urn     string
-		newSpec resource.Spec
+		update  resource.UpdateRequest
 		want    *resource.Resource
 		wantErr error
 	}{
@@ -325,8 +325,11 @@ func TestService_UpdateResource(t *testing.T) {
 
 				return core.New(resourceRepo, nil, &mocks.AsyncWorker{}, deadClock, nil)
 			},
-			urn:     "orn:entropy:mock:project:child",
-			newSpec: resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
+			urn: "orn:entropy:mock:project:child",
+			update: resource.UpdateRequest{
+				Spec:   resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
+				Labels: map[string]string{"created_by": "test_user", "group": "test_group"},
+			},
 			want:    nil,
 			wantErr: errors.ErrNotFound,
 		},
@@ -347,8 +350,11 @@ func TestService_UpdateResource(t *testing.T) {
 
 				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
 			},
-			urn:     "orn:entropy:mock:project:child",
-			newSpec: resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
+			urn: "orn:entropy:mock:project:child",
+			update: resource.UpdateRequest{
+				Spec:   resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
+				Labels: map[string]string{"created_by": "test_user", "group": "test_group"},
+			},
 			want:    nil,
 			wantErr: errors.ErrInvalid,
 		},
@@ -388,8 +394,11 @@ func TestService_UpdateResource(t *testing.T) {
 
 				return core.New(resourceRepo, mod, mockWorker, deadClock, nil)
 			},
-			urn:     "orn:entropy:mock:project:child",
-			newSpec: resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
+			urn: "orn:entropy:mock:project:child",
+			update: resource.UpdateRequest{
+				Spec:   resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
+				Labels: map[string]string{"created_by": "test_user", "group": "test_group"},
+			},
 			want:    nil,
 			wantErr: testErr,
 		},
@@ -441,8 +450,11 @@ func TestService_UpdateResource(t *testing.T) {
 
 				return core.New(resourceRepo, mod, mockWorker, deadClock, nil)
 			},
-			urn:     "orn:entropy:mock:project:child",
-			newSpec: resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
+			urn: "orn:entropy:mock:project:child",
+			update: resource.UpdateRequest{
+				Spec:   resource.Spec{Configs: []byte(`{"foo": "bar"}`)},
+				Labels: map[string]string{"created_by": "test_user", "group": "test_group"},
+			},
 			want: &resource.Resource{
 				URN:       "orn:entropy:mock:project:child",
 				Kind:      "mock",
@@ -451,6 +463,7 @@ func TestService_UpdateResource(t *testing.T) {
 				CreatedAt: frozenTime,
 				UpdatedAt: frozenTime,
 				State:     resource.State{Status: resource.StatusPending},
+				Labels:    map[string]string{"created_by": "test_user", "group": "test_group"},
 				Spec: resource.Spec{
 					Configs: []byte(`{"foo": "bar"}`),
 				},
@@ -465,7 +478,7 @@ func TestService_UpdateResource(t *testing.T) {
 			t.Parallel()
 			svc := tt.setup(t)
 
-			got, err := svc.UpdateResource(context.Background(), tt.urn, tt.newSpec)
+			got, err := svc.UpdateResource(context.Background(), tt.urn, tt.update)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))

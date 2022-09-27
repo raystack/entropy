@@ -32,6 +32,26 @@ func readTags(ctx context.Context, r sq.BaseRunner, table string, idColumn strin
 	return rows.Err()
 }
 
+func setTags(ctx context.Context, runner sq.BaseRunner, table string, idColumn string, id int64, labels map[string]string) error {
+	deleteOld := sq.Delete(table).Where(sq.Eq{idColumn: id}).PlaceholderFormat(sq.Dollar)
+
+	if _, err := deleteOld.RunWith(runner).ExecContext(ctx); err != nil {
+		return err
+	}
+
+	if len(labels) > 0 {
+		insertTags := sq.Insert(table).Columns(idColumn, "tag").PlaceholderFormat(sq.Dollar)
+		for _, tag := range labelMapToTags(labels) {
+			insertTags = insertTags.Values(id, tag)
+		}
+		if _, err := insertTags.RunWith(runner).ExecContext(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func tagsToLabelMap(tags []string) map[string]string {
 	const keyValueParts = 2
 

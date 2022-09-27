@@ -234,23 +234,7 @@ func insertResourceRecord(ctx context.Context, runner sq.BaseRunner, r resource.
 }
 
 func setResourceTags(ctx context.Context, runner sq.BaseRunner, id int64, labels map[string]string) error {
-	deleteOld := sq.Delete(tableResourceTags).Where(sq.Eq{"resource_id": id}).PlaceholderFormat(sq.Dollar)
-
-	if _, err := deleteOld.RunWith(runner).ExecContext(ctx); err != nil {
-		return err
-	}
-
-	if len(labels) > 0 {
-		insertTags := sq.Insert(tableResourceTags).Columns("resource_id", "tag").PlaceholderFormat(sq.Dollar)
-		for _, tag := range labelMapToTags(labels) {
-			insertTags = insertTags.Values(id, tag)
-		}
-		if _, err := insertTags.RunWith(runner).ExecContext(ctx); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return setTags(ctx, runner, tableResourceTags, "resource_id", id, labels)
 }
 
 func setDependencies(ctx context.Context, runner sq.BaseRunner, id int64, deps map[string]string) error {
