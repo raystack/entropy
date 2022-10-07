@@ -26,7 +26,8 @@ type Service struct {
 type ModuleService interface {
 	PlanAction(ctx context.Context, res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error)
 	SyncState(ctx context.Context, res module.ExpandedResource) (*resource.State, error)
-	StreamLogs(ctx context.Context, spec module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error)
+	GetLogOptions(ctx context.Context, res module.ExpandedResource) (*resource.LogOptions, error)
+	StreamLogs(ctx context.Context, res module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error)
 }
 
 type AsyncWorker interface {

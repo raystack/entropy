@@ -39,6 +39,7 @@ type Loggable interface {
 	Driver
 
 	Log(ctx context.Context, spec ExpandedResource, filter map[string]string) (<-chan LogChunk, error)
+	LogOptions(ctx context.Context, spec ExpandedResource) (*resource.LogOptions, error)
 }
 
 // ExpandedResource represents the context for Plan() or Sync() invocations.

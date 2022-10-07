@@ -52,11 +52,23 @@ func resourceStateToProto(state resource.State) (*entropyv1beta1.ResourceState, 
 		protoStatus = entropyv1beta1.ResourceState_Status(resourceStatus)
 	}
 
-	return &entropyv1beta1.ResourceState{
+	resourceState := &entropyv1beta1.ResourceState{
 		Status:     protoStatus,
 		Output:     outputVal,
 		ModuleData: state.ModuleData,
-	}, nil
+	}
+
+	if state.LogOptions.Filters != nil {
+		logFilters := map[string]*entropyv1beta1.ListString{}
+		for key, values := range state.LogOptions.Filters {
+			logFilters[key] = &entropyv1beta1.ListString{
+				Values: values,
+			}
+		}
+		resourceState.LogOptions = &entropyv1beta1.LogOptions{Filters: logFilters}
+	}
+
+	return resourceState, nil
 }
 
 func resourceSpecToProto(spec resource.Spec) (*entropyv1beta1.ResourceSpec, error) {

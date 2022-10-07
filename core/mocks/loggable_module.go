@@ -72,6 +72,53 @@ func (_c *LoggableModule_Log_Call) Return(_a0 <-chan module.LogChunk, _a1 error)
 	return _c
 }
 
+// LogOptions provides a mock function with given fields: ctx, spec
+func (_m *LoggableModule) LogOptions(ctx context.Context, spec module.ExpandedResource) (*resource.LogOptions, error) {
+	ret := _m.Called(ctx, spec)
+
+	var r0 *resource.LogOptions
+	if rf, ok := ret.Get(0).(func(context.Context, module.ExpandedResource) *resource.LogOptions); ok {
+		r0 = rf(ctx, spec)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*resource.LogOptions)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, module.ExpandedResource) error); ok {
+		r1 = rf(ctx, spec)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LoggableModule_LogOptions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LogOptions'
+type LoggableModule_LogOptions_Call struct {
+	*mock.Call
+}
+
+// LogOptions is a helper method to define mock.On call
+//  - ctx context.Context
+//  - spec module.ExpandedResource
+func (_e *LoggableModule_Expecter) LogOptions(ctx interface{}, spec interface{}) *LoggableModule_LogOptions_Call {
+	return &LoggableModule_LogOptions_Call{Call: _e.mock.On("LogOptions", ctx, spec)}
+}
+
+func (_c *LoggableModule_LogOptions_Call) Run(run func(ctx context.Context, spec module.ExpandedResource)) *LoggableModule_LogOptions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(module.ExpandedResource))
+	})
+	return _c
+}
+
+func (_c *LoggableModule_LogOptions_Call) Return(_a0 *resource.LogOptions, _a1 error) *LoggableModule_LogOptions_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // Plan provides a mock function with given fields: ctx, res, act
 func (_m *LoggableModule) Plan(ctx context.Context, res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
 	ret := _m.Called(ctx, res, act)

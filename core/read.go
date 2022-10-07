@@ -16,6 +16,19 @@ func (s *Service) GetResource(ctx context.Context, urn string) (*resource.Resour
 		}
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
+	modSpec, err := s.generateModuleSpec(ctx, *res)
+	if err != nil {
+		return nil, err
+	}
+
+	logOps, err := s.moduleSvc.GetLogOptions(ctx, *modSpec)
+	if err != nil {
+		if errors.Is(err, errors.ErrUnsupported) {
+			return res, nil
+		}
+		return nil, err
+	}
+	res.State.LogOptions = *logOps
 	return res, nil
 }
 

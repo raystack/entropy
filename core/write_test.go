@@ -81,6 +81,9 @@ func TestService_CreateResource(t *testing.T) {
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
 				mod := &mocks.ModuleService{}
+				mod.EXPECT().GetLogOptions(mock.Anything, mock.Anything).
+					Return(nil, errors.ErrUnsupported).
+					Once()
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
@@ -115,6 +118,9 @@ func TestService_CreateResource(t *testing.T) {
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
 				mod := &mocks.ModuleService{}
+				mod.EXPECT().GetLogOptions(mock.Anything, mock.Anything).
+					Return(nil, errors.ErrUnsupported).
+					Once()
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
@@ -219,6 +225,10 @@ func TestService_CreateResource(t *testing.T) {
 							State:   resource.State{Status: resource.StatusCompleted},
 						},
 					}, nil).Once()
+				mod.EXPECT().
+					GetLogOptions(mock.Anything, mock.Anything).
+					Return(nil, errors.ErrUnsupported).
+					Once()
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
@@ -341,6 +351,9 @@ func TestService_UpdateResource(t *testing.T) {
 				mod.EXPECT().
 					PlanAction(mock.Anything, mock.Anything, mock.Anything).
 					Return(nil, errors.ErrInvalid).Once()
+				mod.EXPECT().GetLogOptions(mock.Anything, mock.Anything).
+					Return(nil, errors.ErrUnsupported).
+					Once()
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
@@ -366,6 +379,9 @@ func TestService_UpdateResource(t *testing.T) {
 				mod.EXPECT().
 					PlanAction(mock.Anything, mock.Anything, mock.Anything).
 					Return(&module.Plan{Resource: testResource}, nil).Once()
+				mod.EXPECT().GetLogOptions(mock.Anything, mock.Anything).
+					Return(nil, errors.ErrUnsupported).
+					Once()
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
@@ -422,6 +438,9 @@ func TestService_UpdateResource(t *testing.T) {
 							CreatedAt: frozenTime,
 						},
 					}, nil).Once()
+				mod.EXPECT().GetLogOptions(mock.Anything, mock.Anything).
+					Return(nil, errors.ErrUnsupported).
+					Once()
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
@@ -534,6 +553,9 @@ func TestService_DeleteResource(t *testing.T) {
 							UpdatedAt: frozenTime,
 						},
 					}, nil).Once()
+				mod.EXPECT().GetLogOptions(mock.Anything, mock.Anything).
+					Return(nil, errors.ErrUnsupported).
+					Once()
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
@@ -577,6 +599,9 @@ func TestService_DeleteResource(t *testing.T) {
 							UpdatedAt: frozenTime,
 						},
 					}, nil).Once()
+				mod.EXPECT().GetLogOptions(mock.Anything, mock.Anything).
+					Return(nil, errors.ErrUnsupported).
+					Once()
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
@@ -658,6 +683,11 @@ func TestService_ApplyAction(t *testing.T) {
 			name: "ModuleResolutionFailure",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
+				mod := &mocks.ModuleService{}
+				mod.EXPECT().GetLogOptions(mock.Anything, mock.Anything).
+					Return(nil, errors.ErrUnsupported).
+					Once()
+
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().
 					GetByURN(mock.Anything, "orn:entropy:mock:foo:bar").
@@ -669,7 +699,7 @@ func TestService_ApplyAction(t *testing.T) {
 					}, nil).
 					Once()
 
-				return core.New(resourceRepo, nil, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
 			},
 			urn:     "orn:entropy:mock:foo:bar",
 			action:  sampleAction,
@@ -684,6 +714,9 @@ func TestService_ApplyAction(t *testing.T) {
 				mod.EXPECT().
 					PlanAction(mock.Anything, mock.Anything, sampleAction).
 					Return(nil, errors.New("failed")).
+					Once()
+				mod.EXPECT().GetLogOptions(mock.Anything, mock.Anything).
+					Return(nil, errors.ErrUnsupported).
 					Once()
 
 				resourceRepo := &mocks.ResourceStore{}
@@ -721,6 +754,9 @@ func TestService_ApplyAction(t *testing.T) {
 							State:   resource.State{Status: resource.StatusPending},
 						},
 					}, nil).Once()
+				mod.EXPECT().GetLogOptions(mock.Anything, mock.Anything).
+					Return(nil, errors.ErrUnsupported).
+					Once()
 
 				resourceRepo := &mocks.ResourceStore{}
 				resourceRepo.EXPECT().

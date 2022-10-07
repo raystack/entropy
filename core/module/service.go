@@ -55,6 +55,25 @@ func (mr *Service) SyncState(ctx context.Context, spec ExpandedResource) (*resou
 	return driver.Sync(ctx, spec)
 }
 
+func (mr *Service) GetLogOptions(ctx context.Context, spec ExpandedResource) (*resource.LogOptions, error) {
+	mod, err := mr.discoverModule(ctx, spec.Kind, spec.Project)
+	if err != nil {
+		return nil, err
+	}
+
+	driver, _, err := mr.initDriver(ctx, *mod)
+	if err != nil {
+		return nil, err
+	}
+
+	lg, supported := driver.(Loggable)
+	if !supported {
+		return nil, errors.ErrUnsupported.WithMsgf("log streaming not supported for kind '%s'", spec.Kind)
+	}
+
+	return lg.LogOptions(ctx, spec)
+}
+
 func (mr *Service) StreamLogs(ctx context.Context, spec ExpandedResource, filter map[string]string) (<-chan LogChunk, error) {
 	mod, err := mr.discoverModule(ctx, spec.Kind, spec.Project)
 	if err != nil {

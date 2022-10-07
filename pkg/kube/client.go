@@ -43,6 +43,11 @@ type LogChunk struct {
 	Labels map[string]string
 }
 
+type Pod struct {
+	Name       string
+	Containers []string
+}
+
 func DefaultClientConfig() Config {
 	var defaultProviderConfig Config
 	defaults.SetDefaults(&defaultProviderConfig)
@@ -95,6 +100,43 @@ func (c Client) StreamLogs(ctx context.Context, namespace string, filter map[str
 	}
 
 	return c.streamFromPods(ctx, namespace, containerName, opts, tailLines, sinceSeconds, filter)
+}
+
+func (c Client) GetPodDetails(ctx context.Context, namespace string, labelSelectors map[string]string) ([]Pod, error) {
+	var podDetails []Pod
+	var selectors []string
+	var labelSelector string
+	var opts metav1.ListOptions
+
+	for k, v := range labelSelectors {
+		s := fmt.Sprintf("%s=%s", k, v)
+		selectors = append(selectors, s)
+	}
+	labelSelector = strings.Join(selectors, ",")
+	opts = metav1.ListOptions{LabelSelector: labelSelector}
+
+	clientSet, err := kubernetes.NewForConfig(&c.restConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	pods, err := clientSet.CoreV1().Pods(namespace).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, pod := range pods.Items {
+		podDetail := Pod{
+			Name: pod.Name,
+		}
+
+		for _, container := range pod.Spec.Containers {
+			podDetail.Containers = append(podDetail.Containers, container.Name)
+		}
+		podDetails = append(podDetails, podDetail)
+	}
+
+	return podDetails, nil
 }
 
 func (c Client) RunJob(ctx context.Context, namespace, name string, image string, cmd []string, retries int32) error {

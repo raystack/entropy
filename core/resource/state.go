@@ -16,6 +16,11 @@ type State struct {
 	Status     string          `json:"status"`
 	Output     json.RawMessage `json:"output"`
 	ModuleData json.RawMessage `json:"module_data,omitempty"`
+	LogOptions LogOptions      `json:"log_options,omitempty"`
+}
+
+type LogOptions struct {
+	Filters map[string][]string `json:"string,omitempty"`
 }
 
 type Output map[string]interface{}

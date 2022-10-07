@@ -41,12 +41,17 @@ func TestService_GetResource(t *testing.T) {
 			name: "Success",
 			setup: func(t *testing.T) *core.Service {
 				t.Helper()
+				mod := &mocks.ModuleService{}
+				mod.EXPECT().GetLogOptions(mock.Anything, mock.Anything).
+					Return(nil, errors.ErrUnsupported).
+					Once()
+
 				repo := &mocks.ResourceStore{}
 				repo.EXPECT().
 					GetByURN(mock.Anything, mock.Anything).
 					Return(&sampleResource, nil).
 					Once()
-				return core.New(repo, nil, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(repo, mod, &mocks.AsyncWorker{}, deadClock, nil)
 			},
 			urn:     "foo:bar:baz",
 			want:    &sampleResource,
