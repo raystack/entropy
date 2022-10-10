@@ -20,7 +20,7 @@ type State struct {
 }
 
 type LogOptions struct {
-	Filters map[string][]string `json:"string,omitempty"`
+	Filters map[string][]string `json:"filters,omitempty"`
 }
 
 type Output map[string]interface{}
