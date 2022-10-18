@@ -26,6 +26,10 @@ type Driver interface {
 	// Sync can return state in resource.StatusDeleted to indicate resource
 	// should be removed from the Entropy storage.
 	Sync(ctx context.Context, res ExpandedResource) (*resource.State, error)
+
+	// Output returns the current external state of the resource
+	// Output should not have any side effects on any external resource
+	Output(ctx context.Context, res ExpandedResource) (json.RawMessage, error)
 }
 
 // Plan represents the changes to be staged and later synced by module.
@@ -38,7 +42,7 @@ type Plan struct {
 type Loggable interface {
 	Driver
 
-	Log(ctx context.Context, spec ExpandedResource, filter map[string]string) (<-chan LogChunk, error)
+	Log(ctx context.Context, res ExpandedResource, filter map[string]string) (<-chan LogChunk, error)
 }
 
 // ExpandedResource represents the context for Plan() or Sync() invocations.

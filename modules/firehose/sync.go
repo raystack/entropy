@@ -25,8 +25,8 @@ var (
 	ErrKubeAPI = worker.RetryableError{RetryAfter: kubeAPIRetryBackoffDuration}
 )
 
-func (m *firehoseModule) Sync(ctx context.Context, spec module.ExpandedResource) (*resource.State, error) {
-	r := spec.Resource
+func (m *firehoseModule) Sync(ctx context.Context, res module.ExpandedResource) (*resource.State, error) {
+	r := res.Resource
 
 	var data moduleData
 	var pendingStep string
@@ -45,7 +45,7 @@ func (m *firehoseModule) Sync(ctx context.Context, spec module.ExpandedResource)
 	}
 
 	var kubeOut kubernetes.Output
-	if err := json.Unmarshal(spec.Dependencies[keyKubeDependency].Output, &kubeOut); err != nil {
+	if err := json.Unmarshal(res.Dependencies[keyKubeDependency].Output, &kubeOut); err != nil {
 		return nil, err
 	}
 
@@ -78,12 +78,14 @@ func (m *firehoseModule) Sync(ctx context.Context, spec module.ExpandedResource)
 		finalStatus = resource.StatusPending
 	}
 
+	output, err := m.Output(ctx, res)
+	if err != nil {
+		return nil, err
+	}
+
 	return &resource.State{
-		Status: finalStatus,
-		Output: Output{
-			Namespace:   conf.GetHelmReleaseConfig(r).Namespace,
-			ReleaseName: conf.GetHelmReleaseConfig(r).Name,
-		}.JSON(),
+		Status:     finalStatus,
+		Output:     output,
 		ModuleData: data.JSON(),
 	}, nil
 }

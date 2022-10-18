@@ -10,8 +10,8 @@ import (
 	"github.com/odpf/entropy/pkg/kube"
 )
 
-func (*firehoseModule) Log(ctx context.Context, spec module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error) {
-	r := spec.Resource
+func (*firehoseModule) Log(ctx context.Context, res module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error) {
+	r := res.Resource
 
 	var conf moduleConfig
 	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
@@ -19,7 +19,7 @@ func (*firehoseModule) Log(ctx context.Context, spec module.ExpandedResource, fi
 	}
 
 	var kubeOut kubernetes.Output
-	if err := json.Unmarshal(spec.Dependencies[keyKubeDependency].Output, &kubeOut); err != nil {
+	if err := json.Unmarshal(res.Dependencies[keyKubeDependency].Output, &kubeOut); err != nil {
 		return nil, err
 	}
 

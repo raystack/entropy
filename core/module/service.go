@@ -21,8 +21,8 @@ func NewService(registry Registry, store Store) *Service {
 	}
 }
 
-func (mr *Service) PlanAction(ctx context.Context, spec ExpandedResource, act ActionRequest) (*Plan, error) {
-	mod, err := mr.discoverModule(ctx, spec.Kind, spec.Project)
+func (mr *Service) PlanAction(ctx context.Context, res ExpandedResource, act ActionRequest) (*Plan, error) {
+	mod, err := mr.discoverModule(ctx, res.Kind, res.Project)
 	if err != nil {
 		return nil, err
 	}
@@ -30,17 +30,17 @@ func (mr *Service) PlanAction(ctx context.Context, spec ExpandedResource, act Ac
 	driver, desc, err := mr.initDriver(ctx, *mod)
 	if err != nil {
 		return nil, err
-	} else if err := desc.validateDependencies(spec.Dependencies); err != nil {
+	} else if err := desc.validateDependencies(res.Dependencies); err != nil {
 		return nil, err
-	} else if err := desc.validateActionReq(spec, act); err != nil {
+	} else if err := desc.validateActionReq(res, act); err != nil {
 		return nil, err
 	}
 
-	return driver.Plan(ctx, spec, act)
+	return driver.Plan(ctx, res, act)
 }
 
-func (mr *Service) SyncState(ctx context.Context, spec ExpandedResource) (*resource.State, error) {
-	mod, err := mr.discoverModule(ctx, spec.Kind, spec.Project)
+func (mr *Service) SyncState(ctx context.Context, res ExpandedResource) (*resource.State, error) {
+	mod, err := mr.discoverModule(ctx, res.Kind, res.Project)
 	if err != nil {
 		return nil, err
 	}
@@ -48,15 +48,15 @@ func (mr *Service) SyncState(ctx context.Context, spec ExpandedResource) (*resou
 	driver, desc, err := mr.initDriver(ctx, *mod)
 	if err != nil {
 		return nil, err
-	} else if err := desc.validateDependencies(spec.Dependencies); err != nil {
+	} else if err := desc.validateDependencies(res.Dependencies); err != nil {
 		return nil, err
 	}
 
-	return driver.Sync(ctx, spec)
+	return driver.Sync(ctx, res)
 }
 
-func (mr *Service) StreamLogs(ctx context.Context, spec ExpandedResource, filter map[string]string) (<-chan LogChunk, error) {
-	mod, err := mr.discoverModule(ctx, spec.Kind, spec.Project)
+func (mr *Service) StreamLogs(ctx context.Context, res ExpandedResource, filter map[string]string) (<-chan LogChunk, error) {
+	mod, err := mr.discoverModule(ctx, res.Kind, res.Project)
 	if err != nil {
 		return nil, err
 	}
@@ -68,10 +68,24 @@ func (mr *Service) StreamLogs(ctx context.Context, spec ExpandedResource, filter
 
 	lg, supported := driver.(Loggable)
 	if !supported {
-		return nil, errors.ErrUnsupported.WithMsgf("log streaming not supported for kind '%s'", spec.Kind)
+		return nil, errors.ErrUnsupported.WithMsgf("log streaming not supported for kind '%s'", res.Kind)
 	}
 
-	return lg.Log(ctx, spec, filter)
+	return lg.Log(ctx, res, filter)
+}
+
+func (mr *Service) GetOutput(ctx context.Context, res ExpandedResource) (json.RawMessage, error) {
+	mod, err := mr.discoverModule(ctx, res.Kind, res.Project)
+	if err != nil {
+		return nil, err
+	}
+
+	driver, _, err := mr.initDriver(ctx, *mod)
+	if err != nil {
+		return nil, err
+	}
+
+	return driver.Output(ctx, res)
 }
 
 func (mr *Service) GetModule(ctx context.Context, urn string) (*Module, error) {
