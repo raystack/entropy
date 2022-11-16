@@ -11,9 +11,13 @@ import (
 	"time"
 
 	"github.com/mcuadros/go-defaults"
+	"github.com/mitchellh/mapstructure"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
 	typedbatchv1 "k8s.io/client-go/kubernetes/typed/batch/v1"
 	"k8s.io/client-go/rest"
@@ -25,6 +29,7 @@ const (
 	bufferSize                     = 4096
 	sleepTime                      = 500
 	defaultTTLSecondsAfterFinished = 60
+	trueString                     = "true"
 )
 
 var (
@@ -48,6 +53,72 @@ type Pod struct {
 	Containers []string `json:"containers"`
 }
 
+type LogOptions struct {
+	App          string `mapstructure:"app"`
+	Pod          string `mapstructure:"pod"`
+	Container    string `mapstructure:"container"`
+	Follow       string `mapstructure:"follow"`
+	Previous     string `mapstructure:"previous"`
+	SinceSeconds string `mapstructure:"sinceSeconds"`
+	Timestamps   string `mapstructure:"timestamps"`
+	TailLines    string `mapstructure:"tailLines"`
+}
+
+func (l LogOptions) getPodListOptions() (metav1.ListOptions, error) {
+	labelSelector := labels.NewSelector()
+	fieldSelector := fields.Everything()
+	r, err := labels.NewRequirement("app", selection.Equals, []string{l.App})
+	if err != nil {
+		return metav1.ListOptions{}, err
+	}
+	labelSelector = labelSelector.Add(*r)
+
+	if l.Pod != "" {
+		fieldSelector = fields.AndSelectors(fieldSelector, fields.OneTermEqualSelector("metadata.name", l.Pod))
+	}
+
+	return metav1.ListOptions{
+		LabelSelector: labelSelector.String(),
+		FieldSelector: fieldSelector.String(),
+	}, nil
+}
+
+func (l LogOptions) getPodLogOptions() (*corev1.PodLogOptions, error) {
+	podLogOpts := &corev1.PodLogOptions{
+		Container: l.Container,
+	}
+
+	if l.Follow == trueString {
+		podLogOpts.Follow = true
+	}
+
+	if l.Previous == trueString {
+		podLogOpts.Previous = true
+	}
+
+	if l.Timestamps == trueString {
+		podLogOpts.Timestamps = true
+	}
+
+	if l.SinceSeconds != "" {
+		ss, err := strconv.ParseInt(l.SinceSeconds, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		podLogOpts.SinceSeconds = &ss
+	}
+
+	if l.TailLines != "" {
+		tl, err := strconv.ParseInt(l.TailLines, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		podLogOpts.TailLines = &tl
+	}
+
+	return podLogOpts, nil
+}
+
 func DefaultClientConfig() Config {
 	var defaultProviderConfig Config
 	defaults.SetDefaults(&defaultProviderConfig)
@@ -62,44 +133,14 @@ func NewClient(config Config) *Client {
 }
 
 func (c Client) StreamLogs(ctx context.Context, namespace string, filter map[string]string) (<-chan LogChunk, error) {
-	var selectors []string
-	var podName, containerName, labelSelector, filedSelector string
-	var sinceSeconds, tailLines int64
-	var opts metav1.ListOptions
+	var logOptions LogOptions
 
-	for k, v := range filter {
-		switch k {
-		case "pod":
-			podName = v
-		case "container":
-			containerName = v
-		case "sinceSeconds":
-			i, err := strconv.ParseInt(v, 10, 64)
-			if err != nil {
-				return nil, errors.ErrInvalid.WithMsgf("invalid sinceSeconds filter value: %v", err)
-			}
-			sinceSeconds = i
-		case "tailLine":
-			i, err := strconv.ParseInt(v, 10, 64)
-			if err != nil {
-				return nil, errors.ErrInvalid.WithMsgf("invalid tailLine filter value: %v", err)
-			}
-			tailLines = i
-		default:
-			s := fmt.Sprintf("%s=%s", k, v)
-			selectors = append(selectors, s)
-		}
+	err := mapstructure.Decode(filter, &logOptions)
+	if err != nil {
+		return nil, errors.ErrInvalid.WithMsgf(err.Error())
 	}
 
-	if podName == "" {
-		labelSelector = strings.Join(selectors, ",")
-		opts = metav1.ListOptions{LabelSelector: labelSelector}
-	} else {
-		filedSelector = fmt.Sprintf("metadata.name=%s", podName)
-		opts = metav1.ListOptions{FieldSelector: filedSelector}
-	}
-
-	return c.streamFromPods(ctx, namespace, containerName, opts, tailLines, sinceSeconds, filter)
+	return c.streamFromPods(ctx, namespace, logOptions, filter)
 }
 
 func (c Client) RunJob(ctx context.Context, namespace, name string, image string, cmd []string, retries int32) error {
@@ -170,13 +211,18 @@ func waitForJob(ctx context.Context, jobName string, jobs typedbatchv1.JobInterf
 	}
 }
 
-func (c Client) streamFromPods(ctx context.Context, namespace, containerName string, opts metav1.ListOptions, tailLines, sinceSeconds int64, filter map[string]string) (<-chan LogChunk, error) {
+func (c Client) streamFromPods(ctx context.Context, namespace string, logOptions LogOptions, filter map[string]string) (<-chan LogChunk, error) {
 	clientSet, err := kubernetes.NewForConfig(&c.restConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	pods, err := clientSet.CoreV1().Pods(namespace).List(ctx, opts)
+	listOpts, err := logOptions.getPodListOptions()
+	if err != nil {
+		return nil, err
+	}
+
+	pods, err := clientSet.CoreV1().Pods(namespace).List(ctx, listOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -191,16 +237,24 @@ func (c Client) streamFromPods(ctx context.Context, namespace, containerName str
 	wg := &sync.WaitGroup{}
 	for _, pod := range pods.Items {
 		for _, container := range append(pod.Spec.InitContainers, pod.Spec.Containers...) {
-			if containerName != "" && container.Name != containerName {
+			if logOptions.Container != "" && container.Name != logOptions.Container {
 				continue
 			}
+			plo, err := logOptions.getPodLogOptions()
+			if err != nil {
+				return nil, err
+			}
+			plo.Container = container.Name
+			fc := filterCopy(filter)
+			fc["pod"] = pod.Name
+			fc["container"] = container.Name
 			wg.Add(1)
-			go func(podName string, c corev1.Container) {
+			go func(podName string, plo corev1.PodLogOptions, filter map[string]string) {
 				defer wg.Done()
-				if err := streamContainerLogs(ctx, namespace, podName, logCh, streamingClientSet, c, tailLines, sinceSeconds, filter); err != nil {
-					log.Printf("[WARN] failed to stream from container '%s':%s", c.Name, err)
+				if err := streamContainerLogs(ctx, namespace, podName, logCh, streamingClientSet, plo, filter); err != nil {
+					log.Printf("[WARN] failed to stream from container '%s':%s", plo.Container, err)
 				}
-			}(pod.Name, container)
+			}(pod.Name, *plo, fc)
 		}
 	}
 
@@ -249,26 +303,11 @@ func (c Client) GetPodDetails(ctx context.Context, namespace string, labelSelect
 	return podDetails, nil
 }
 
-func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- LogChunk, clientSet *kubernetes.Clientset, container corev1.Container, tailLines, sinceSeconds int64, filter map[string]string) error {
-	podLogOpts := corev1.PodLogOptions{}
-	podLogOpts.Follow = true
-	podLogOpts.Container = container.Name
-
-	if sinceSeconds > 0 {
-		podLogOpts.SinceSeconds = &sinceSeconds
-	}
-
-	if tailLines > 0 {
-		podLogOpts.TailLines = &tailLines
-	}
-
+func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- LogChunk, clientSet *kubernetes.Clientset, podLogOpts corev1.PodLogOptions, filter map[string]string) error {
 	podLogs, err := clientSet.CoreV1().Pods(ns).GetLogs(podName, &podLogOpts).Stream(ctx)
 	if err != nil {
 		return err
 	}
-
-	filter["pod"] = podName
-	filter["container"] = container.Name
 
 	buf := make([]byte, bufferSize)
 	for {
@@ -295,4 +334,15 @@ func streamContainerLogs(ctx context.Context, ns, podName string, logCh chan<- L
 		case logCh <- logChunk:
 		}
 	}
+}
+
+func filterCopy(m map[string]string) map[string]string {
+	if m == nil {
+		return nil
+	}
+	cp := make(map[string]string, len(m))
+	for k, v := range m {
+		cp[k] = v
+	}
+	return cp
 }
