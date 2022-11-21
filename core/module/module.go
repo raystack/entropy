@@ -79,8 +79,8 @@ func (desc Descriptor) validateDependencies(dependencies map[string]ResolvedDepe
 	return nil
 }
 
-func (desc Descriptor) validateActionReq(spec ExpandedResource, req ActionRequest) error {
-	kind := spec.Resource.Kind
+func (desc Descriptor) validateActionReq(res ExpandedResource, req ActionRequest) error {
+	kind := res.Resource.Kind
 
 	actDesc := desc.findAction(req.Name)
 	if actDesc == nil {

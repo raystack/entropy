@@ -9,20 +9,20 @@ import (
 	"github.com/odpf/entropy/pkg/errors"
 )
 
-func (m *firehoseModule) Plan(_ context.Context, spec module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
+func (m *firehoseModule) Plan(_ context.Context, res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
 	switch act.Name {
 	case module.CreateAction:
-		return m.planCreate(spec, act)
+		return m.planCreate(res, act)
 	case ResetAction:
-		return m.planReset(spec, act)
+		return m.planReset(res, act)
 	default:
-		return m.planChange(spec, act)
+		return m.planChange(res, act)
 	}
 }
 
-func (*firehoseModule) planCreate(spec module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
+func (*firehoseModule) planCreate(res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
 	var plan module.Plan
-	r := spec.Resource
+	r := res.Resource
 
 	var reqConf moduleConfig
 	if err := json.Unmarshal(act.Params, &reqConf); err != nil {
@@ -47,9 +47,9 @@ func (*firehoseModule) planCreate(spec module.ExpandedResource, act module.Actio
 	return &plan, nil
 }
 
-func (*firehoseModule) planChange(spec module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
+func (*firehoseModule) planChange(res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
 	var plan module.Plan
-	r := spec.Resource
+	r := res.Resource
 
 	var conf moduleConfig
 	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
@@ -98,8 +98,8 @@ func (*firehoseModule) planChange(spec module.ExpandedResource, act module.Actio
 	return &plan, nil
 }
 
-func (*firehoseModule) planReset(spec module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
-	r := spec.Resource
+func (*firehoseModule) planReset(res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
+	r := res.Resource
 
 	var conf moduleConfig
 	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {

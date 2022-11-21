@@ -4,9 +4,11 @@ package mocks
 
 import (
 	context "context"
+	json "encoding/json"
+
+	mock "github.com/stretchr/testify/mock"
 
 	module "github.com/odpf/entropy/core/module"
-	mock "github.com/stretchr/testify/mock"
 
 	resource "github.com/odpf/entropy/core/resource"
 )
@@ -24,13 +26,13 @@ func (_m *LoggableModule) EXPECT() *LoggableModule_Expecter {
 	return &LoggableModule_Expecter{mock: &_m.Mock}
 }
 
-// Log provides a mock function with given fields: ctx, spec, filter
-func (_m *LoggableModule) Log(ctx context.Context, spec module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error) {
-	ret := _m.Called(ctx, spec, filter)
+// Log provides a mock function with given fields: ctx, res, filter
+func (_m *LoggableModule) Log(ctx context.Context, res module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error) {
+	ret := _m.Called(ctx, res, filter)
 
 	var r0 <-chan module.LogChunk
 	if rf, ok := ret.Get(0).(func(context.Context, module.ExpandedResource, map[string]string) <-chan module.LogChunk); ok {
-		r0 = rf(ctx, spec, filter)
+		r0 = rf(ctx, res, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(<-chan module.LogChunk)
@@ -39,7 +41,7 @@ func (_m *LoggableModule) Log(ctx context.Context, spec module.ExpandedResource,
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, module.ExpandedResource, map[string]string) error); ok {
-		r1 = rf(ctx, spec, filter)
+		r1 = rf(ctx, res, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -54,13 +56,13 @@ type LoggableModule_Log_Call struct {
 
 // Log is a helper method to define mock.On call
 //  - ctx context.Context
-//  - spec module.ExpandedResource
+//  - res module.ExpandedResource
 //  - filter map[string]string
-func (_e *LoggableModule_Expecter) Log(ctx interface{}, spec interface{}, filter interface{}) *LoggableModule_Log_Call {
-	return &LoggableModule_Log_Call{Call: _e.mock.On("Log", ctx, spec, filter)}
+func (_e *LoggableModule_Expecter) Log(ctx interface{}, res interface{}, filter interface{}) *LoggableModule_Log_Call {
+	return &LoggableModule_Log_Call{Call: _e.mock.On("Log", ctx, res, filter)}
 }
 
-func (_c *LoggableModule_Log_Call) Run(run func(ctx context.Context, spec module.ExpandedResource, filter map[string]string)) *LoggableModule_Log_Call {
+func (_c *LoggableModule_Log_Call) Run(run func(ctx context.Context, res module.ExpandedResource, filter map[string]string)) *LoggableModule_Log_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(module.ExpandedResource), args[2].(map[string]string))
 	})
@@ -68,6 +70,53 @@ func (_c *LoggableModule_Log_Call) Run(run func(ctx context.Context, spec module
 }
 
 func (_c *LoggableModule_Log_Call) Return(_a0 <-chan module.LogChunk, _a1 error) *LoggableModule_Log_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// Output provides a mock function with given fields: ctx, res
+func (_m *LoggableModule) Output(ctx context.Context, res module.ExpandedResource) (json.RawMessage, error) {
+	ret := _m.Called(ctx, res)
+
+	var r0 json.RawMessage
+	if rf, ok := ret.Get(0).(func(context.Context, module.ExpandedResource) json.RawMessage); ok {
+		r0 = rf(ctx, res)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(json.RawMessage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, module.ExpandedResource) error); ok {
+		r1 = rf(ctx, res)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LoggableModule_Output_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Output'
+type LoggableModule_Output_Call struct {
+	*mock.Call
+}
+
+// Output is a helper method to define mock.On call
+//  - ctx context.Context
+//  - res module.ExpandedResource
+func (_e *LoggableModule_Expecter) Output(ctx interface{}, res interface{}) *LoggableModule_Output_Call {
+	return &LoggableModule_Output_Call{Call: _e.mock.On("Output", ctx, res)}
+}
+
+func (_c *LoggableModule_Output_Call) Run(run func(ctx context.Context, res module.ExpandedResource)) *LoggableModule_Output_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(module.ExpandedResource))
+	})
+	return _c
+}
+
+func (_c *LoggableModule_Output_Call) Return(_a0 json.RawMessage, _a1 error) *LoggableModule_Output_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }

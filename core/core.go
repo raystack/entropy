@@ -4,7 +4,8 @@ package core
 //go:generate mockery --name=ModuleService -r --case underscore --with-expecter --structname ModuleService  --filename=module_service.go --output=./mocks
 
 import (
-	"context"
+	context "context"
+	"encoding/json"
 	"time"
 
 	"go.uber.org/zap"
@@ -26,7 +27,8 @@ type Service struct {
 type ModuleService interface {
 	PlanAction(ctx context.Context, res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error)
 	SyncState(ctx context.Context, res module.ExpandedResource) (*resource.State, error)
-	StreamLogs(ctx context.Context, spec module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error)
+	StreamLogs(ctx context.Context, res module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error)
+	GetOutput(ctx context.Context, res module.ExpandedResource) (json.RawMessage, error)
 }
 
 type AsyncWorker interface {

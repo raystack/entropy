@@ -18,8 +18,6 @@ type State struct {
 	ModuleData json.RawMessage `json:"module_data,omitempty"`
 }
 
-type Output map[string]interface{}
-
 // IsTerminal returns true if state is terminal. A terminal state is
 // one where resource needs no further sync.
 func (s State) IsTerminal() bool {

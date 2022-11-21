@@ -41,11 +41,35 @@ type Output struct {
 	ServerInfo version.Info `json:"server_info"`
 }
 
-func (*kubeModule) Plan(_ context.Context, spec module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
-	res := spec.Resource
+func (m *kubeModule) Plan(ctx context.Context, res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
+	res.Resource.Spec = resource.Spec{
+		Configs:      act.Params,
+		Dependencies: nil,
+	}
 
+	output, err := m.Output(ctx, res)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Resource.State = resource.State{
+		Status: resource.StatusCompleted,
+		Output: output,
+	}
+	return &module.Plan{Resource: res.Resource}, nil
+}
+
+func (*kubeModule) Sync(_ context.Context, res module.ExpandedResource) (*resource.State, error) {
+	return &resource.State{
+		Status:     resource.StatusCompleted,
+		Output:     res.Resource.State.Output,
+		ModuleData: nil,
+	}, nil
+}
+
+func (*kubeModule) Output(_ context.Context, res module.ExpandedResource) (json.RawMessage, error) {
 	conf := kube.DefaultClientConfig()
-	if err := json.Unmarshal(act.Params, &conf); err != nil {
+	if err := json.Unmarshal(res.Spec.Configs, &conf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid json config value").WithCausef(err.Error())
 	}
 
@@ -59,26 +83,10 @@ func (*kubeModule) Plan(_ context.Context, spec module.ExpandedResource, act mod
 		return nil, errors.ErrInvalid.WithMsgf("failed to fetch server info: %v", err)
 	}
 
-	res.Spec = resource.Spec{
-		Configs:      act.Params,
-		Dependencies: nil,
-	}
-	res.State = resource.State{
-		Status: resource.StatusCompleted,
-		Output: Output{
-			Configs:    conf,
-			ServerInfo: *info,
-		}.JSON(),
-	}
-	return &module.Plan{Resource: res}, nil
-}
-
-func (*kubeModule) Sync(_ context.Context, spec module.ExpandedResource) (*resource.State, error) {
-	return &resource.State{
-		Status:     resource.StatusCompleted,
-		Output:     spec.Resource.State.Output,
-		ModuleData: nil,
-	}, nil
+	return Output{
+		Configs:    conf,
+		ServerInfo: *info,
+	}.JSON(), nil
 }
 
 func (out Output) JSON() []byte {

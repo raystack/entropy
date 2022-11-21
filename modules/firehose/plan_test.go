@@ -29,14 +29,14 @@ func TestFirehoseModule_Plan(t *testing.T) {
 
 	table := []struct {
 		title   string
-		spec    module.ExpandedResource
+		res     module.ExpandedResource
 		act     module.ActionRequest
 		want    *module.Plan
 		wantErr error
 	}{
 		{
 			title: "InvalidConfiguration",
-			spec:  module.ExpandedResource{Resource: res},
+			res:   module.ExpandedResource{Resource: res},
 			act: module.ActionRequest{
 				Name:   module.CreateAction,
 				Params: []byte(`{`),
@@ -45,7 +45,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		},
 		{
 			title: "ValidConfiguration",
-			spec:  module.ExpandedResource{Resource: res},
+			res:   module.ExpandedResource{Resource: res},
 			act: module.ActionRequest{
 				Name:   module.CreateAction,
 				Params: []byte(`{"state":"RUNNING","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
@@ -68,7 +68,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		},
 		{
 			title: "InvalidActionParams",
-			spec:  module.ExpandedResource{Resource: res},
+			res:   module.ExpandedResource{Resource: res},
 			act: module.ActionRequest{
 				Name:   ScaleAction,
 				Params: []byte(`{`),
@@ -77,7 +77,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		},
 		{
 			title: "ValidScaleRequest",
-			spec:  module.ExpandedResource{Resource: res},
+			res:   module.ExpandedResource{Resource: res},
 			act: module.ActionRequest{
 				Name:   ScaleAction,
 				Params: []byte(`{"replicas": 5}`),
@@ -100,7 +100,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		},
 		{
 			title: "ValidResetRequest",
-			spec:  module.ExpandedResource{Resource: res},
+			res:   module.ExpandedResource{Resource: res},
 			act: module.ActionRequest{
 				Name:   ResetAction,
 				Params: []byte(`{"to":"DATETIME","datetime":"2022-06-22T00:00:00+00:00"}`),
@@ -123,7 +123,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		},
 		{
 			title: "WithStopTimeConfiguration",
-			spec:  module.ExpandedResource{Resource: res},
+			res:   module.ExpandedResource{Resource: res},
 			act: module.ActionRequest{
 				Name:   module.CreateAction,
 				Params: []byte(`{"state":"RUNNING","stop_time":"3022-07-13T00:40:14.028016Z","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
@@ -153,7 +153,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 			t.Parallel()
 			m := firehoseModule{}
 
-			got, err := m.Plan(context.Background(), tt.spec, tt.act)
+			got, err := m.Plan(context.Background(), tt.res, tt.act)
 			if tt.wantErr != nil || err != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))
