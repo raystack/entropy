@@ -90,6 +90,7 @@ func (*firehoseModule) planChange(res module.ExpandedResource, act module.Action
 	r.Spec.Configs = conf.JSON()
 	r.State = resource.State{
 		Status: resource.StatusPending,
+		Output: res.State.Output,
 		ModuleData: moduleData{
 			PendingSteps: []string{releaseUpdate},
 		}.JSON(),
@@ -125,6 +126,7 @@ func (*firehoseModule) planReset(res module.ExpandedResource, act module.ActionR
 	r.Spec.Configs = conf.JSON()
 	r.State = resource.State{
 		Status: resource.StatusPending,
+		Output: res.State.Output,
 		ModuleData: moduleData{
 			PendingSteps:  []string{releaseUpdate, consumerReset, releaseUpdate},
 			ResetTo:       resetTo,
