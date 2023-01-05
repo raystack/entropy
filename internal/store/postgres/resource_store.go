@@ -114,11 +114,10 @@ func (st *Store) Create(ctx context.Context, r resource.Resource, hooks ...resou
 			return translateErr(err)
 		}
 
-		// TODO: Add labels for revisions
 		rev := resource.Revision{
 			URN:    r.URN,
 			Spec:   r.Spec,
-			Labels: map[string]string{},
+			Labels: r.Labels,
 		}
 
 		if err := insertRevision(ctx, tx, rev); err != nil {
@@ -165,11 +164,10 @@ func (st *Store) Update(ctx context.Context, r resource.Resource, hooks ...resou
 			return err
 		}
 
-		// TODO: Add labels for revisions
 		rev := resource.Revision{
 			URN:    r.URN,
 			Spec:   r.Spec,
-			Labels: map[string]string{},
+			Labels: r.Labels,
 		}
 
 		if err := insertRevision(ctx, tx, rev); err != nil {
