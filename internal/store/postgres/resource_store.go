@@ -134,7 +134,7 @@ func (st *Store) Create(ctx context.Context, r resource.Resource, hooks ...resou
 	return nil
 }
 
-func (st *Store) Update(ctx context.Context, r resource.Resource, hooks ...resource.MutationHook) error {
+func (st *Store) Update(ctx context.Context, r resource.Resource, saveRevision bool, hooks ...resource.MutationHook) error {
 	updateResource := func(ctx context.Context, tx *sqlx.Tx) error {
 		id, err := translateURNToID(ctx, tx, r.URN)
 		if err != nil {
@@ -164,14 +164,16 @@ func (st *Store) Update(ctx context.Context, r resource.Resource, hooks ...resou
 			return err
 		}
 
-		rev := resource.Revision{
-			URN:    r.URN,
-			Spec:   r.Spec,
-			Labels: r.Labels,
-		}
+		if saveRevision {
+			rev := resource.Revision{
+				URN:    r.URN,
+				Spec:   r.Spec,
+				Labels: r.Labels,
+			}
 
-		if err := insertRevision(ctx, tx, rev); err != nil {
-			return translateErr(err)
+			if err := insertRevision(ctx, tx, rev); err != nil {
+				return translateErr(err)
+			}
 		}
 
 		return runAllHooks(ctx, hooks)
