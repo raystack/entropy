@@ -394,8 +394,8 @@ func TestService_UpdateResource(t *testing.T) {
 					Once()
 
 				resourceRepo.EXPECT().
-					Update(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
-					Run(func(ctx context.Context, r resource.Resource, saveRevision bool, hooks ...resource.MutationHook) {
+					Update(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+					Run(func(ctx context.Context, r resource.Resource, saveRevision bool, reason string, hooks ...resource.MutationHook) {
 						assert.Len(t, hooks, 1)
 						assert.NoError(t, hooks[0](ctx))
 					}).
@@ -453,9 +453,9 @@ func TestService_UpdateResource(t *testing.T) {
 					Return(&testResource, nil).Once()
 
 				resourceRepo.EXPECT().
-					Update(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+					Update(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(nil).
-					Run(func(ctx context.Context, r resource.Resource, saveRevision bool, hooks ...resource.MutationHook) {
+					Run(func(ctx context.Context, r resource.Resource, saveRevision bool, reason string, hooks ...resource.MutationHook) {
 						assert.Len(t, hooks, 1)
 						assert.NoError(t, hooks[0](ctx))
 					}).
@@ -578,7 +578,7 @@ func TestService_DeleteResource(t *testing.T) {
 					Once()
 
 				resourceRepo.EXPECT().
-					Update(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+					Update(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(testErr).
 					Once()
 
@@ -625,7 +625,7 @@ func TestService_DeleteResource(t *testing.T) {
 					Once()
 
 				resourceRepo.EXPECT().
-					Update(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+					Update(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(nil).
 					Once()
 
@@ -780,7 +780,7 @@ func TestService_ApplyAction(t *testing.T) {
 					}, nil).
 					Once()
 				resourceRepo.EXPECT().
-					Update(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+					Update(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(nil).
 					Once()
 

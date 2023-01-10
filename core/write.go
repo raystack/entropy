@@ -69,7 +69,7 @@ func (s *Service) execAction(ctx context.Context, res resource.Resource, act mod
 		planned.Resource.UpdatedAt = s.clock()
 	}
 
-	if err := s.upsert(ctx, *planned, isCreate(act.Name), true); err != nil {
+	if err := s.upsert(ctx, *planned, isCreate(act.Name), true, planned.Reason); err != nil {
 		return nil, err
 	}
 	return &planned.Resource, nil
@@ -101,7 +101,7 @@ func (s *Service) planChange(ctx context.Context, res resource.Resource, act mod
 	return planned, nil
 }
 
-func (s *Service) upsert(ctx context.Context, plan module.Plan, isCreate bool, saveRevision bool) error {
+func (s *Service) upsert(ctx context.Context, plan module.Plan, isCreate bool, saveRevision bool, reason string) error {
 	var hooks []resource.MutationHook
 	hooks = append(hooks, func(ctx context.Context) error {
 		if plan.Resource.State.IsTerminal() {
@@ -122,7 +122,7 @@ func (s *Service) upsert(ctx context.Context, plan module.Plan, isCreate bool, s
 	if isCreate {
 		err = s.store.Create(ctx, plan.Resource, hooks...)
 	} else {
-		err = s.store.Update(ctx, plan.Resource, saveRevision, hooks...)
+		err = s.store.Update(ctx, plan.Resource, saveRevision, reason, hooks...)
 	}
 
 	if err != nil {

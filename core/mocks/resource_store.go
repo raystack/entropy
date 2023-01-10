@@ -269,20 +269,20 @@ func (_c *ResourceStore_Revisions_Call) Return(_a0 []resource.Revision, _a1 erro
 	return _c
 }
 
-// Update provides a mock function with given fields: ctx, r, saveRevision, hooks
-func (_m *ResourceStore) Update(ctx context.Context, r resource.Resource, saveRevision bool, hooks ...resource.MutationHook) error {
+// Update provides a mock function with given fields: ctx, r, saveRevision, reason, hooks
+func (_m *ResourceStore) Update(ctx context.Context, r resource.Resource, saveRevision bool, reason string, hooks ...resource.MutationHook) error {
 	_va := make([]interface{}, len(hooks))
 	for _i := range hooks {
 		_va[_i] = hooks[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, r, saveRevision)
+	_ca = append(_ca, ctx, r, saveRevision, reason)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Resource, bool, ...resource.MutationHook) error); ok {
-		r0 = rf(ctx, r, saveRevision, hooks...)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Resource, bool, string, ...resource.MutationHook) error); ok {
+		r0 = rf(ctx, r, saveRevision, reason, hooks...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -299,21 +299,22 @@ type ResourceStore_Update_Call struct {
 //  - ctx context.Context
 //  - r resource.Resource
 //  - saveRevision bool
+//  - reason string
 //  - hooks ...resource.MutationHook
-func (_e *ResourceStore_Expecter) Update(ctx interface{}, r interface{}, saveRevision interface{}, hooks ...interface{}) *ResourceStore_Update_Call {
+func (_e *ResourceStore_Expecter) Update(ctx interface{}, r interface{}, saveRevision interface{}, reason interface{}, hooks ...interface{}) *ResourceStore_Update_Call {
 	return &ResourceStore_Update_Call{Call: _e.mock.On("Update",
-		append([]interface{}{ctx, r, saveRevision}, hooks...)...)}
+		append([]interface{}{ctx, r, saveRevision, reason}, hooks...)...)}
 }
 
-func (_c *ResourceStore_Update_Call) Run(run func(ctx context.Context, r resource.Resource, saveRevision bool, hooks ...resource.MutationHook)) *ResourceStore_Update_Call {
+func (_c *ResourceStore_Update_Call) Run(run func(ctx context.Context, r resource.Resource, saveRevision bool, reason string, hooks ...resource.MutationHook)) *ResourceStore_Update_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]resource.MutationHook, len(args)-3)
-		for i, a := range args[3:] {
+		variadicArgs := make([]resource.MutationHook, len(args)-4)
+		for i, a := range args[4:] {
 			if a != nil {
 				variadicArgs[i] = a.(resource.MutationHook)
 			}
 		}
-		run(args[0].(context.Context), args[1].(resource.Resource), args[2].(bool), variadicArgs...)
+		run(args[0].(context.Context), args[1].(resource.Resource), args[2].(bool), args[3].(string), variadicArgs...)
 	})
 	return _c
 }

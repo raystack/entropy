@@ -36,6 +36,7 @@ type Driver interface {
 type Plan struct {
 	Resource      resource.Resource
 	ScheduleRunAt time.Time
+	Reason        string
 }
 
 // Loggable extension of driver allows streaming log data for a resource.

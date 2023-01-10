@@ -118,6 +118,7 @@ func (st *Store) Create(ctx context.Context, r resource.Resource, hooks ...resou
 			URN:    r.URN,
 			Spec:   r.Spec,
 			Labels: r.Labels,
+			Reason: "resource created",
 		}
 
 		if err := insertRevision(ctx, tx, rev); err != nil {
@@ -134,7 +135,7 @@ func (st *Store) Create(ctx context.Context, r resource.Resource, hooks ...resou
 	return nil
 }
 
-func (st *Store) Update(ctx context.Context, r resource.Resource, saveRevision bool, hooks ...resource.MutationHook) error {
+func (st *Store) Update(ctx context.Context, r resource.Resource, saveRevision bool, reason string, hooks ...resource.MutationHook) error {
 	updateResource := func(ctx context.Context, tx *sqlx.Tx) error {
 		id, err := translateURNToID(ctx, tx, r.URN)
 		if err != nil {
@@ -169,6 +170,7 @@ func (st *Store) Update(ctx context.Context, r resource.Resource, saveRevision b
 				URN:    r.URN,
 				Spec:   r.Spec,
 				Labels: r.Labels,
+				Reason: reason,
 			}
 
 			if err := insertRevision(ctx, tx, rev); err != nil {

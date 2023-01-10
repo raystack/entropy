@@ -44,6 +44,7 @@ func (*firehoseModule) planCreate(res module.ExpandedResource, act module.Action
 	if reqConf.StopTime != nil {
 		plan.ScheduleRunAt = *reqConf.StopTime
 	}
+	plan.Reason = "firehose created"
 	return &plan, nil
 }
 
@@ -70,6 +71,7 @@ func (*firehoseModule) planChange(res module.ExpandedResource, act module.Action
 		if conf.StopTime != nil {
 			plan.ScheduleRunAt = *conf.StopTime
 		}
+		plan.Reason = "firehose config updated"
 
 	case ScaleAction:
 		var scaleParams struct {
@@ -79,12 +81,15 @@ func (*firehoseModule) planChange(res module.ExpandedResource, act module.Action
 			return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 		}
 		conf.Firehose.Replicas = scaleParams.Replicas
+		plan.Reason = "firehose scaled"
 
 	case StartAction:
 		conf.State = stateRunning
+		plan.Reason = "firehose started"
 
 	case StopAction:
 		conf.State = stateStopped
+		plan.Reason = "firehose stopped"
 	}
 
 	r.Spec.Configs = conf.JSON()
@@ -134,5 +139,5 @@ func (*firehoseModule) planReset(res module.ExpandedResource, act module.ActionR
 		}.JSON(),
 	}
 
-	return &module.Plan{Resource: r}, nil
+	return &module.Plan{Resource: r, Reason: "firehose consumer reset"}, nil
 }
