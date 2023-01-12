@@ -138,6 +138,7 @@ func revisionToProto(revision resource.Revision) (*entropyv1beta1.ResourceRevisi
 	return &entropyv1beta1.ResourceRevision{
 		Id:        strconv.FormatInt(revision.ID, decimalBase),
 		Urn:       revision.URN,
+		Reason:    revision.Reason,
 		Labels:    revision.Labels,
 		CreatedAt: timestamppb.New(revision.CreatedAt),
 		Spec:      spec,

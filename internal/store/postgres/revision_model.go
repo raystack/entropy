@@ -14,12 +14,13 @@ import (
 type revisionModel struct {
 	ID          int64     `db:"id"`
 	URN         string    `db:"urn"`
+	Reason      string    `db:"reason"`
 	CreatedAt   time.Time `db:"created_at"`
 	SpecConfigs []byte    `db:"spec_configs"`
 }
 
 func readRevisionRecord(ctx context.Context, r sqlx.QueryerContext, id int64, into *revisionModel) error {
-	cols := []string{"id", "urn", "created_at", "spec_configs"}
+	cols := []string{"id", "urn", "reason", "created_at", "spec_configs"}
 	builder := sq.Select(cols...).From(tableRevisions).Where(sq.Eq{"id": id})
 
 	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()

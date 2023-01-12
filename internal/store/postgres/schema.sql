@@ -66,3 +66,4 @@ CREATE TABLE IF NOT EXISTS modules (
 );
 
 CREATE INDEX IF NOT EXISTS idx_modules_project ON modules (project);
+ALTER TABLE revisions ADD COLUMN IF NOT EXISTS reason TEXT DEFAULT '<none>' NOT NULL;

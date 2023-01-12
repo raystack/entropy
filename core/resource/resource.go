@@ -21,7 +21,7 @@ type Store interface {
 	List(ctx context.Context, filter Filter) ([]Resource, error)
 
 	Create(ctx context.Context, r Resource, hooks ...MutationHook) error
-	Update(ctx context.Context, r Resource, hooks ...MutationHook) error
+	Update(ctx context.Context, r Resource, saveRevision bool, reason string, hooks ...MutationHook) error
 	Delete(ctx context.Context, urn string, hooks ...MutationHook) error
 
 	Revisions(ctx context.Context, selector RevisionsSelector) ([]Revision, error)
@@ -68,6 +68,7 @@ type RevisionsSelector struct {
 type Revision struct {
 	ID        int64             `json:"id"`
 	URN       string            `json:"urn"`
+	Reason    string            `json:"reason"`
 	Labels    map[string]string `json:"labels"`
 	CreatedAt time.Time         `json:"created_at"`
 

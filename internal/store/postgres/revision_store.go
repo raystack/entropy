@@ -75,6 +75,7 @@ func (st *Store) getRevisionByID(ctx context.Context, id int64) (*resource.Revis
 	return &resource.Revision{
 		ID:        rec.ID,
 		URN:       rec.URN,
+		Reason:    rec.Reason,
 		Labels:    tagsToLabelMap(tags),
 		CreatedAt: rec.CreatedAt,
 		Spec: resource.Spec{
@@ -98,8 +99,8 @@ func insertRevision(ctx context.Context, tx *sqlx.Tx, rev resource.Revision) err
 
 func insertRevisionRecord(ctx context.Context, runner sq.BaseRunner, r resource.Revision) (int64, error) {
 	q := sq.Insert(tableRevisions).
-		Columns("urn", "spec_configs").
-		Values(r.URN, r.Spec.Configs).
+		Columns("urn", "reason", "spec_configs").
+		Values(r.URN, r.Reason, r.Spec.Configs).
 		Suffix(`RETURNING "id"`).
 		PlaceholderFormat(sq.Dollar)
 

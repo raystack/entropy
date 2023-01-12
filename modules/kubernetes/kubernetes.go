@@ -56,7 +56,7 @@ func (m *kubeModule) Plan(ctx context.Context, res module.ExpandedResource, act 
 		Status: resource.StatusCompleted,
 		Output: output,
 	}
-	return &module.Plan{Resource: res.Resource}, nil
+	return &module.Plan{Resource: res.Resource, Reason: "kubernetes cluster details updated"}, nil
 }
 
 func (*kubeModule) Sync(_ context.Context, res module.ExpandedResource) (*resource.State, error) {

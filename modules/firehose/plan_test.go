@@ -64,6 +64,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 						ModuleData: []byte(`{"pending_steps":["release_create"]}`),
 					},
 				},
+				Reason: "firehose created",
 			},
 		},
 		{
@@ -96,6 +97,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 						ModuleData: []byte(`{"pending_steps":["release_update"]}`),
 					},
 				},
+				Reason: "firehose scaled",
 			},
 		},
 		{
@@ -119,6 +121,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 						ModuleData: []byte(`{"pending_steps":["release_update","consumer_reset","release_update"],"reset_to":"2022-06-22T00:00:00+00:00","state_override":"STOPPED"}`),
 					},
 				},
+				Reason: "firehose consumer reset",
 			},
 		},
 		{
@@ -143,6 +146,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 					},
 				},
 				ScheduleRunAt: parseTime("3022-07-13T00:40:14.028016Z"),
+				Reason:        "firehose created",
 			},
 		},
 	}
