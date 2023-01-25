@@ -41,7 +41,10 @@ func (m *firehoseModule) Output(ctx context.Context, res module.ExpandedResource
 		return nil, err
 	}
 
-	hc := conf.GetHelmReleaseConfig(res.Resource, m.Config)
+	hc, err := conf.GetHelmReleaseConfig(res.Resource)
+	if err != nil {
+		return nil, err
+	}
 
 	return Output{
 		Namespace:   hc.Namespace,
@@ -51,7 +54,7 @@ func (m *firehoseModule) Output(ctx context.Context, res module.ExpandedResource
 	}.JSON(), nil
 }
 
-func (m *firehoseModule) podDetails(ctx context.Context, res module.ExpandedResource) ([]kube.Pod, error) {
+func (*firehoseModule) podDetails(ctx context.Context, res module.ExpandedResource) ([]kube.Pod, error) {
 	r := res.Resource
 
 	var conf moduleConfig
@@ -64,7 +67,10 @@ func (m *firehoseModule) podDetails(ctx context.Context, res module.ExpandedReso
 		return nil, err
 	}
 
-	hc := conf.GetHelmReleaseConfig(r, m.Config)
+	hc, err := conf.GetHelmReleaseConfig(r)
+	if err != nil {
+		return nil, err
+	}
 
 	kubeCl := kube.NewClient(kubeOut.Configs)
 	return kubeCl.GetPodDetails(ctx, hc.Namespace, map[string]string{"app": hc.Name})

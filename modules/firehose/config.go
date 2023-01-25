@@ -43,7 +43,14 @@ func (mc *moduleConfig) validate() error {
 	return nil
 }
 
-func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource, defaults config) *helm.ReleaseConfig {
+func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
+	var output Output
+	err := json.Unmarshal(r.State.Output, &output)
+	if err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid output json: %v", err)
+	}
+	defaults := output.Defaults
+
 	rc := helm.DefaultReleaseConfig()
 	rc.Name = fmt.Sprintf("%s-%s-firehose", r.Project, r.Name)
 	rc.Repository = defaults.ChartRepository
@@ -73,7 +80,7 @@ func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource, defaults config
 	}
 	rc.Values = hv
 
-	return rc
+	return rc, nil
 }
 
 func (mc moduleConfig) JSON() []byte {

@@ -10,7 +10,7 @@ import (
 	"github.com/odpf/entropy/pkg/kube"
 )
 
-func (m *firehoseModule) Log(ctx context.Context, res module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error) {
+func (*firehoseModule) Log(ctx context.Context, res module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error) {
 	r := res.Resource
 
 	var conf moduleConfig
@@ -27,7 +27,10 @@ func (m *firehoseModule) Log(ctx context.Context, res module.ExpandedResource, f
 		filter = make(map[string]string)
 	}
 
-	hc := conf.GetHelmReleaseConfig(r, m.Config)
+	hc, err := conf.GetHelmReleaseConfig(r)
+	if err != nil {
+		return nil, err
+	}
 
 	filter["app"] = hc.Name
 
