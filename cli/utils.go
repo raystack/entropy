@@ -3,7 +3,6 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -22,7 +21,7 @@ const (
 type RunEFunc func(cmd *cobra.Command, args []string) error
 
 func parseFile(filePath string, v protoreflect.ProtoMessage) error {
-	b, err := ioutil.ReadFile(filePath)
+	b, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}

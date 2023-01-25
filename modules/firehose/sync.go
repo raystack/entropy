@@ -62,7 +62,7 @@ func (m *firehoseModule) Sync(ctx context.Context, res module.ExpandedResource) 
 			conf.Firehose.KafkaBrokerAddress,
 			conf.Firehose.KafkaConsumerID,
 			data.ResetTo,
-			conf.GetHelmReleaseConfig(r).Namespace,
+			conf.GetHelmReleaseConfig(r, m.Config).Namespace,
 			kubeOut); err != nil {
 			return nil, err
 		}
@@ -90,18 +90,20 @@ func (m *firehoseModule) Sync(ctx context.Context, res module.ExpandedResource) 
 	}, nil
 }
 
-func (*firehoseModule) releaseSync(isCreate bool, conf moduleConfig, r resource.Resource, kube kubernetes.Output) error {
+func (m *firehoseModule) releaseSync(isCreate bool, conf moduleConfig, r resource.Resource, kube kubernetes.Output) error {
 	helmCl := helm.NewClient(&helm.Config{Kubernetes: kube.Configs})
 
 	if conf.State == stateStopped || (conf.StopTime != nil && conf.StopTime.Before(time.Now())) {
 		conf.Firehose.Replicas = 0
 	}
 
+	hc := conf.GetHelmReleaseConfig(r, m.Config)
+
 	var helmErr error
 	if isCreate {
-		_, helmErr = helmCl.Create(conf.GetHelmReleaseConfig(r))
+		_, helmErr = helmCl.Create(hc)
 	} else {
-		_, helmErr = helmCl.Update(conf.GetHelmReleaseConfig(r))
+		_, helmErr = helmCl.Update(hc)
 	}
 
 	return helmErr

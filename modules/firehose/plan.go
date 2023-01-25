@@ -20,7 +20,7 @@ func (m *firehoseModule) Plan(_ context.Context, res module.ExpandedResource, ac
 	}
 }
 
-func (*firehoseModule) planCreate(res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
+func (m *firehoseModule) planCreate(res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
 	var plan module.Plan
 	r := res.Resource
 
@@ -28,9 +28,13 @@ func (*firehoseModule) planCreate(res module.ExpandedResource, act module.Action
 	if err := json.Unmarshal(act.Params, &reqConf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 	}
-	if err := reqConf.sanitiseAndValidate(); err != nil {
+	if err := reqConf.validate(); err != nil {
 		return nil, err
 	}
+
+	output := Output{
+		Defaults: m.Config,
+	}.JSON()
 
 	r.Spec.Configs = reqConf.JSON()
 	r.State = resource.State{
@@ -38,6 +42,7 @@ func (*firehoseModule) planCreate(res module.ExpandedResource, act module.Action
 		ModuleData: moduleData{
 			PendingSteps: []string{releaseCreate},
 		}.JSON(),
+		Output: output,
 	}
 
 	plan.Resource = r
@@ -63,7 +68,7 @@ func (*firehoseModule) planChange(res module.ExpandedResource, act module.Action
 		if err := json.Unmarshal(act.Params, &reqConf); err != nil {
 			return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 		}
-		if err := reqConf.sanitiseAndValidate(); err != nil {
+		if err := reqConf.validate(); err != nil {
 			return nil, err
 		}
 		conf = reqConf
