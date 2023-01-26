@@ -9,10 +9,11 @@ import (
 )
 
 const (
-	StopAction  = "stop"
-	StartAction = "start"
-	ScaleAction = "scale"
-	ResetAction = "reset"
+	StopAction    = "stop"
+	StartAction   = "start"
+	ScaleAction   = "scale"
+	ResetAction   = "reset"
+	UpgradeAction = "upgrade"
 )
 
 const (
@@ -67,6 +68,10 @@ var Module = module.Descriptor{
 			Name:        ResetAction,
 			Description: "Reset firehose kafka consumer group to given timestamp",
 			ParamSchema: resetActionSchema,
+		},
+		{
+			Name:        UpgradeAction,
+			Description: "Upgrade firehose to current stable version",
 		},
 	},
 	DriverFactory: func(conf json.RawMessage) (module.Driver, error) {

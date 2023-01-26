@@ -53,7 +53,7 @@ func (m *firehoseModule) planCreate(res module.ExpandedResource, act module.Acti
 	return &plan, nil
 }
 
-func (*firehoseModule) planChange(res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
+func (m *firehoseModule) planChange(res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
 	var plan module.Plan
 	r := res.Resource
 
@@ -95,6 +95,18 @@ func (*firehoseModule) planChange(res module.ExpandedResource, act module.Action
 	case StopAction:
 		conf.State = stateStopped
 		plan.Reason = "firehose stopped"
+
+	case UpgradeAction:
+		var output Output
+		err := json.Unmarshal(res.State.Output, &output)
+		if err != nil {
+			return nil, errors.ErrInvalid.WithMsgf("invalid output json: %v", err)
+		}
+
+		output.Defaults = m.Config
+		res.State.Output = output.JSON()
+
+		plan.Reason = "firehose upgraded"
 	}
 
 	r.Spec.Configs = conf.JSON()
