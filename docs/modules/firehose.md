@@ -18,7 +18,6 @@ The configuration struct for Firehose module looks like:
 ```
 type moduleConfig struct {
 	State        string `json:"state"`
-	ChartVersion string `json:"chart_version"`
 	Firehose     struct {
 		Replicas           int               `json:"replicas"`
 		KafkaBrokerAddress string            `json:"kafka_broker_address"`

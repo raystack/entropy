@@ -11,16 +11,6 @@ import (
 	"github.com/odpf/entropy/pkg/helm"
 )
 
-const (
-	defaultNamespace        = "firehose"
-	defaultChartString      = "firehose"
-	defaultVersionString    = "0.1.1"
-	defaultRepositoryString = "https://odpf.github.io/charts/"
-	defaultImagePullPolicy  = "IfNotPresent"
-	defaultImageRepository  = "odpf/firehose"
-	defaultImageTag         = "latest"
-)
-
 var (
 	//go:embed schema/config.json
 	completeConfigSchema string
@@ -33,11 +23,10 @@ var (
 )
 
 type moduleConfig struct {
-	State        string                 `json:"state"`
-	ChartVersion string                 `json:"chart_version"`
-	StopTime     *time.Time             `json:"stop_time"`
-	Telegraf     map[string]interface{} `json:"telegraf"`
-	Firehose     struct {
+	State    string                 `json:"state"`
+	StopTime *time.Time             `json:"stop_time"`
+	Telegraf map[string]interface{} `json:"telegraf"`
+	Firehose struct {
 		Replicas           int               `json:"replicas"`
 		KafkaBrokerAddress string            `json:"kafka_broker_address"`
 		KafkaTopic         string            `json:"kafka_topic"`
@@ -46,25 +35,29 @@ type moduleConfig struct {
 	} `json:"firehose"`
 }
 
-func (mc *moduleConfig) sanitiseAndValidate() error {
+func (mc *moduleConfig) validate() error {
 	if mc.StopTime != nil && mc.StopTime.Before(time.Now()) {
 		return errors.ErrInvalid.
 			WithMsgf("value for stop_time must be greater than current time")
 	}
-	if mc.ChartVersion == "" {
-		mc.ChartVersion = defaultVersionString
-	}
 	return nil
 }
 
-func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) *helm.ReleaseConfig {
+func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
+	var output Output
+	err := json.Unmarshal(r.State.Output, &output)
+	if err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid output json: %v", err)
+	}
+	defaults := output.Defaults
+
 	rc := helm.DefaultReleaseConfig()
 	rc.Name = fmt.Sprintf("%s-%s-firehose", r.Project, r.Name)
-	rc.Repository = defaultRepositoryString
-	rc.Chart = defaultChartString
-	rc.Namespace = defaultNamespace
+	rc.Repository = defaults.ChartRepository
+	rc.Chart = defaults.ChartName
+	rc.Namespace = defaults.Namespace
 	rc.ForceUpdate = true
-	rc.Version = mc.ChartVersion
+	rc.Version = defaults.ChartVersion
 
 	fc := mc.Firehose
 	fc.EnvVariables["SOURCE_KAFKA_BROKERS"] = fc.KafkaBrokerAddress
@@ -75,9 +68,9 @@ func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) *helm.ReleaseCo
 		"replicaCount": mc.Firehose.Replicas,
 		"firehose": map[string]interface{}{
 			"image": map[string]interface{}{
-				"repository": defaultImageRepository,
-				"pullPolicy": defaultImagePullPolicy,
-				"tag":        defaultImageTag,
+				"repository": defaults.ImageRepository,
+				"pullPolicy": defaults.ImagePullPolicy,
+				"tag":        defaults.ImageTag,
 			},
 			"config": fc.EnvVariables,
 		},
@@ -87,7 +80,7 @@ func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) *helm.ReleaseCo
 	}
 	rc.Values = hv
 
-	return rc
+	return rc, nil
 }
 
 func (mc moduleConfig) JSON() []byte {

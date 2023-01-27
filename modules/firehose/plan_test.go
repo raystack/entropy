@@ -22,7 +22,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		Name:    "test",
 		Project: "demo",
 		Spec: resource.Spec{
-			Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+			Configs: []byte(`{"state":"RUNNING","firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 		},
 		State: resource.State{},
 	}
@@ -57,11 +57,12 @@ func TestFirehoseModule_Plan(t *testing.T) {
 					Name:    "test",
 					Project: "demo",
 					Spec: resource.Spec{
-						Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_time":null,"telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+						Configs: []byte(`{"state":"RUNNING","stop_time":null,"telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 					},
 					State: resource.State{
 						Status:     resource.StatusPending,
 						ModuleData: []byte(`{"pending_steps":["release_create"]}`),
+						Output:     []byte(`{"defaults":{}}`),
 					},
 				},
 				Reason: "firehose created",
@@ -90,7 +91,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 					Name:    "test",
 					Project: "demo",
 					Spec: resource.Spec{
-						Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_time":null,"telegraf":null,"firehose":{"replicas":5,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+						Configs: []byte(`{"state":"RUNNING","stop_time":null,"telegraf":null,"firehose":{"replicas":5,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 					},
 					State: resource.State{
 						Status:     resource.StatusPending,
@@ -114,7 +115,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 					Name:    "test",
 					Project: "demo",
 					Spec: resource.Spec{
-						Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_time":null,"telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+						Configs: []byte(`{"state":"RUNNING","stop_time":null,"telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 					},
 					State: resource.State{
 						Status:     resource.StatusPending,
@@ -138,11 +139,12 @@ func TestFirehoseModule_Plan(t *testing.T) {
 					Name:    "test",
 					Project: "demo",
 					Spec: resource.Spec{
-						Configs: []byte(`{"state":"RUNNING","chart_version":"0.1.1","stop_time":"3022-07-13T00:40:14.028016Z","telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+						Configs: []byte(`{"state":"RUNNING","stop_time":"3022-07-13T00:40:14.028016Z","telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 					},
 					State: resource.State{
 						Status:     resource.StatusPending,
 						ModuleData: []byte(`{"pending_steps":["release_create"]}`),
+						Output:     []byte(`{"defaults":{}}`),
 					},
 				},
 				ScheduleRunAt: parseTime("3022-07-13T00:40:14.028016Z"),

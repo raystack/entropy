@@ -59,10 +59,9 @@ func (m *firehoseModule) Sync(ctx context.Context, res module.ExpandedResource) 
 		}
 	case consumerReset:
 		if err := m.consumerReset(ctx,
-			conf.Firehose.KafkaBrokerAddress,
-			conf.Firehose.KafkaConsumerID,
+			conf,
+			r,
 			data.ResetTo,
-			conf.GetHelmReleaseConfig(r).Namespace,
 			kubeOut); err != nil {
 			return nil, err
 		}
@@ -97,27 +96,36 @@ func (*firehoseModule) releaseSync(isCreate bool, conf moduleConfig, r resource.
 		conf.Firehose.Replicas = 0
 	}
 
+	hc, err := conf.GetHelmReleaseConfig(r)
+	if err != nil {
+		return err
+	}
+
 	var helmErr error
 	if isCreate {
-		_, helmErr = helmCl.Create(conf.GetHelmReleaseConfig(r))
+		_, helmErr = helmCl.Create(hc)
 	} else {
-		_, helmErr = helmCl.Update(conf.GetHelmReleaseConfig(r))
+		_, helmErr = helmCl.Update(hc)
 	}
 
 	return helmErr
 }
 
-func (*firehoseModule) consumerReset(ctx context.Context, brokers string, consumerID string, resetTo string, namespace string, out kubernetes.Output) error {
-	cgm := kafka.NewConsumerGroupManager(brokers, kube.NewClient(out.Configs), namespace)
+func (*firehoseModule) consumerReset(ctx context.Context, conf moduleConfig, r resource.Resource, resetTo string, out kubernetes.Output) error {
+	releaseConfig, err := conf.GetHelmReleaseConfig(r)
+	if err != nil {
+		return err
+	}
 
-	var err error
+	cgm := kafka.NewConsumerGroupManager(conf.Firehose.KafkaBrokerAddress, kube.NewClient(out.Configs), releaseConfig.Namespace)
+
 	switch resetTo {
 	case ResetToEarliest:
-		err = cgm.ResetOffsetToEarliest(ctx, consumerID)
+		err = cgm.ResetOffsetToEarliest(ctx, conf.Firehose.KafkaConsumerID)
 	case ResetToLatest:
-		err = cgm.ResetOffsetToLatest(ctx, consumerID)
+		err = cgm.ResetOffsetToLatest(ctx, conf.Firehose.KafkaConsumerID)
 	default:
-		err = cgm.ResetOffsetToDatetime(ctx, consumerID, resetTo)
+		err = cgm.ResetOffsetToDatetime(ctx, conf.Firehose.KafkaConsumerID, resetTo)
 	}
 
 	return handleErr(err)

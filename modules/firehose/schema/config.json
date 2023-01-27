@@ -11,9 +11,6 @@
       ],
       "default": "RUNNING"
     },
-    "chart_version": {
-      "type": "string"
-    },
     "stop_time": {
       "type": "string",
       "format": "date-time"

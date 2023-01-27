@@ -11,9 +11,10 @@ import (
 )
 
 type Output struct {
-	Namespace   string     `json:"namespace"`
-	ReleaseName string     `json:"release_name"`
-	Pods        []kube.Pod `json:"pods"`
+	Namespace   string     `json:"namespace,omitempty"`
+	ReleaseName string     `json:"release_name,omitempty"`
+	Pods        []kube.Pod `json:"pods,omitempty"`
+	Defaults    config     `json:"defaults,omitempty"`
 }
 
 func (out Output) JSON() []byte {
@@ -30,15 +31,26 @@ func (m *firehoseModule) Output(ctx context.Context, res module.ExpandedResource
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 	}
 
+	var output Output
+	if err := json.Unmarshal(res.Resource.State.Output, &output); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid output json: %v", err)
+	}
+
 	pods, err := m.podDetails(ctx, res)
 	if err != nil {
 		return nil, err
 	}
 
+	hc, err := conf.GetHelmReleaseConfig(res.Resource)
+	if err != nil {
+		return nil, err
+	}
+
 	return Output{
-		Namespace:   conf.GetHelmReleaseConfig(res.Resource).Namespace,
-		ReleaseName: conf.GetHelmReleaseConfig(res.Resource).Name,
+		Namespace:   hc.Namespace,
+		ReleaseName: hc.Name,
 		Pods:        pods,
+		Defaults:    output.Defaults,
 	}.JSON(), nil
 }
 
@@ -55,6 +67,11 @@ func (*firehoseModule) podDetails(ctx context.Context, res module.ExpandedResour
 		return nil, err
 	}
 
+	hc, err := conf.GetHelmReleaseConfig(r)
+	if err != nil {
+		return nil, err
+	}
+
 	kubeCl := kube.NewClient(kubeOut.Configs)
-	return kubeCl.GetPodDetails(ctx, defaultNamespace, map[string]string{"app": conf.GetHelmReleaseConfig(r).Name})
+	return kubeCl.GetPodDetails(ctx, hc.Namespace, map[string]string{"app": hc.Name})
 }
