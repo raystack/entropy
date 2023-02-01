@@ -11,6 +11,8 @@ import (
 	"github.com/odpf/entropy/pkg/helm"
 )
 
+const firehoseConsumerIDStartingSequence = "0001"
+
 var (
 	//go:embed schema/config.json
 	completeConfigSchema string
@@ -35,12 +37,21 @@ type moduleConfig struct {
 	} `json:"firehose"`
 }
 
-func (mc *moduleConfig) validate() error {
+func (mc *moduleConfig) validateAndSanitize(r resource.Resource) error {
 	if mc.StopTime != nil && mc.StopTime.Before(time.Now()) {
 		return errors.ErrInvalid.
 			WithMsgf("value for stop_time must be greater than current time")
 	}
+
+	if mc.Firehose.KafkaConsumerID == "" {
+		mc.Firehose.KafkaConsumerID = fmt.Sprintf("%s-%s", generateFirehoseName(r), firehoseConsumerIDStartingSequence)
+	}
+
 	return nil
+}
+
+func generateFirehoseName(r resource.Resource) string {
+	return fmt.Sprintf("%s-%s-firehose", r.Project, r.Name)
 }
 
 func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
@@ -52,7 +63,7 @@ func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) (*helm.ReleaseC
 	defaults := output.Defaults
 
 	rc := helm.DefaultReleaseConfig()
-	rc.Name = fmt.Sprintf("%s-%s-firehose", r.Project, r.Name)
+	rc.Name = generateFirehoseName(r)
 	rc.Repository = defaults.ChartRepository
 	rc.Chart = defaults.ChartName
 	rc.Namespace = defaults.Namespace
