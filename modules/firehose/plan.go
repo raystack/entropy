@@ -28,7 +28,7 @@ func (m *firehoseModule) planCreate(res module.ExpandedResource, act module.Acti
 	if err := json.Unmarshal(act.Params, &reqConf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 	}
-	if err := reqConf.validate(); err != nil {
+	if err := reqConf.validateAndSanitize(res.Resource); err != nil {
 		return nil, err
 	}
 
@@ -68,7 +68,7 @@ func (m *firehoseModule) planChange(res module.ExpandedResource, act module.Acti
 		if err := json.Unmarshal(act.Params, &reqConf); err != nil {
 			return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 		}
-		if err := reqConf.validate(); err != nil {
+		if err := reqConf.validateAndSanitize(r); err != nil {
 			return nil, err
 		}
 		conf = reqConf
