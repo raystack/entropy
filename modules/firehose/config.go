@@ -50,11 +50,7 @@ func (mc *moduleConfig) validateAndSanitize(r resource.Resource) error {
 	return nil
 }
 
-func generateFirehoseName(r resource.Resource) string {
-	return fmt.Sprintf("%s-%s-firehose", r.Project, r.Name)
-}
-
-func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
+func (mc *moduleConfig) GetHelmReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
 	var output Output
 	err := json.Unmarshal(r.State.Output, &output)
 	if err != nil {
@@ -94,10 +90,14 @@ func (mc moduleConfig) GetHelmReleaseConfig(r resource.Resource) (*helm.ReleaseC
 	return rc, nil
 }
 
-func (mc moduleConfig) JSON() []byte {
+func (mc *moduleConfig) JSON() []byte {
 	b, err := json.Marshal(mc)
 	if err != nil {
 		panic(err)
 	}
 	return b
+}
+
+func generateFirehoseName(r resource.Resource) string {
+	return fmt.Sprintf("%s-%s-firehose", r.Project, r.Name)
 }

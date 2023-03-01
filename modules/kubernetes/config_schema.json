@@ -1,12 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
     "host": {
       "type": "string",
-      "format": "uri",
-      "pattern": "^https?://"
+      "format": "uri"
     },
     "insecure": {
       "type": "boolean",
@@ -21,61 +19,38 @@
     "client_certificate": {
       "type": "string"
     },
-    "cluster_ca_certificate": {
+    "client_ca_certificate": {
       "type": "string"
-    },
-    "timeout": {
-      "type": "number",
-      "default": 100000000
     }
   },
-  "allOf": [
+  "required": [
+    "host"
+  ],
+  "anyOf": [
     {
-      "oneOf": [
-        {
-          "required": [
-            "token"
-          ]
-        },
-        {
-          "allOf": [
-            {
-              "required": [
-                "client_key"
-              ]
-            },
-            {
-              "required": [
-                "client_certificate"
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "oneOf": [
-        {
-          "required": [
-            "cluster_ca_certificate"
-          ]
-        },
-        {
-          "properties": {
-            "insecure": {
-              "const": true
-            }
-          },
-          "required": [
-            "insecure"
-          ]
-        }
+      "required": [
+        "token"
       ]
     },
     {
       "required": [
-        "host"
-      ]
+        "client_key",
+        "client_certificate"
+      ],
+      "if": {
+        "not": {
+          "properties": {
+            "insecure": {
+              "const": true
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "client_ca_certificate"
+        ]
+      }
     }
   ]
 }
