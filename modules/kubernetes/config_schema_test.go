@@ -1,113 +1,120 @@
 package kubernetes
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/xeipuuv/gojsonschema"
 )
 
 func TestModule_KubernetesJSONSchema(t *testing.T) {
 	tests := []struct {
-		Case    string
-		wantErr error
-		want    bool
+		title         string
+		Case          string
+		shouldBeValid bool
 	}{
 		{
+			title: "TokenAuthPresent_InsecureTrue",
 			Case: `{
 				"host": "http://0.0.0.0:1234",
 				"insecure": true,
 				"token": "token"
 			}`,
-			wantErr: nil,
-			want:    true,
+			shouldBeValid: true,
 		},
 		{
+			title: "TokenAuthPresent_InsecureFalse",
+			Case: `{
+			  "host": "http://0.0.0.0:1234",
+			  "insecure": false,
+			  "token": "foo"
+			}`,
+			shouldBeValid: true,
+		},
+		{
+			title: "TokenAuthPresent_CertIsPresentToo",
 			Case: `{
 				"host": "http://0.0.0.0:1234",
 				"insecure": false,
-				"token": "token"
+				"token": "token",
+				"cluster_certificate": "c_ca_cert"
 			  }`,
-			wantErr: nil,
-			want:    false,
+			shouldBeValid: true,
 		},
 		{
-			Case: `{
-				"host": "http://0.0.0.0:1234",
-				"insecure": false,
-				"cluster_ca_certificate": "c_ca_cert",
-				"token": "token"
-			  }`,
-			wantErr: nil,
-			want:    true,
-		},
-		{
-			Case: `{
-				"host": "http://0.0.0.0:1234",
-				"cluster_ca_certificate": "c_ca_cert",
-				"token": "token"
-			  }`,
-			wantErr: nil,
-			want:    true,
-		},
-		{
+			title: "CertAuthPresent_InsecureTrue",
 			Case: `{
 				"host": "http://0.0.0.0:1234",
 				"insecure": true,
 				"client_key": "c_key",
 				"client_certificate": "c_cert"
 			  }`,
-			wantErr: nil,
-			want:    true,
+			shouldBeValid: true,
 		},
 		{
-			Case: `  "host": "http://0.0.0.0:1234",
-			"insecure": true,
-			"client_key": "c_key"
-		  }`,
-			wantErr: nil,
-			want:    false,
-		},
-		{
+			title: "CertAuthPresent_InsecureFalse",
 			Case: `{
 				"host": "http://0.0.0.0:1234",
-				"insecure": true,
-				"token": "token",
+				"insecure": false,
 				"client_key": "c_key",
 				"client_certificate": "c_cert"
 			  }`,
-			wantErr: nil,
-			want:    false,
+			shouldBeValid: false,
 		},
+
 		{
+			title: "CertAuthPresent_InsecureFalse_WithCACert",
 			Case: `{
 				"host": "http://0.0.0.0:1234",
-				"insecure": true,
-				"token": "token",
+				"insecure": false,
+				"client_key": "c_key",
+				"client_certificate": "c_cert",
+				"client_ca_certificate": "ca_cert"
+			  }`,
+			shouldBeValid: true,
+		},
+		{
+			title: "Missing_ClientCert",
+			Case: `{
+				"host": "http://0.0.0.0:1234",
 				"client_key": "c_key"
+		  	}`,
+			shouldBeValid: false,
+		},
+		{
+			title: "Missing_ClientKey",
+			Case: `{
+				"host": "http://0.0.0.0:1234",
+				"insecure": true,
+				"client_certificate": "c_cert"
 			  }`,
-			wantErr: nil,
-			want:    true,
+			shouldBeValid: false,
+		},
+		{
+			title: "Missing_CACert",
+			Case: `{
+				"host": "http://0.0.0.0:1234",
+				"insecure": false,
+				"client_key": "foo",
+				"client_certificate": "c_cert"
+			  }`,
+			shouldBeValid: false,
 		},
 	}
-	loader := gojsonschema.NewStringLoader(configSchema)
-	schema, _ := gojsonschema.NewSchema(loader)
+
+	schema, err := gojsonschema.NewSchema(gojsonschema.NewStringLoader(configSchema))
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.Case, func(t *testing.T) {
+		t.Run(tt.title, func(t *testing.T) {
 			t.Parallel()
 
 			c := gojsonschema.NewStringLoader(tt.Case)
 			result, err := schema.Validate(c)
-			if tt.wantErr != nil {
-				assert.Error(t, err)
-				assert.True(t, errors.Is(err, tt.wantErr))
-			} else {
-				assert.NoError(t, err)
-			}
-			assert.Equal(t, tt.want, result.Valid())
+			require.NoError(t, err)
+			assert.Equal(t, tt.shouldBeValid, result.Valid())
 		})
 	}
 }
