@@ -24,6 +24,7 @@ tmp/
 
 expt/
 
-entropy.dev.yaml
+entropy*.dev.yaml
+entropy*.dev.yml
 
 requests.http

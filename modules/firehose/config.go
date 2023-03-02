@@ -1,6 +1,7 @@
 package firehose
 
 import (
+	"crypto/sha256"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -99,5 +100,17 @@ func (mc *moduleConfig) JSON() []byte {
 }
 
 func generateFirehoseName(r resource.Resource) string {
-	return fmt.Sprintf("%s-%s-firehose", r.Project, r.Name)
+	const (
+		suffix         = "-firehose"
+		kubeNameMaxLen = 63
+	)
+
+	name := fmt.Sprintf("%s-%s", r.Project, r.Name)
+	if len(name)+len(suffix) >= kubeNameMaxLen {
+		val := sha256.Sum256([]byte(name))
+		hash := fmt.Sprintf("%x", val)
+		name = fmt.Sprintf("%s-%s", name[:48], hash[:5])
+	}
+
+	return name + suffix
 }
