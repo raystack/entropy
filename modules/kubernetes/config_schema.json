@@ -19,7 +19,7 @@
     "client_certificate": {
       "type": "string"
     },
-    "client_ca_certificate": {
+    "cluster_ca_certificate": {
       "type": "string"
     }
   },
@@ -48,7 +48,7 @@
       },
       "then": {
         "required": [
-          "client_ca_certificate"
+          "cluster_ca_certificate"
         ]
       }
     }
