@@ -1,6 +1,7 @@
 package firehose
 
 import (
+	"crypto/sha256"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -11,7 +12,10 @@ import (
 	"github.com/odpf/entropy/pkg/helm"
 )
 
-const firehoseConsumerIDStartingSequence = "0001"
+const (
+	firehoseConsumerIDStartingSequence = "0001"
+	kubeDeploymentNameLengthLimit      = 63
+)
 
 var (
 	//go:embed schema/config.json
@@ -34,6 +38,7 @@ type moduleConfig struct {
 		KafkaTopic         string            `json:"kafka_topic"`
 		KafkaConsumerID    string            `json:"kafka_consumer_id"`
 		EnvVariables       map[string]string `json:"env_variables"`
+		DeploymentID       string            `json:"deployment_id,omitempty"`
 	} `json:"firehose"`
 }
 
@@ -44,7 +49,8 @@ func (mc *moduleConfig) validateAndSanitize(r resource.Resource) error {
 	}
 
 	if mc.Firehose.KafkaConsumerID == "" {
-		mc.Firehose.KafkaConsumerID = fmt.Sprintf("%s-%s", generateFirehoseName(r), firehoseConsumerIDStartingSequence)
+		mc.Firehose.KafkaConsumerID = fmt.Sprintf("%s-%s-%s-%s",
+			r.Project, r.Name, "-firehose-", firehoseConsumerIDStartingSequence)
 	}
 
 	return nil
@@ -58,8 +64,13 @@ func (mc *moduleConfig) GetHelmReleaseConfig(r resource.Resource) (*helm.Release
 	}
 	defaults := output.Defaults
 
+	relName, err := sanitiseDeploymentID(r, *mc)
+	if err != nil {
+		return nil, err
+	}
+
 	rc := helm.DefaultReleaseConfig()
-	rc.Name = generateFirehoseName(r)
+	rc.Name = relName
 	rc.Repository = defaults.ChartRepository
 	rc.Chart = defaults.ChartName
 	rc.Namespace = defaults.Namespace
@@ -98,6 +109,25 @@ func (mc *moduleConfig) JSON() []byte {
 	return b
 }
 
-func generateFirehoseName(r resource.Resource) string {
-	return fmt.Sprintf("%s-%s-firehose", r.Project, r.Name)
+func sanitiseDeploymentID(r resource.Resource, mc moduleConfig) (string, error) {
+	releaseName := mc.Firehose.DeploymentID
+	if len(releaseName) == 0 {
+		releaseName = generateSafeReleaseName(r.Project, r.Name)
+	} else if len(releaseName) >= kubeDeploymentNameLengthLimit {
+		return "", errors.ErrInvalid.WithMsgf("deployment_id must be shorter than 63 chars")
+	}
+	return releaseName, nil
+}
+
+func generateSafeReleaseName(project, name string) string {
+	const suffix = "-firehose"
+
+	releaseName := fmt.Sprintf("%s-%s", project, name)
+	if len(releaseName)+len(suffix) >= kubeDeploymentNameLengthLimit {
+		val := sha256.Sum256([]byte(releaseName))
+		hash := fmt.Sprintf("%x", val)
+		releaseName = fmt.Sprintf("%s-%s", releaseName[:48], hash[:5])
+	}
+
+	return releaseName + suffix
 }

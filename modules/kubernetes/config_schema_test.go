@@ -70,7 +70,7 @@ func TestModule_KubernetesJSONSchema(t *testing.T) {
 				"insecure": false,
 				"client_key": "c_key",
 				"client_certificate": "c_cert",
-				"client_ca_certificate": "ca_cert"
+				"cluster_ca_certificate": "ca_cert"
 			  }`,
 			shouldBeValid: true,
 		},
