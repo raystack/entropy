@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/testing/protocmp"
 
 	"github.com/goto/entropy/pkg/errors"
+	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 )
 
 func TestAPIServer_ListModules(t *testing.T) {

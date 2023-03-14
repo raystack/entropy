@@ -20,6 +20,7 @@ const (
 
 // schema represents the storage schema.
 // Note: Update the constants above if the table name is changed.
+//
 //go:embed schema.sql
 var schema string
 

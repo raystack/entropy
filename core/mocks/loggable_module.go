@@ -55,9 +55,9 @@ type LoggableModule_Log_Call struct {
 }
 
 // Log is a helper method to define mock.On call
-//  - ctx context.Context
-//  - res module.ExpandedResource
-//  - filter map[string]string
+//   - ctx context.Context
+//   - res module.ExpandedResource
+//   - filter map[string]string
 func (_e *LoggableModule_Expecter) Log(ctx interface{}, res interface{}, filter interface{}) *LoggableModule_Log_Call {
 	return &LoggableModule_Log_Call{Call: _e.mock.On("Log", ctx, res, filter)}
 }
@@ -103,8 +103,8 @@ type LoggableModule_Output_Call struct {
 }
 
 // Output is a helper method to define mock.On call
-//  - ctx context.Context
-//  - res module.ExpandedResource
+//   - ctx context.Context
+//   - res module.ExpandedResource
 func (_e *LoggableModule_Expecter) Output(ctx interface{}, res interface{}) *LoggableModule_Output_Call {
 	return &LoggableModule_Output_Call{Call: _e.mock.On("Output", ctx, res)}
 }
@@ -150,9 +150,9 @@ type LoggableModule_Plan_Call struct {
 }
 
 // Plan is a helper method to define mock.On call
-//  - ctx context.Context
-//  - res module.ExpandedResource
-//  - act module.ActionRequest
+//   - ctx context.Context
+//   - res module.ExpandedResource
+//   - act module.ActionRequest
 func (_e *LoggableModule_Expecter) Plan(ctx interface{}, res interface{}, act interface{}) *LoggableModule_Plan_Call {
 	return &LoggableModule_Plan_Call{Call: _e.mock.On("Plan", ctx, res, act)}
 }
@@ -198,8 +198,8 @@ type LoggableModule_Sync_Call struct {
 }
 
 // Sync is a helper method to define mock.On call
-//  - ctx context.Context
-//  - res module.ExpandedResource
+//   - ctx context.Context
+//   - res module.ExpandedResource
 func (_e *LoggableModule_Expecter) Sync(ctx interface{}, res interface{}) *LoggableModule_Sync_Call {
 	return &LoggableModule_Sync_Call{Call: _e.mock.On("Sync", ctx, res)}
 }

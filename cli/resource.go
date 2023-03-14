@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
-	"github.com/goto/salt/term" // nolint
-
 	"github.com/MakeNowJust/heredoc"
 	"github.com/goto/salt/printer"
+	"github.com/goto/salt/term" // nolint
 	"github.com/spf13/cobra"
+
+	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 )
 
 func cmdResource() *cobra.Command {

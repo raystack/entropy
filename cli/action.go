@@ -4,11 +4,12 @@ import (
 	"fmt"
 
 	"github.com/MakeNowJust/heredoc"
-	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 	"github.com/goto/salt/printer"
 	"github.com/goto/salt/term"
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/types/known/structpb"
+
+	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 )
 
 func cmdAction() *cobra.Command {

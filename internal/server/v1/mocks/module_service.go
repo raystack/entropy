@@ -53,8 +53,8 @@ type ModuleService_CreateModule_Call struct {
 }
 
 // CreateModule is a helper method to define mock.On call
-//  - ctx context.Context
-//  - mod module.Module
+//   - ctx context.Context
+//   - mod module.Module
 func (_e *ModuleService_Expecter) CreateModule(ctx interface{}, mod interface{}) *ModuleService_CreateModule_Call {
 	return &ModuleService_CreateModule_Call{Call: _e.mock.On("CreateModule", ctx, mod)}
 }
@@ -91,8 +91,8 @@ type ModuleService_DeleteModule_Call struct {
 }
 
 // DeleteModule is a helper method to define mock.On call
-//  - ctx context.Context
-//  - urn string
+//   - ctx context.Context
+//   - urn string
 func (_e *ModuleService_Expecter) DeleteModule(ctx interface{}, urn interface{}) *ModuleService_DeleteModule_Call {
 	return &ModuleService_DeleteModule_Call{Call: _e.mock.On("DeleteModule", ctx, urn)}
 }
@@ -138,8 +138,8 @@ type ModuleService_GetModule_Call struct {
 }
 
 // GetModule is a helper method to define mock.On call
-//  - ctx context.Context
-//  - urn string
+//   - ctx context.Context
+//   - urn string
 func (_e *ModuleService_Expecter) GetModule(ctx interface{}, urn interface{}) *ModuleService_GetModule_Call {
 	return &ModuleService_GetModule_Call{Call: _e.mock.On("GetModule", ctx, urn)}
 }
@@ -185,8 +185,8 @@ type ModuleService_ListModules_Call struct {
 }
 
 // ListModules is a helper method to define mock.On call
-//  - ctx context.Context
-//  - project string
+//   - ctx context.Context
+//   - project string
 func (_e *ModuleService_Expecter) ListModules(ctx interface{}, project interface{}) *ModuleService_ListModules_Call {
 	return &ModuleService_ListModules_Call{Call: _e.mock.On("ListModules", ctx, project)}
 }
@@ -232,9 +232,9 @@ type ModuleService_UpdateModule_Call struct {
 }
 
 // UpdateModule is a helper method to define mock.On call
-//  - ctx context.Context
-//  - urn string
-//  - newConfigs json.RawMessage
+//   - ctx context.Context
+//   - urn string
+//   - newConfigs json.RawMessage
 func (_e *ModuleService_Expecter) UpdateModule(ctx interface{}, urn interface{}, newConfigs interface{}) *ModuleService_UpdateModule_Call {
 	return &ModuleService_UpdateModule_Call{Call: _e.mock.On("UpdateModule", ctx, urn, newConfigs)}
 }

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -20,6 +19,7 @@ import (
 	"github.com/goto/entropy/core/resource"
 	"github.com/goto/entropy/internal/server/v1/mocks"
 	"github.com/goto/entropy/pkg/errors"
+	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 )
 
 func TestAPIServer_CreateResource(t *testing.T) {

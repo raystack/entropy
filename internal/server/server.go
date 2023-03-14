@@ -7,8 +7,6 @@ import (
 	"time"
 
 	gorillamux "github.com/gorilla/mux"
-	commonv1 "github.com/goto/entropy/proto/gotocompany/common/v1"
-	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 	"github.com/goto/salt/mux"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
@@ -28,9 +26,16 @@ import (
 	resourcesv1 "github.com/goto/entropy/internal/server/v1/resources"
 	"github.com/goto/entropy/pkg/common"
 	"github.com/goto/entropy/pkg/version"
+	commonv1 "github.com/goto/entropy/proto/gotocompany/common/v1"
+	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 )
 
-const defaultGracePeriod = 5 * time.Second
+const (
+	gracePeriod    = 5 * time.Second
+	readTimeout    = 120 * time.Second
+	writeTimeout   = 120 * time.Second
+	maxHeaderBytes = 1 << 20
+)
 
 // Serve initialises all the gRPC+HTTP API routes, starts listening for requests at addr, and blocks until server exits.
 // Server exits gracefully when context is cancelled.
@@ -93,9 +98,12 @@ func Serve(ctx context.Context, addr string, nrApp *newrelic.Application, logger
 	logger.Info("starting server", zap.String("addr", addr))
 	return mux.Serve(ctx,
 		mux.WithHTTPTarget(":8081", &http.Server{
-			Handler: httpRouter,
+			Handler:        httpRouter,
+			ReadTimeout:    readTimeout,
+			WriteTimeout:   writeTimeout,
+			MaxHeaderBytes: maxHeaderBytes,
 		}),
 		mux.WithGRPCTarget(addr, grpcServer),
-		mux.WithGracePeriod(defaultGracePeriod),
+		mux.WithGracePeriod(gracePeriod),
 	)
 }

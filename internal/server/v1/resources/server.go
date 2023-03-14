@@ -5,11 +5,10 @@ package resources
 import (
 	"context"
 
-	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
-
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/core/resource"
 	"github.com/goto/entropy/internal/server/serverutils"
+	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 )
 
 type ResourceService interface {

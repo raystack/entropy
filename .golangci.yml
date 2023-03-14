@@ -43,9 +43,9 @@ linters:
 linters-settings:
   decorder:
     dec-order:
-      - type
       - const
       - var
+      - type
       - func
     disable-dec-order-check: false
     disable-init-func-first-check: false

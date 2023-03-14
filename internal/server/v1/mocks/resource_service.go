@@ -5,8 +5,9 @@ package mocks
 import (
 	context "context"
 
-	module "github.com/goto/entropy/core/module"
 	mock "github.com/stretchr/testify/mock"
+
+	module "github.com/goto/entropy/core/module"
 
 	resource "github.com/goto/entropy/core/resource"
 )
@@ -53,9 +54,9 @@ type ResourceService_ApplyAction_Call struct {
 }
 
 // ApplyAction is a helper method to define mock.On call
-//  - ctx context.Context
-//  - urn string
-//  - action module.ActionRequest
+//   - ctx context.Context
+//   - urn string
+//   - action module.ActionRequest
 func (_e *ResourceService_Expecter) ApplyAction(ctx interface{}, urn interface{}, action interface{}) *ResourceService_ApplyAction_Call {
 	return &ResourceService_ApplyAction_Call{Call: _e.mock.On("ApplyAction", ctx, urn, action)}
 }
@@ -101,8 +102,8 @@ type ResourceService_CreateResource_Call struct {
 }
 
 // CreateResource is a helper method to define mock.On call
-//  - ctx context.Context
-//  - res resource.Resource
+//   - ctx context.Context
+//   - res resource.Resource
 func (_e *ResourceService_Expecter) CreateResource(ctx interface{}, res interface{}) *ResourceService_CreateResource_Call {
 	return &ResourceService_CreateResource_Call{Call: _e.mock.On("CreateResource", ctx, res)}
 }
@@ -139,8 +140,8 @@ type ResourceService_DeleteResource_Call struct {
 }
 
 // DeleteResource is a helper method to define mock.On call
-//  - ctx context.Context
-//  - urn string
+//   - ctx context.Context
+//   - urn string
 func (_e *ResourceService_Expecter) DeleteResource(ctx interface{}, urn interface{}) *ResourceService_DeleteResource_Call {
 	return &ResourceService_DeleteResource_Call{Call: _e.mock.On("DeleteResource", ctx, urn)}
 }
@@ -186,9 +187,9 @@ type ResourceService_GetLog_Call struct {
 }
 
 // GetLog is a helper method to define mock.On call
-//  - ctx context.Context
-//  - urn string
-//  - filter map[string]string
+//   - ctx context.Context
+//   - urn string
+//   - filter map[string]string
 func (_e *ResourceService_Expecter) GetLog(ctx interface{}, urn interface{}, filter interface{}) *ResourceService_GetLog_Call {
 	return &ResourceService_GetLog_Call{Call: _e.mock.On("GetLog", ctx, urn, filter)}
 }
@@ -234,8 +235,8 @@ type ResourceService_GetResource_Call struct {
 }
 
 // GetResource is a helper method to define mock.On call
-//  - ctx context.Context
-//  - urn string
+//   - ctx context.Context
+//   - urn string
 func (_e *ResourceService_Expecter) GetResource(ctx interface{}, urn interface{}) *ResourceService_GetResource_Call {
 	return &ResourceService_GetResource_Call{Call: _e.mock.On("GetResource", ctx, urn)}
 }
@@ -281,8 +282,8 @@ type ResourceService_GetRevisions_Call struct {
 }
 
 // GetRevisions is a helper method to define mock.On call
-//  - ctx context.Context
-//  - selector resource.RevisionsSelector
+//   - ctx context.Context
+//   - selector resource.RevisionsSelector
 func (_e *ResourceService_Expecter) GetRevisions(ctx interface{}, selector interface{}) *ResourceService_GetRevisions_Call {
 	return &ResourceService_GetRevisions_Call{Call: _e.mock.On("GetRevisions", ctx, selector)}
 }
@@ -328,8 +329,8 @@ type ResourceService_ListResources_Call struct {
 }
 
 // ListResources is a helper method to define mock.On call
-//  - ctx context.Context
-//  - filter resource.Filter
+//   - ctx context.Context
+//   - filter resource.Filter
 func (_e *ResourceService_Expecter) ListResources(ctx interface{}, filter interface{}) *ResourceService_ListResources_Call {
 	return &ResourceService_ListResources_Call{Call: _e.mock.On("ListResources", ctx, filter)}
 }
@@ -375,9 +376,9 @@ type ResourceService_UpdateResource_Call struct {
 }
 
 // UpdateResource is a helper method to define mock.On call
-//  - ctx context.Context
-//  - urn string
-//  - req resource.UpdateRequest
+//   - ctx context.Context
+//   - urn string
+//   - req resource.UpdateRequest
 func (_e *ResourceService_Expecter) UpdateResource(ctx interface{}, urn interface{}, req interface{}) *ResourceService_UpdateResource_Call {
 	return &ResourceService_UpdateResource_Call{Call: _e.mock.On("UpdateResource", ctx, urn, req)}
 }

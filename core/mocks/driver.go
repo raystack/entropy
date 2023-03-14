@@ -55,8 +55,8 @@ type ModuleDriver_Output_Call struct {
 }
 
 // Output is a helper method to define mock.On call
-//  - ctx context.Context
-//  - res module.ExpandedResource
+//   - ctx context.Context
+//   - res module.ExpandedResource
 func (_e *ModuleDriver_Expecter) Output(ctx interface{}, res interface{}) *ModuleDriver_Output_Call {
 	return &ModuleDriver_Output_Call{Call: _e.mock.On("Output", ctx, res)}
 }
@@ -102,9 +102,9 @@ type ModuleDriver_Plan_Call struct {
 }
 
 // Plan is a helper method to define mock.On call
-//  - ctx context.Context
-//  - res module.ExpandedResource
-//  - act module.ActionRequest
+//   - ctx context.Context
+//   - res module.ExpandedResource
+//   - act module.ActionRequest
 func (_e *ModuleDriver_Expecter) Plan(ctx interface{}, res interface{}, act interface{}) *ModuleDriver_Plan_Call {
 	return &ModuleDriver_Plan_Call{Call: _e.mock.On("Plan", ctx, res, act)}
 }
@@ -150,8 +150,8 @@ type ModuleDriver_Sync_Call struct {
 }
 
 // Sync is a helper method to define mock.On call
-//  - ctx context.Context
-//  - res module.ExpandedResource
+//   - ctx context.Context
+//   - res module.ExpandedResource
 func (_e *ModuleDriver_Expecter) Sync(ctx interface{}, res interface{}) *ModuleDriver_Sync_Call {
 	return &ModuleDriver_Sync_Call{Call: _e.mock.On("Sync", ctx, res)}
 }

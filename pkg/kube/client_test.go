@@ -8,8 +8,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/goto/entropy/pkg/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goto/entropy/pkg/errors"
 )
 
 var (

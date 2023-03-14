@@ -56,8 +56,8 @@ type ModuleService_GetOutput_Call struct {
 }
 
 // GetOutput is a helper method to define mock.On call
-//  - ctx context.Context
-//  - res module.ExpandedResource
+//   - ctx context.Context
+//   - res module.ExpandedResource
 func (_e *ModuleService_Expecter) GetOutput(ctx interface{}, res interface{}) *ModuleService_GetOutput_Call {
 	return &ModuleService_GetOutput_Call{Call: _e.mock.On("GetOutput", ctx, res)}
 }
@@ -103,9 +103,9 @@ type ModuleService_PlanAction_Call struct {
 }
 
 // PlanAction is a helper method to define mock.On call
-//  - ctx context.Context
-//  - res module.ExpandedResource
-//  - act module.ActionRequest
+//   - ctx context.Context
+//   - res module.ExpandedResource
+//   - act module.ActionRequest
 func (_e *ModuleService_Expecter) PlanAction(ctx interface{}, res interface{}, act interface{}) *ModuleService_PlanAction_Call {
 	return &ModuleService_PlanAction_Call{Call: _e.mock.On("PlanAction", ctx, res, act)}
 }
@@ -151,9 +151,9 @@ type ModuleService_StreamLogs_Call struct {
 }
 
 // StreamLogs is a helper method to define mock.On call
-//  - ctx context.Context
-//  - res module.ExpandedResource
-//  - filter map[string]string
+//   - ctx context.Context
+//   - res module.ExpandedResource
+//   - filter map[string]string
 func (_e *ModuleService_Expecter) StreamLogs(ctx interface{}, res interface{}, filter interface{}) *ModuleService_StreamLogs_Call {
 	return &ModuleService_StreamLogs_Call{Call: _e.mock.On("StreamLogs", ctx, res, filter)}
 }
@@ -199,8 +199,8 @@ type ModuleService_SyncState_Call struct {
 }
 
 // SyncState is a helper method to define mock.On call
-//  - ctx context.Context
-//  - res module.ExpandedResource
+//   - ctx context.Context
+//   - res module.ExpandedResource
 func (_e *ModuleService_Expecter) SyncState(ctx interface{}, res interface{}) *ModuleService_SyncState_Call {
 	return &ModuleService_SyncState_Call{Call: _e.mock.On("SyncState", ctx, res)}
 }

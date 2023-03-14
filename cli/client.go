@@ -5,10 +5,11 @@ import (
 	"strconv"
 	"time"
 
-	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 )
 
 const timeout = 2

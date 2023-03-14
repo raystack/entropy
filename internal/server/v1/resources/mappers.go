@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"strconv"
 
-	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/goto/entropy/core/resource"
 	"github.com/goto/entropy/pkg/errors"
+	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 )
 
 const decimalBase = 10

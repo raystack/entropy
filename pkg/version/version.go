@@ -5,10 +5,10 @@ import (
 	"runtime"
 	"time"
 
-	commonv1 "github.com/goto/entropy/proto/gotocompany/common/v1"
-
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	commonv1 "github.com/goto/entropy/proto/gotocompany/common/v1"
 )
 
 var (

@@ -50,8 +50,8 @@ type AsyncWorker_Enqueue_Call struct {
 }
 
 // Enqueue is a helper method to define mock.On call
-//  - ctx context.Context
-//  - jobs ...worker.Job
+//   - ctx context.Context
+//   - jobs ...worker.Job
 func (_e *AsyncWorker_Expecter) Enqueue(ctx interface{}, jobs ...interface{}) *AsyncWorker_Enqueue_Call {
 	return &AsyncWorker_Enqueue_Call{Call: _e.mock.On("Enqueue",
 		append([]interface{}{ctx}, jobs...)...)}
