@@ -6,13 +6,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/odpf/salt/config"
+	"github.com/goto/salt/config"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 
-	"github.com/odpf/entropy/pkg/errors"
-	"github.com/odpf/entropy/pkg/logger"
-	"github.com/odpf/entropy/pkg/telemetry"
+	"github.com/goto/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/logger"
+	"github.com/goto/entropy/pkg/telemetry"
 )
 
 const configFlag = "config"

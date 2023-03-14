@@ -7,8 +7,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 
-	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/pkg/errors"
 )
 
 func (st *Store) GetByURN(ctx context.Context, urn string) (*resource.Resource, error) {

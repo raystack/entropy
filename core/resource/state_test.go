@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/odpf/entropy/core/resource"
+	"github.com/goto/entropy/core/resource"
 )
 
 func TestState_IsTerminal(t *testing.T) {

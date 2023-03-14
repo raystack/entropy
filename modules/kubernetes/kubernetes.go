@@ -8,10 +8,10 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/odpf/entropy/core/module"
-	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/pkg/errors"
-	"github.com/odpf/entropy/pkg/kube"
+	"github.com/goto/entropy/core/module"
+	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/kube"
 )
 
 //go:embed config_schema.json

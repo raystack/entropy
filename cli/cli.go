@@ -3,7 +3,7 @@ package cli
 import (
 	"context"
 
-	"github.com/odpf/salt/cmdx"
+	"github.com/goto/salt/cmdx"
 	"github.com/spf13/cobra"
 )
 

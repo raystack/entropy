@@ -4,7 +4,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/errors"
 )
 
 // ToRPCError returns an instance of gRPC Error Status equivalent to the

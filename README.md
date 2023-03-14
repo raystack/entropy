@@ -1,8 +1,8 @@
 # Entropy
 
-![test workflow](https://github.com/odpf/entropy/actions/workflows/test.yml/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/odpf/entropy)](https://goreportcard.com/report/github.com/odpf/entropy)
-[![Version](https://img.shields.io/github/v/release/odpf/entropy?logo=semantic-release)](Version)
+![test workflow](https://github.com/goto/entropy/actions/workflows/test.yml/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/goto/entropy)](https://goreportcard.com/report/github.com/goto/entropy)
+[![Version](https://img.shields.io/github/v/release/goto/entropy?logo=semantic-release)](Version)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?logo=apache)](LICENSE)
 
 Entropy is an extensible infrastructure orchestration and application deployment tool. Entropy provides features
@@ -23,7 +23,7 @@ Install Entropy on macOS, Windows, Linux, OpenBSD, FreeBSD, and on any machine.
 
 #### Binary (Cross-platform)
 
-Download the appropriate version for your platform from [releases](https://github.com/odpf/entropy/releases) page. Once
+Download the appropriate version for your platform from [releases](https://github.com/goto/entropy/releases) page. Once
 downloaded, the binary can be run from anywhere. You don’t need to install it into a global location. This works well
 for shared hosts and other systems where you don’t have a privileged account. Ideally, you should install it somewhere
 in your PATH for easy use. `/usr/local/bin` is the most probable location.
@@ -58,7 +58,7 @@ $ entropy serve --config ./my_config.yaml
 
 ```sh
 # Clone the repo
-$ git clone https://github.com/odpf/entropy.git
+$ git clone https://github.com/goto/entropy.git
 
 # Build entropy binary file
 $ make build
@@ -87,10 +87,10 @@ Read our [contributing guide](https://odpf.github.io/entropy/docs/contribute/con
 development process, how to propose bugfixes and improvements, and how to build and test your changes to Entropy.
 
 To help you get your feet wet and get you familiar with our contribution process, we have a list
-of [good first issues](https://github.com/odpf/entropy/labels/good%20first%20issue) that contain bugs which have a
+of [good first issues](https://github.com/goto/entropy/labels/good%20first%20issue) that contain bugs which have a
 relatively limited scope. This is a great place to get started.
 
-This project exists thanks to all the [contributors](https://github.com/odpf/entropy/graphs/contributors).
+This project exists thanks to all the [contributors](https://github.com/goto/entropy/graphs/contributors).
 
 ## License
 

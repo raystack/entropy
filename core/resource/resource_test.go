@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/pkg/errors"
 )
 
 func TestResource_Validate(t *testing.T) {

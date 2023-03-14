@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/odpf/entropy/core/module"
-	"github.com/odpf/entropy/modules/kubernetes"
-	"github.com/odpf/entropy/pkg/errors"
-	"github.com/odpf/entropy/pkg/kube"
+	"github.com/goto/entropy/core/module"
+	"github.com/goto/entropy/modules/kubernetes"
+	"github.com/goto/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/kube"
 )
 
 func (*firehoseModule) Log(ctx context.Context, res module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error) {

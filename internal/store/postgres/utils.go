@@ -7,8 +7,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 
-	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/pkg/errors"
 )
 
 type TxFunc func(ctx context.Context, tx *sqlx.Tx) error

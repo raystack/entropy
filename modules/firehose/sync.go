@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/odpf/entropy/core/module"
-	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/modules/firehose/kafka"
-	"github.com/odpf/entropy/modules/kubernetes"
-	"github.com/odpf/entropy/pkg/errors"
-	"github.com/odpf/entropy/pkg/helm"
-	"github.com/odpf/entropy/pkg/kube"
-	"github.com/odpf/entropy/pkg/worker"
+	"github.com/goto/entropy/core/module"
+	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/modules/firehose/kafka"
+	"github.com/goto/entropy/modules/kubernetes"
+	"github.com/goto/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/helm"
+	"github.com/goto/entropy/pkg/kube"
+	"github.com/goto/entropy/pkg/worker"
 )
 
 const (

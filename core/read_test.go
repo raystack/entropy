@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/odpf/entropy/core"
-	"github.com/odpf/entropy/core/mocks"
-	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/goto/entropy/core"
+	"github.com/goto/entropy/core/mocks"
+	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/pkg/errors"
 )
 
 func TestService_GetResource(t *testing.T) {

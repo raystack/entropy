@@ -1,12 +1,13 @@
-NAME=github.com/odpf/entropy
+NAME=github.com/goto/entropy
 VERSION=$(shell git describe --tags --always --first-parent 2>/dev/null)
 COMMIT=$(shell git rev-parse --short HEAD)
+PROTON_COMMIT="5b5dc727b525925bcec025b355983ca61d7ccf68"
 BUILD_TIME=$(shell date)
 COVERAGE_DIR=coverage
 BUILD_DIR=dist
 EXE=entropy
 
-.PHONY: all build clean tidy format test test-coverage
+.PHONY: all build clean tidy format test test-coverage proto
 
 all: clean test build format lint
 
@@ -14,9 +15,17 @@ tidy:
 	@echo "Tidy up go.mod..."
 	@go mod tidy -v
 
-install:
-	@echo "Installing Entropy to ${GOBIN}..."
-	@go install
+install: ## install required dependencies
+	@echo "> installing dependencies"
+	go get -d github.com/vektra/mockery/v2@v2.13.1
+	go get -d google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1
+	go get google.golang.org/protobuf/proto@v1.28.1
+	go get google.golang.org/grpc@v1.49.0
+	go get -d google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+	go get -d github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.11.3
+	go get -d github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@v2.11.3
+	go get -d github.com/bufbuild/buf/cmd/buf@v1.7.0
+	go get github.com/envoyproxy/protoc-gen-validate@v0.6.7
 	
 format:
 	@echo "Running gofumpt..."
@@ -45,6 +54,13 @@ build: clean
 	@mkdir -p ${BUILD_DIR}
 	@echo "Running build for '${VERSION}' in '${BUILD_DIR}/'..."
 	@CGO_ENABLED=0 go build -ldflags '-X "${NAME}/pkg/version.Version=${VERSION}" -X "${NAME}/pkg/version.Commit=${COMMIT}" -X "${NAME}/pkg/version.BuildTime=${BUILD_TIME}"' -o ${BUILD_DIR}/${EXE}
+
+proto: ## Generate the protobuf files
+	@echo " > generating protobuf from goto/proton"
+	@echo " > [info] make sure correct version of dependencies are installed using 'make install'"
+	@rm -rf ./proto
+	@buf generate https://github.com/goto/proton/archive/${PROTON_COMMIT}.zip#strip_components=1 --template buf.gen.yaml --path gotocompany/entropy --path gotocompany/common
+	@echo " > protobuf compilation finished"
 
 download:
 	@go mod download

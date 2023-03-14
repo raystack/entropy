@@ -13,7 +13,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/release"
 
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/errors"
 )
 
 var (

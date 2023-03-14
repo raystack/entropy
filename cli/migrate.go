@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	"github.com/odpf/entropy/pkg/logger"
+	"github.com/goto/entropy/pkg/logger"
 )
 
 func cmdMigrate() *cobra.Command {

@@ -1,0 +1,564 @@
+swagger: "2.0"
+info:
+  title: gotocompany/common/v1/service.proto
+  version: 0.1.0
+tags:
+  - name: CommonService
+  - name: ModuleService
+  - name: ResourceService
+schemes:
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /v1beta1/modules:
+    get:
+      operationId: ModuleService_ListModules
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ListModulesResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: project
+          in: query
+          required: false
+          type: string
+      tags:
+        - ModuleService
+    post:
+      operationId: ModuleService_CreateModule
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/CreateModuleResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: module
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Module'
+      tags:
+        - ModuleService
+  /v1beta1/modules/{urn}:
+    get:
+      operationId: ModuleService_GetModule
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/GetModuleResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: urn
+          in: path
+          required: true
+          type: string
+      tags:
+        - ModuleService
+    delete:
+      operationId: ModuleService_DeleteModule
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/DeleteModuleResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: urn
+          in: path
+          required: true
+          type: string
+      tags:
+        - ModuleService
+    patch:
+      operationId: ModuleService_UpdateModule
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/UpdateModuleResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: urn
+          in: path
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              configs: {}
+      tags:
+        - ModuleService
+  /v1beta1/resources:
+    get:
+      operationId: ResourceService_ListResources
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ListResourcesResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: project
+          in: query
+          required: false
+          type: string
+        - name: kind
+          in: query
+          required: false
+          type: string
+      tags:
+        - ResourceService
+    post:
+      operationId: ResourceService_CreateResource
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/CreateResourceResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: resource
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Resource'
+      tags:
+        - ResourceService
+  /v1beta1/resources/{urn}:
+    get:
+      operationId: ResourceService_GetResource
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/GetResourceResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: urn
+          in: path
+          required: true
+          type: string
+      tags:
+        - ResourceService
+    delete:
+      operationId: ResourceService_DeleteResource
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/DeleteResourceResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: urn
+          in: path
+          required: true
+          type: string
+      tags:
+        - ResourceService
+    patch:
+      operationId: ResourceService_UpdateResource
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/UpdateResourceResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: urn
+          in: path
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              labels:
+                type: object
+                additionalProperties:
+                  type: string
+              new_spec:
+                $ref: '#/definitions/ResourceSpec'
+      tags:
+        - ResourceService
+  /v1beta1/resources/{urn}/actions/{action}:
+    post:
+      operationId: ResourceService_ApplyAction
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ApplyActionResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: urn
+          in: path
+          required: true
+          type: string
+        - name: action
+          in: path
+          required: true
+          type: string
+        - name: params
+          in: body
+          required: true
+          schema: {}
+      tags:
+        - ResourceService
+  /v1beta1/resources/{urn}/logs:
+    get:
+      operationId: ResourceService_GetLog
+      responses:
+        "200":
+          description: A successful response.(streaming responses)
+          schema:
+            type: object
+            properties:
+              error:
+                $ref: '#/definitions/rpc.Status'
+              result:
+                $ref: '#/definitions/GetLogResponse'
+            title: Stream result of GetLogResponse
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: urn
+          in: path
+          required: true
+          type: string
+      tags:
+        - ResourceService
+  /v1beta1/resources/{urn}/revisions:
+    get:
+      operationId: ResourceService_GetResourceRevisions
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/GetResourceRevisionsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: urn
+          in: path
+          required: true
+          type: string
+      tags:
+        - ResourceService
+  /v1/version:
+    post:
+      operationId: CommonService_GetVersion
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/GetVersionResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpc.Status'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/GetVersionRequest'
+      tags:
+        - CommonService
+definitions:
+  Any:
+    type: object
+    properties:
+      '@type':
+        type: string
+    additionalProperties: {}
+  ApplyActionResponse:
+    type: object
+    properties:
+      resource:
+        $ref: '#/definitions/Resource'
+  CreateModuleResponse:
+    type: object
+    properties:
+      module:
+        $ref: '#/definitions/Module'
+  CreateResourceResponse:
+    type: object
+    properties:
+      resource:
+        $ref: '#/definitions/Resource'
+  DeleteModuleResponse:
+    type: object
+  DeleteResourceResponse:
+    type: object
+  GetLogResponse:
+    type: object
+    properties:
+      chunk:
+        $ref: '#/definitions/LogChunk'
+  GetModuleResponse:
+    type: object
+    properties:
+      module:
+        $ref: '#/definitions/Module'
+  GetResourceResponse:
+    type: object
+    properties:
+      resource:
+        $ref: '#/definitions/Resource'
+  GetResourceRevisionsResponse:
+    type: object
+    properties:
+      revisions:
+        type: array
+        items:
+          $ref: '#/definitions/ResourceRevision'
+  GetVersionRequest:
+    type: object
+    properties:
+      client:
+        $ref: '#/definitions/Version'
+  GetVersionResponse:
+    type: object
+    properties:
+      server:
+        $ref: '#/definitions/Version'
+  ListModulesResponse:
+    type: object
+    properties:
+      modules:
+        type: array
+        items:
+          $ref: '#/definitions/Module'
+  ListResourcesResponse:
+    type: object
+    properties:
+      resources:
+        type: array
+        items:
+          $ref: '#/definitions/Resource'
+  ListString:
+    type: object
+    properties:
+      values:
+        type: array
+        items:
+          type: string
+  LogChunk:
+    type: object
+    properties:
+      data:
+        type: string
+        format: byte
+      labels:
+        type: object
+        additionalProperties:
+          type: string
+  LogOptions:
+    type: object
+    properties:
+      filters:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/ListString'
+  Module:
+    type: object
+    properties:
+      configs: {}
+      created_at:
+        type: string
+        format: date-time
+      name:
+        type: string
+      project:
+        type: string
+      updated_at:
+        type: string
+        format: date-time
+      urn:
+        type: string
+  NullValue:
+    type: string
+    enum:
+      - NULL_VALUE
+    default: NULL_VALUE
+    description: |-
+      `NullValue` is a singleton enumeration to represent the null value for the
+      `Value` type union.
+
+       The JSON representation for `NullValue` is JSON `null`.
+
+       - NULL_VALUE: Null value.
+  Resource:
+    type: object
+    properties:
+      created_at:
+        type: string
+        format: date-time
+      kind:
+        type: string
+      labels:
+        type: object
+        additionalProperties:
+          type: string
+      name:
+        type: string
+      project:
+        type: string
+      spec:
+        $ref: '#/definitions/ResourceSpec'
+      state:
+        $ref: '#/definitions/ResourceState'
+      updated_at:
+        type: string
+        format: date-time
+      urn:
+        type: string
+  ResourceDependency:
+    type: object
+    properties:
+      key:
+        type: string
+        description: |-
+          Key should be as defined by the module being used for
+          the resource.
+      value:
+        type: string
+        description: Value should refer to an existing resource via URN.
+  ResourceRevision:
+    type: object
+    properties:
+      created_at:
+        type: string
+        format: date-time
+      id:
+        type: string
+      labels:
+        type: object
+        additionalProperties:
+          type: string
+      reason:
+        type: string
+      spec:
+        $ref: '#/definitions/ResourceSpec'
+      urn:
+        type: string
+  ResourceSpec:
+    type: object
+    properties:
+      configs: {}
+      dependencies:
+        type: array
+        items:
+          $ref: '#/definitions/ResourceDependency'
+        description: |-
+          dependencies can be used to refer to other existing resources
+          as dependency of this resource.
+  ResourceState:
+    type: object
+    properties:
+      log_options:
+        $ref: '#/definitions/LogOptions'
+      module_data:
+        type: string
+        format: byte
+      output: {}
+      status:
+        $ref: '#/definitions/ResourceState.Status'
+  ResourceState.Status:
+    type: string
+    enum:
+      - STATUS_UNSPECIFIED
+      - STATUS_PENDING
+      - STATUS_ERROR
+      - STATUS_DELETED
+      - STATUS_COMPLETED
+    default: STATUS_UNSPECIFIED
+  UpdateModuleResponse:
+    type: object
+    properties:
+      module:
+        $ref: '#/definitions/Module'
+  UpdateResourceResponse:
+    type: object
+    properties:
+      resource:
+        $ref: '#/definitions/Resource'
+  Version:
+    type: object
+    properties:
+      architecture:
+        type: string
+      build_time:
+        type: string
+        format: date-time
+      commit:
+        type: string
+      lang_version:
+        type: string
+      os:
+        type: string
+      version:
+        type: string
+  rpc.Status:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      details:
+        type: array
+        items:
+          $ref: '#/definitions/Any'
+      message:
+        type: string
+externalDocs:
+  description: Common endpoints for all services

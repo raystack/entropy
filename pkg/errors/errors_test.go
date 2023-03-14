@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/errors"
 )
 
 func Test_E(t *testing.T) {

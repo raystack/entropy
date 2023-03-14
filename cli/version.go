@@ -3,7 +3,7 @@ package cli
 import (
 	"github.com/spf13/cobra"
 
-	v "github.com/odpf/entropy/pkg/version"
+	v "github.com/goto/entropy/pkg/version"
 )
 
 func cmdVersion() *cobra.Command {

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/errors"
 )
 
 // Module represents all the data needed to initialize a particular module.

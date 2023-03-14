@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/odpf/entropy/pkg/errors"
-	"github.com/odpf/entropy/pkg/worker"
-	"github.com/odpf/entropy/pkg/worker/mocks"
+	"github.com/goto/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/worker"
+	"github.com/goto/entropy/pkg/worker/mocks"
 )
 
 func Test_New(t *testing.T) {

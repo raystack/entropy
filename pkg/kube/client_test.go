@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 

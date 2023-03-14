@@ -5,7 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/odpf/entropy/cli"
+	"github.com/goto/entropy/cli"
 )
 
 func main() {

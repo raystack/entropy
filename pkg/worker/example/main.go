@@ -9,9 +9,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/odpf/entropy/pkg/errors"
-	"github.com/odpf/entropy/pkg/worker"
-	"github.com/odpf/entropy/pkg/worker/pgq"
+	"github.com/goto/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/worker"
+	"github.com/goto/entropy/pkg/worker/pgq"
 )
 
 var (

@@ -10,10 +10,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/odpf/entropy/core/module"
-	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/pkg/errors"
-	"github.com/odpf/entropy/pkg/worker"
+	"github.com/goto/entropy/core/module"
+	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/worker"
 )
 
 type Service struct {

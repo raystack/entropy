@@ -7,7 +7,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 
-	"github.com/odpf/entropy/pkg/worker"
+	"github.com/goto/entropy/pkg/worker"
 )
 
 type txnFn func(ctx context.Context, tx *sql.Tx) error

@@ -8,17 +8,17 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	"github.com/odpf/entropy/core"
-	"github.com/odpf/entropy/core/module"
-	entropyserver "github.com/odpf/entropy/internal/server"
-	"github.com/odpf/entropy/internal/store/postgres"
-	"github.com/odpf/entropy/modules"
-	"github.com/odpf/entropy/modules/firehose"
-	"github.com/odpf/entropy/modules/kubernetes"
-	"github.com/odpf/entropy/pkg/logger"
-	"github.com/odpf/entropy/pkg/telemetry"
-	"github.com/odpf/entropy/pkg/worker"
-	"github.com/odpf/entropy/pkg/worker/pgq"
+	"github.com/goto/entropy/core"
+	"github.com/goto/entropy/core/module"
+	entropyserver "github.com/goto/entropy/internal/server"
+	"github.com/goto/entropy/internal/store/postgres"
+	"github.com/goto/entropy/modules"
+	"github.com/goto/entropy/modules/firehose"
+	"github.com/goto/entropy/modules/kubernetes"
+	"github.com/goto/entropy/pkg/logger"
+	"github.com/goto/entropy/pkg/telemetry"
+	"github.com/goto/entropy/pkg/worker"
+	"github.com/goto/entropy/pkg/worker/pgq"
 )
 
 func cmdServe() *cobra.Command {

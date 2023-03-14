@@ -12,8 +12,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/lib/pq"
 
-	"github.com/odpf/entropy/pkg/errors"
-	"github.com/odpf/entropy/pkg/worker"
+	"github.com/goto/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/worker"
 )
 
 const (

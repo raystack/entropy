@@ -5,11 +5,11 @@ package resources
 import (
 	"context"
 
-	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
+	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 
-	"github.com/odpf/entropy/core/module"
-	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/internal/server/serverutils"
+	"github.com/goto/entropy/core/module"
+	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/internal/server/serverutils"
 )
 
 type ResourceService interface {

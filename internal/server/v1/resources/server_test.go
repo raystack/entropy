@@ -7,19 +7,19 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/internal/server/v1/mocks"
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/internal/server/v1/mocks"
+	"github.com/goto/entropy/pkg/errors"
 )
 
 func TestAPIServer_CreateResource(t *testing.T) {

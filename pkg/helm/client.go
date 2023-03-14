@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 
-	"github.com/odpf/entropy/pkg/kube"
+	"github.com/goto/entropy/pkg/kube"
 )
 
 type Config struct {

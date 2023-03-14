@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/odpf/entropy/core"
-	"github.com/odpf/entropy/core/mocks"
-	"github.com/odpf/entropy/core/module"
-	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/pkg/errors"
-	"github.com/odpf/entropy/pkg/worker"
+	"github.com/goto/entropy/core"
+	"github.com/goto/entropy/core/mocks"
+	"github.com/goto/entropy/core/module"
+	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/worker"
 )
 
 func TestService_CreateResource(t *testing.T) {

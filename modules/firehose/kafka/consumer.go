@@ -3,7 +3,7 @@ package kafka
 import (
 	"context"
 
-	"github.com/odpf/entropy/pkg/kube"
+	"github.com/goto/entropy/pkg/kube"
 )
 
 const (

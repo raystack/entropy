@@ -10,9 +10,9 @@ builds:
     binary: entropy
     flags: [-a]
     ldflags:
-      - -X github.com/odpf/entropy/pkg/version.Version={{.Tag}}
-      - -X github.com/odpf/entropy/pkg/version.Commit={{.FullCommit}}
-      - -X github.com/odpf/entropy/pkg/version.BuildTime={{.Date}}
+      - -X github.com/goto/entropy/pkg/version.Version={{.Tag}}
+      - -X github.com/goto/entropy/pkg/version.Commit={{.FullCommit}}
+      - -X github.com/goto/entropy/pkg/version.BuildTime={{.Date}}
     goos: 
       - darwin
       - linux
@@ -58,13 +58,13 @@ dockers:
       - entropy
     dockerfile: Dockerfile
     image_templates:
-      - 'docker.io/odpf/{{.ProjectName}}:latest'
-      - 'docker.io/odpf/{{.ProjectName}}:{{ .Version }}'
-      - 'docker.io/odpf/{{.ProjectName}}:{{ .Version }}-amd64'
+      - 'docker.io/gotocompany/{{.ProjectName}}:latest'
+      - 'docker.io/gotocompany/{{.ProjectName}}:{{ .Version }}'
+      - 'docker.io/gotocompany/{{.ProjectName}}:{{ .Version }}-amd64'
 
 brews:
   - name: entropy
-    homepage: "https://github.com/odpf/entropy"
+    homepage: "https://github.com/goto/entropy"
     description: "Infrastructure orchestration tool."
     tap:
       owner: odpf

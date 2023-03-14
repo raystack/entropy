@@ -9,7 +9,7 @@ Entropy installation is simple. You can install Entropy on macOS, Windows, Linux
 
 #### Binary (Cross-platform)
 
-Download the appropriate version for your platform from [releases](https://github.com/odpf/entropy/releases) page. Once
+Download the appropriate version for your platform from [releases](https://github.com/goto/entropy/releases) page. Once
 downloaded, the binary can be run from anywhere. You don’t need to install it into a global location. This works well
 for shared hosts and other systems where you don’t have a privileged account. Ideally, you should install it somewhere
 in your PATH for easy use. `/usr/local/bin` is the most probable location.
@@ -33,7 +33,7 @@ To compile from source, you will need [Go](https://golang.org/) installed in you
 
 ```bash
 # Clone the repo
-$ https://github.com/odpf/entropy.git
+$ https://github.com/goto/entropy.git
 
 # Build entropy binary file
 $ make build
@@ -44,7 +44,7 @@ $ ./entropy version
 
 ### Using Docker image
 
-Entropy ships a Docker image [odpf/entropy](https://hub.docker.com/r/odpf/entropy) that enables you to use `entropy` as part of your Docker workflow.
+Entropy ships a Docker image [odpf/entropy](https://hub.docker.com/r/goto/entropy) that enables you to use `entropy` as part of your Docker workflow.
 
 For example, you can run `entropy version` with this command:
 

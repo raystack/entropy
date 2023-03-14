@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/odpf/entropy/core/resource"
-	"github.com/odpf/entropy/pkg/errors"
-	"github.com/odpf/entropy/pkg/helm"
+	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/helm"
 )
 
 const (

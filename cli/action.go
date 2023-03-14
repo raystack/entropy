@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/odpf/salt/printer"
-	"github.com/odpf/salt/term"
+	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
+	"github.com/goto/salt/printer"
+	"github.com/goto/salt/term"
 	"github.com/spf13/cobra"
-	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 

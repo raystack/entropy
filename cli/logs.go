@@ -7,11 +7,11 @@ import (
 	"log"
 	"strings"
 
-	"github.com/odpf/salt/term" // nolint
-	entropyv1beta1 "go.buf.build/odpf/gwv/odpf/proton/odpf/entropy/v1beta1"
+	entropyv1beta1 "github.com/goto/entropy/proto/gotocompany/entropy/v1beta1"
+	"github.com/goto/salt/term" // nolint
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/odpf/salt/printer"
+	"github.com/goto/salt/printer"
 	"github.com/spf13/cobra"
 )
 

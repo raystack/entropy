@@ -6,8 +6,8 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 
-	"github.com/odpf/entropy/core/module"
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/goto/entropy/core/module"
+	"github.com/goto/entropy/pkg/errors"
 )
 
 func (st *Store) GetModule(ctx context.Context, urn string) (*module.Module, error) {

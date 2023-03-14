@@ -34,4 +34,4 @@ type moduleConfig struct {
 | `ChartVersion` | `string` Chart version you want to use. |
 | `Firehose` | `struct` Holds firehose configuration. |
 
-Detailed JSONSchema for config can be referenced [here](https://github.com/odpf/entropy/blob/main/modules/firehose/schema/config.json).
+Detailed JSONSchema for config can be referenced [here](https://github.com/goto/entropy/blob/main/modules/firehose/schema/config.json).

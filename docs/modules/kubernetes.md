@@ -43,7 +43,7 @@ type Config struct {
 | `ClientCertificate` | `string` PEM-encoded client certificate for TLS authentication. |
 
 Note: User shall either enable Insecure or set ClusterCACertificate. Also, user can either use Token to aunthenate a service account or they can use ClientKey & ClientCertificate for TLS authentication.
-Detailed JSONSchema for config can be referenced [here](https://github.com/odpf/entropy/blob/main/modules/kubernetes/config_schema.json).
+Detailed JSONSchema for config can be referenced [here](https://github.com/goto/entropy/blob/main/modules/kubernetes/config_schema.json).
 
 ## Supported actions
 

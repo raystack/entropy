@@ -4,8 +4,8 @@ import (
 	_ "embed"
 	"encoding/json"
 
-	"github.com/odpf/entropy/core/module"
-	"github.com/odpf/entropy/modules/kubernetes"
+	"github.com/goto/entropy/core/module"
+	"github.com/goto/entropy/modules/kubernetes"
 )
 
 const (

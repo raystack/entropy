@@ -6,7 +6,7 @@ import (
 
 	"github.com/xeipuuv/gojsonschema"
 
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/errors"
 )
 
 const (

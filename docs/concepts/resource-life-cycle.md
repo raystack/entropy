@@ -37,7 +37,7 @@ type Output map[string]interface{}
 
 The `Resource` definition is self explanatory. It has the `Spec` field which holds the `Configs` and `Dependencies` of a resource. The `State` field has three parts, `Status` holds the current status of a resource, `Output` holds the outcome of the latest action performed while `Data` holds the transactory information which might be used to perform actions on the reosurce.
 
-For instance, a [firehose](https://github.com/odpf/firehose) resource looks like:
+For instance, a [firehose](https://github.com/goto/firehose) resource looks like:
 
 ```
 {

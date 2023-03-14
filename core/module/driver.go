@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/odpf/entropy/core/resource"
+	"github.com/goto/entropy/core/resource"
 )
 
 // Driver is responsible for achieving desired external system states based

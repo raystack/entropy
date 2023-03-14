@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/odpf/entropy/core/module"
-	"github.com/odpf/entropy/pkg/errors"
+	"github.com/goto/entropy/core/module"
+	"github.com/goto/entropy/pkg/errors"
 )
 
 // Registry maintains a list of supported/enabled modules.
