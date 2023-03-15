@@ -5,9 +5,8 @@ package mocks
 import (
 	context "context"
 
-	mock "github.com/stretchr/testify/mock"
-
 	module "github.com/goto/entropy/core/module"
+	mock "github.com/stretchr/testify/mock"
 
 	resource "github.com/goto/entropy/core/resource"
 )

@@ -2,10 +2,8 @@ package kubernetes
 
 import (
 	"context"
-	_ "embed"
 	"encoding/json"
 
-	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/goto/entropy/core/module"
@@ -14,34 +12,9 @@ import (
 	"github.com/goto/entropy/pkg/kube"
 )
 
-//go:embed config_schema.json
-var configSchema string
+type kubeDriver struct{}
 
-var Module = module.Descriptor{
-	Kind: "kubernetes",
-	Actions: []module.ActionDesc{
-		{
-			Name:        module.CreateAction,
-			ParamSchema: configSchema,
-		},
-		{
-			Name:        module.UpdateAction,
-			ParamSchema: configSchema,
-		},
-	},
-	DriverFactory: func(conf json.RawMessage) (module.Driver, error) {
-		return &kubeModule{}, nil
-	},
-}
-
-type kubeModule struct{}
-
-type Output struct {
-	Configs    kube.Config  `json:"configs"`
-	ServerInfo version.Info `json:"server_info"`
-}
-
-func (m *kubeModule) Plan(ctx context.Context, res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
+func (m *kubeDriver) Plan(ctx context.Context, res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
 	res.Resource.Spec = resource.Spec{
 		Configs:      act.Params,
 		Dependencies: nil,
@@ -56,10 +29,11 @@ func (m *kubeModule) Plan(ctx context.Context, res module.ExpandedResource, act 
 		Status: resource.StatusCompleted,
 		Output: output,
 	}
+
 	return &module.Plan{Resource: res.Resource, Reason: "kubernetes cluster details updated"}, nil
 }
 
-func (*kubeModule) Sync(_ context.Context, res module.ExpandedResource) (*resource.State, error) {
+func (*kubeDriver) Sync(_ context.Context, res module.ExpandedResource) (*resource.State, error) {
 	return &resource.State{
 		Status:     resource.StatusCompleted,
 		Output:     res.Resource.State.Output,
@@ -67,10 +41,12 @@ func (*kubeModule) Sync(_ context.Context, res module.ExpandedResource) (*resour
 	}, nil
 }
 
-func (*kubeModule) Output(_ context.Context, res module.ExpandedResource) (json.RawMessage, error) {
+func (*kubeDriver) Output(_ context.Context, res module.ExpandedResource) (json.RawMessage, error) {
 	conf := kube.DefaultClientConfig()
 	if err := json.Unmarshal(res.Spec.Configs, &conf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid json config value").WithCausef(err.Error())
+	} else if err := conf.Sanitise(); err != nil {
+		return nil, err
 	}
 
 	clientSet, err := kubernetes.NewForConfig(conf.RESTConfig())
@@ -87,12 +63,4 @@ func (*kubeModule) Output(_ context.Context, res module.ExpandedResource) (json.
 		Configs:    conf,
 		ServerInfo: *info,
 	}.JSON(), nil
-}
-
-func (out Output) JSON() []byte {
-	b, err := json.Marshal(out)
-	if err != nil {
-		panic(err)
-	}
-	return b
 }

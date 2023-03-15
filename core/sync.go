@@ -61,12 +61,11 @@ func (s *Service) HandleSyncJob(ctx context.Context, job worker.Job) ([]byte, er
 	if err != nil {
 		if errors.Is(err, errors.ErrInternal) {
 			return nil, &worker.RetryableError{
-				Cause:      errors.Verbose(err),
+				Cause:      err,
 				RetryAfter: retryBackoff,
 			}
 		}
-
-		return nil, errors.Verbose(err)
+		return nil, err
 	}
 
 	return json.Marshal(map[string]interface{}{

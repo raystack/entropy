@@ -89,7 +89,10 @@ func runServer(baseCtx context.Context, nrApp *newrelic.Application, zapLog *zap
 		return err
 	}
 
-	return entropyserver.Serve(ctx, cfg.Service.addr(), nrApp, zapLog, resourceService, moduleService)
+	return entropyserver.Serve(ctx,
+		cfg.Service.httpAddr(), cfg.Service.grpcAddr(),
+		nrApp, zapLog, resourceService, moduleService,
+	)
 }
 
 func setupRegistry(logger *zap.Logger) module.Registry {

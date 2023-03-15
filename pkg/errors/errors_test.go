@@ -16,7 +16,7 @@ func Test_E(t *testing.T) {
 		want := errors.Error{
 			Code:    "internal_error",
 			Cause:   "some native error",
-			Message: "Some unexpected error occurred",
+			Message: "some unexpected error occurred",
 		}
 
 		err := errors.New("some native error")
@@ -41,31 +41,11 @@ func Test_E(t *testing.T) {
 	})
 }
 
-func Test_Verbose(t *testing.T) {
-	t.Parallel()
-
-	t.Run("NonError", func(t *testing.T) {
-		err := errors.New("some native error")
-
-		got := errors.Verbose(err)
-		assert.EqualError(t, got, "some native error")
-	})
-
-	t.Run("CustomError", func(t *testing.T) {
-		err := errors.ErrInvalid.
-			WithMsgf("request is not valid").
-			WithCausef("invalid parameter value")
-
-		got := errors.Verbose(err)
-		assert.EqualError(t, got, "bad_request: request is not valid (cause: invalid parameter value)")
-	})
-}
-
 func Test_Errorf(t *testing.T) {
 	t.Parallel()
 	e := errors.Errorf("failed: %d", 100)
 	assert.Error(t, e)
-	assert.EqualError(t, e, "failed: 100")
+	assert.EqualError(t, e, "internal_error: failed: 100")
 }
 
 func Test_OneOf(t *testing.T) {
@@ -92,12 +72,12 @@ func TestError_Error(t *testing.T) {
 		{
 			title: "WithoutCause",
 			err:   errors.ErrInvalid,
-			want:  "request is not valid",
+			want:  "bad_request: request is not valid",
 		},
 		{
 			title: "WithCause",
-			err:   errors.ErrInvalid.WithMsgf("").WithCausef("foo"),
-			want:  "bad_request: foo",
+			err:   errors.ErrInvalid.WithMsgf("").WithCausef("input has bad field"),
+			want:  "bad_request: input has bad field",
 		},
 	}
 
@@ -163,7 +143,7 @@ func TestError_WithCausef(t *testing.T) {
 			err:   errors.ErrInvalid.WithCausef("foo"),
 			want: errors.Error{
 				Code:    "bad_request",
-				Message: "Request is not valid",
+				Message: "request is not valid",
 				Cause:   "foo",
 			},
 		},
@@ -172,7 +152,7 @@ func TestError_WithCausef(t *testing.T) {
 			err:   errors.ErrConflict.WithCausef("hello %s", "world"),
 			want: errors.Error{
 				Code:    "conflict",
-				Message: "An entity with conflicting identifier exists",
+				Message: "an entity with conflicting identifier exists",
 				Cause:   "hello world",
 			},
 		},

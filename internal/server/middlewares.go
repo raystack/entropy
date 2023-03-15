@@ -93,7 +93,10 @@ func requestLogger(lg *zap.Logger) gorillamux.MiddlewareFunc {
 				zap.String("trace_id", span.SpanContext().TraceID.String()),
 			}
 
-			wrapped := &wrappedWriter{ResponseWriter: wr}
+			wrapped := &wrappedWriter{
+				Status:         http.StatusOK,
+				ResponseWriter: wr,
+			}
 			next.ServeHTTP(wrapped, req)
 			fields = append(fields,
 				zap.Duration("response_time", time.Since(t)),

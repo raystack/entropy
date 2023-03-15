@@ -29,6 +29,8 @@ type Config struct {
 type serveConfig struct {
 	Host string `mapstructure:"host" default:""`
 	Port int    `mapstructure:"port" default:"8080"`
+
+	HTTPAddr string `mapstructure:"http_addr" default:":8081"`
 }
 
 type workerConf struct {
@@ -39,7 +41,9 @@ type workerConf struct {
 	PollInterval time.Duration `mapstructure:"poll_interval" default:"100ms"`
 }
 
-func (serveCfg serveConfig) addr() string {
+func (serveCfg serveConfig) httpAddr() string { return serveCfg.HTTPAddr }
+
+func (serveCfg serveConfig) grpcAddr() string {
 	return fmt.Sprintf("%s:%d", serveCfg.Host, serveCfg.Port)
 }
 

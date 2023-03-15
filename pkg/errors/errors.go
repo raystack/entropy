@@ -3,7 +3,6 @@ package errors
 import (
 	"errors"
 	"fmt"
-	"strings"
 )
 
 // These aliased values are added to avoid conflicting imports of standard `errors`
@@ -16,11 +15,11 @@ var (
 
 // Common error categories. Use `ErrX.WithXXX()` to clone and add context.
 var (
-	ErrInvalid     = Error{Code: "bad_request", Message: "Request is not valid"}
-	ErrNotFound    = Error{Code: "not_found", Message: "Requested entity not found"}
-	ErrConflict    = Error{Code: "conflict", Message: "An entity with conflicting identifier exists"}
-	ErrInternal    = Error{Code: "internal_error", Message: "Some unexpected error occurred"}
-	ErrUnsupported = Error{Code: "unsupported", Message: "Requested feature is not supported"}
+	ErrInvalid     = Error{Code: "bad_request", Message: "request is not valid"}
+	ErrNotFound    = Error{Code: "not_found", Message: "requested entity not found"}
+	ErrConflict    = Error{Code: "conflict", Message: "an entity with conflicting identifier exists"}
+	ErrInternal    = Error{Code: "internal_error", Message: "some unexpected error occurred"}
+	ErrUnsupported = Error{Code: "unsupported", Message: "requested feature is not supported"}
 )
 
 // Error represents any error returned by the Entropy components along with any
@@ -63,10 +62,14 @@ func (err Error) Is(other error) bool {
 }
 
 func (err Error) Error() string {
+	msg := err.Code
 	if err.Message != "" {
-		return strings.ToLower(err.Message)
+		msg += ": " + err.Message
 	}
-	return fmt.Sprintf("%s: %s", err.Code, err.Cause)
+	if err.Cause != "" {
+		msg += ": " + err.Cause
+	}
+	return msg
 }
 
 // Errorf returns a formatted error similar to `fmt.Errorf` but uses the
@@ -94,13 +97,4 @@ func E(err error) Error {
 		return e
 	}
 	return ErrInternal.WithCausef(err.Error())
-}
-
-// Verbose returns a verbose error value.
-func Verbose(err error) error {
-	var e Error
-	if errors.As(err, &e) {
-		return e.WithMsgf("%s: %s (cause: %s)", e.Code, e.Message, e.Cause)
-	}
-	return err
 }

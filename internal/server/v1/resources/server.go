@@ -26,13 +26,12 @@ type ResourceService interface {
 
 type APIServer struct {
 	entropyv1beta1.UnimplementedResourceServiceServer
-
-	resourceService ResourceService
+	resourceSvc ResourceService
 }
 
 func NewAPIServer(resourceService ResourceService) *APIServer {
 	return &APIServer{
-		resourceService: resourceService,
+		resourceSvc: resourceService,
 	}
 }
 
@@ -42,7 +41,7 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 		return nil, serverutils.ToRPCError(err)
 	}
 
-	result, err := server.resourceService.CreateResource(ctx, *res)
+	result, err := server.resourceSvc.CreateResource(ctx, *res)
 	if err != nil {
 		return nil, serverutils.ToRPCError(err)
 	}
@@ -68,7 +67,7 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 		Labels: request.Labels,
 	}
 
-	res, err := server.resourceService.UpdateResource(ctx, request.GetUrn(), updateRequest)
+	res, err := server.resourceSvc.UpdateResource(ctx, request.GetUrn(), updateRequest)
 	if err != nil {
 		return nil, serverutils.ToRPCError(err)
 	}
@@ -84,7 +83,7 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 }
 
 func (server APIServer) GetResource(ctx context.Context, request *entropyv1beta1.GetResourceRequest) (*entropyv1beta1.GetResourceResponse, error) {
-	res, err := server.resourceService.GetResource(ctx, request.GetUrn())
+	res, err := server.resourceSvc.GetResource(ctx, request.GetUrn())
 	if err != nil {
 		return nil, serverutils.ToRPCError(err)
 	}
@@ -106,7 +105,7 @@ func (server APIServer) ListResources(ctx context.Context, request *entropyv1bet
 		Labels:  nil,
 	}
 
-	resources, err := server.resourceService.ListResources(ctx, filter)
+	resources, err := server.resourceSvc.ListResources(ctx, filter)
 	if err != nil {
 		return nil, serverutils.ToRPCError(err)
 	}
@@ -126,7 +125,7 @@ func (server APIServer) ListResources(ctx context.Context, request *entropyv1bet
 }
 
 func (server APIServer) DeleteResource(ctx context.Context, request *entropyv1beta1.DeleteResourceRequest) (*entropyv1beta1.DeleteResourceResponse, error) {
-	err := server.resourceService.DeleteResource(ctx, request.GetUrn())
+	err := server.resourceSvc.DeleteResource(ctx, request.GetUrn())
 	if err != nil {
 		return nil, serverutils.ToRPCError(err)
 	}
@@ -146,7 +145,7 @@ func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1
 		Labels: request.Labels,
 	}
 
-	updatedRes, err := server.resourceService.ApplyAction(ctx, request.GetUrn(), action)
+	updatedRes, err := server.resourceSvc.ApplyAction(ctx, request.GetUrn(), action)
 	if err != nil {
 		return nil, serverutils.ToRPCError(err)
 	}
@@ -164,7 +163,7 @@ func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1
 func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream entropyv1beta1.ResourceService_GetLogServer) error {
 	ctx := stream.Context()
 
-	logStream, err := server.resourceService.GetLog(ctx, request.GetUrn(), request.GetFilter())
+	logStream, err := server.resourceSvc.GetLog(ctx, request.GetUrn(), request.GetFilter())
 	if err != nil {
 		return serverutils.ToRPCError(err)
 	}
@@ -194,7 +193,7 @@ func (server APIServer) GetLog(request *entropyv1beta1.GetLogRequest, stream ent
 }
 
 func (server APIServer) GetResourceRevisions(ctx context.Context, request *entropyv1beta1.GetResourceRevisionsRequest) (*entropyv1beta1.GetResourceRevisionsResponse, error) {
-	revisions, err := server.resourceService.GetRevisions(ctx, resource.RevisionsSelector{URN: request.GetUrn()})
+	revisions, err := server.resourceSvc.GetRevisions(ctx, resource.RevisionsSelector{URN: request.GetUrn()})
 	if err != nil {
 		return nil, serverutils.ToRPCError(err)
 	}

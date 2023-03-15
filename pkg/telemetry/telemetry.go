@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	// Debug sets the bind address for pprof & zpages server.
-	Debug string `mapstructure:"debug_addr"`
+	Debug string `mapstructure:"debug_addr" default:"localhost:8090"`
 
 	// OpenCensus trace & metrics configurations.
 	EnableCPU        bool    `mapstructure:"enable_cpu"`

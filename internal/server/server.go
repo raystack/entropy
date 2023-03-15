@@ -39,7 +39,7 @@ const (
 
 // Serve initialises all the gRPC+HTTP API routes, starts listening for requests at addr, and blocks until server exits.
 // Server exits gracefully when context is cancelled.
-func Serve(ctx context.Context, addr string, nrApp *newrelic.Application, logger *zap.Logger,
+func Serve(ctx context.Context, httpAddr, grpcAddr string, nrApp *newrelic.Application, logger *zap.Logger,
 	resourceSvc resourcesv1.ResourceService, moduleSvc modulesv1.ModuleService,
 ) error {
 	grpcOpts := []grpc.ServerOption{
@@ -70,7 +70,10 @@ func Serve(ctx context.Context, addr string, nrApp *newrelic.Application, logger
 		return err
 	}
 
-	resourceServiceRPC := resourcesv1.NewAPIServer(resourceSvc)
+	resourceServiceRPC := &resourcesv1.LogWrapper{
+		Logger:                logger,
+		ResourceServiceServer: resourcesv1.NewAPIServer(resourceSvc),
+	}
 	grpcServer.RegisterService(&entropyv1beta1.ResourceService_ServiceDesc, resourceServiceRPC)
 	if err := entropyv1beta1.RegisterResourceServiceHandlerServer(ctx, rpcHTTPGateway, resourceServiceRPC); err != nil {
 		return err
@@ -95,15 +98,18 @@ func Serve(ctx context.Context, addr string, nrApp *newrelic.Application, logger
 		requestLogger(logger), // nolint
 	)
 
-	logger.Info("starting server", zap.String("addr", addr))
+	logger.Info("starting http & grpc servers",
+		zap.String("http_addr", httpAddr),
+		zap.String("grpc_addr", grpcAddr),
+	)
 	return mux.Serve(ctx,
-		mux.WithHTTPTarget(":8081", &http.Server{
+		mux.WithHTTPTarget(httpAddr, &http.Server{
 			Handler:        httpRouter,
 			ReadTimeout:    readTimeout,
 			WriteTimeout:   writeTimeout,
 			MaxHeaderBytes: maxHeaderBytes,
 		}),
-		mux.WithGRPCTarget(addr, grpcServer),
+		mux.WithGRPCTarget(grpcAddr, grpcServer),
 		mux.WithGracePeriod(gracePeriod),
 	)
 }

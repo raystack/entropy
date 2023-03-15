@@ -59,7 +59,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: status.Error(codes.AlreadyExists, "an entity with conflicting identifier exists"),
+			wantErr: status.Error(codes.AlreadyExists, "conflict: an entity with conflicting identifier exists"),
 		},
 		{
 			name: "InvalidRequest",
@@ -84,7 +84,7 @@ func TestAPIServer_CreateResource(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: status.Errorf(codes.InvalidArgument, "request is not valid"),
+			wantErr: status.Errorf(codes.InvalidArgument, "bad_request: request is not valid"),
 		},
 		{
 			name: "Success",
@@ -195,7 +195,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: status.Error(codes.NotFound, "requested entity not found"),
+			wantErr: status.Error(codes.NotFound, "not_found: requested entity not found"),
 		},
 		{
 			name: "InvalidRequest",
@@ -214,7 +214,7 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: status.Errorf(codes.InvalidArgument, "request is not valid"),
+			wantErr: status.Errorf(codes.InvalidArgument, "bad_request: request is not valid"),
 		},
 		{
 			name: "Success",
@@ -317,7 +317,7 @@ func TestAPIServer_GetResource(t *testing.T) {
 				Urn: "p-testdata-gl-testname-log",
 			},
 			want:    nil,
-			wantErr: status.Error(codes.NotFound, "requested entity not found"),
+			wantErr: status.Error(codes.NotFound, "not_found: requested entity not found"),
 		},
 		{
 			name: "Success",
@@ -419,7 +419,7 @@ func TestAPIServer_ListResources(t *testing.T) {
 				Kind:    "log",
 			},
 			want:    nil,
-			wantErr: status.Error(codes.Internal, "some unexpected error occurred"),
+			wantErr: status.Error(codes.Internal, "internal_error: some unexpected error occurred: failed"),
 		},
 		{
 			name: "Success",
@@ -518,7 +518,7 @@ func TestAPIServer_DeleteResource(t *testing.T) {
 				Urn: "p-testdata-gl-testname-log",
 			},
 			want:    nil,
-			wantErr: status.Error(codes.NotFound, "requested entity not found"),
+			wantErr: status.Error(codes.NotFound, "not_found: requested entity not found"),
 		},
 		{
 			name: "Success",
@@ -589,7 +589,7 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 				Action: "scale",
 			},
 			want:    nil,
-			wantErr: status.Error(codes.NotFound, "requested entity not found"),
+			wantErr: status.Error(codes.NotFound, "not_found: requested entity not found"),
 		},
 		{
 			name: "Success",

@@ -4,7 +4,7 @@ package core
 //go:generate mockery --name=ModuleService -r --case underscore --with-expecter --structname ModuleService  --filename=module_service.go --output=./mocks
 
 import (
-	context "context"
+	"context"
 	"encoding/json"
 	"time"
 
