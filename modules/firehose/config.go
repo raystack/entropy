@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/goto/entropy/core/resource"
@@ -13,8 +14,8 @@ import (
 )
 
 const (
+	kubeDeploymentNameLengthLimit      = 53
 	firehoseConsumerIDStartingSequence = "0001"
-	kubeDeploymentNameLengthLimit      = 63
 )
 
 var (
@@ -114,20 +115,23 @@ func sanitiseDeploymentID(r resource.Resource, mc moduleConfig) (string, error) 
 	if len(releaseName) == 0 {
 		releaseName = generateSafeReleaseName(r.Project, r.Name)
 	} else if len(releaseName) >= kubeDeploymentNameLengthLimit {
-		return "", errors.ErrInvalid.WithMsgf("deployment_id must be shorter than 63 chars")
+		return "", errors.ErrInvalid.WithMsgf("deployment_id must be shorter than 53 chars")
 	}
 	return releaseName, nil
 }
 
 func generateSafeReleaseName(project, name string) string {
-	const suffix = "-firehose"
+	const prefix = "firehose-"
+	const randomHashLen = 6
 
-	releaseName := fmt.Sprintf("%s-%s", project, name)
-	if len(releaseName)+len(suffix) >= kubeDeploymentNameLengthLimit {
+	releaseName := fmt.Sprintf("%s%s-%s", prefix, project, name)
+	if len(releaseName) >= kubeDeploymentNameLengthLimit {
+		releaseName = strings.Trim(releaseName[:kubeDeploymentNameLengthLimit-randomHashLen-1], "-")
+
 		val := sha256.Sum256([]byte(releaseName))
 		hash := fmt.Sprintf("%x", val)
-		releaseName = fmt.Sprintf("%s-%s", releaseName[:48], hash[:5])
+		releaseName = releaseName + "-" + hash[:randomHashLen]
 	}
 
-	return releaseName + suffix
+	return releaseName
 }

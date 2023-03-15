@@ -127,6 +127,7 @@ func (w *Worker) handleJob(ctx context.Context, job Job) (*Job, error) {
 	w.logger.Info("got a pending job",
 		zap.String("job_id", job.ID),
 		zap.String("job_kind", job.Kind),
+		zap.String("status", job.Status),
 	)
 
 	fn, exists := w.handlers[job.Kind]
@@ -140,6 +141,13 @@ func (w *Worker) handleJob(ctx context.Context, job Job) (*Job, error) {
 	}
 
 	job.Attempt(ctx, time.Now(), fn)
+
+	w.logger.Info("job attempted",
+		zap.String("job_id", job.ID),
+		zap.String("job_kind", job.Kind),
+		zap.String("status", job.Status),
+		zap.String("last_error", job.LastError),
+	)
 	return &job, nil
 }
 
