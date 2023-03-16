@@ -18,17 +18,6 @@ const (
 	firehoseConsumerIDStartingSequence = "0001"
 )
 
-var (
-	//go:embed schema/config.json
-	completeConfigSchema string
-
-	//go:embed schema/scale.json
-	scaleActionSchema string
-
-	//go:embed schema/reset.json
-	resetActionSchema string
-)
-
 type moduleConfig struct {
 	State    string                 `json:"state"`
 	StopTime *time.Time             `json:"stop_time"`
