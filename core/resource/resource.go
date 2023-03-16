@@ -95,7 +95,7 @@ func (res *Resource) Validate(isCreate bool) error {
 	}
 
 	if isCreate {
-		res.URN = generateURN(*res)
+		res.URN = GenerateURN(res.Kind, res.Project, res.Name)
 	}
 	return nil
 }
@@ -126,7 +126,9 @@ func (f Filter) isMatch(r Resource) bool {
 	return true
 }
 
-func generateURN(res Resource) string {
-	parts := []string{"orn", "entropy", res.Kind, res.Project, res.Name}
+// GenerateURN generates an Entropy URN address for the given combination.
+// Note: Changing this will invalidate all existing resource identifiers.
+func GenerateURN(kind, project, name string) string {
+	parts := []string{"orn", "entropy", kind, project, name}
 	return strings.Join(parts, urnSeparator)
 }
