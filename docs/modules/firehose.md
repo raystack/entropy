@@ -1,6 +1,6 @@
 # Firehose
 
-[Firehose](https://odpf.github.io/firehose/) is an extensible, no-code, and cloud-native service to load real-time streaming data from Kafka to data stores, data lakes, and analytical storage systems.
+[Firehose](https://goto.github.io/firehose/) is an extensible, no-code, and cloud-native service to load real-time streaming data from Kafka to data stores, data lakes, and analytical storage systems.
 
 ## What happens in Plan?
 

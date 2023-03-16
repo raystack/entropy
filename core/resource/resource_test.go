@@ -50,7 +50,7 @@ func TestResource_Validate(t *testing.T) {
 			res: resource.Resource{
 				Kind:    "fake",
 				Name:    "foo",
-				Project: "odpf",
+				Project: "goto",
 			},
 			want: nil,
 		},

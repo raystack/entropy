@@ -18,7 +18,7 @@ in your PATH for easy use. `/usr/local/bin` is the most probable location.
 
 ```sh
 # Install entropy (requires homebrew installed)
-$ brew install odpf/taps/entropy
+$ brew install goto/taps/entropy
 
 # Upgrade entropy (requires homebrew installed)
 $ brew upgrade entropy
@@ -44,12 +44,12 @@ $ ./entropy version
 
 ### Using Docker image
 
-Entropy ships a Docker image [odpf/entropy](https://hub.docker.com/r/goto/entropy) that enables you to use `entropy` as part of your Docker workflow.
+Entropy ships a Docker image [goto/entropy](https://hub.docker.com/r/goto/entropy) that enables you to use `entropy` as part of your Docker workflow.
 
 For example, you can run `entropy version` with this command:
 
 ```bash
-$ docker run odpf/entropy version
+$ docker run goto/entropy version
 ```
 
 ### Verifying the installation

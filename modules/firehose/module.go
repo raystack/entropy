@@ -70,10 +70,10 @@ var Module = module.Descriptor{
 	},
 	DriverFactory: func(conf json.RawMessage) (module.Driver, error) {
 		driverCfg := driverConfig{
-			ChartRepository: "https://odpf.github.io/charts/",
+			ChartRepository: "https://goto.github.io/charts/",
 			ChartName:       "firehose",
 			ChartVersion:    "0.1.3",
-			ImageRepository: "odpf/firehose",
+			ImageRepository: "goto/firehose",
 			ImageName:       "firehose",
 			ImageTag:        "latest",
 			Namespace:       "firehose",

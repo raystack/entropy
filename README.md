@@ -32,7 +32,7 @@ in your PATH for easy use. `/usr/local/bin` is the most probable location.
 
 ```sh
 # Install entropy (requires homebrew installed)
-$ brew install odpf/tap/entropy
+$ brew install goto/tap/entropy
 
 # Check for installed entropy version
 $ entropy version
@@ -83,7 +83,7 @@ $ make test
 Development of Entropy happens in the open on GitHub, and we are grateful to the community for contributing bugfixes and
 improvements. Read below to learn how you can take part in improving Entropy.
 
-Read our [contributing guide](https://odpf.github.io/entropy/docs/contribute/contributing) to learn about our
+Read our [contributing guide](https://goto.github.io/entropy/docs/contribute/contributing) to learn about our
 development process, how to propose bugfixes and improvements, and how to build and test your changes to Entropy.
 
 To help you get your feet wet and get you familiar with our contribution process, we have a list
