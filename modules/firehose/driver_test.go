@@ -157,7 +157,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 		tt := tt
 		t.Run(tt.title, func(t *testing.T) {
 			t.Parallel()
-			m := firehoseModule{}
+			m := firehoseDriver{}
 
 			got, err := m.Plan(context.Background(), tt.res, tt.act)
 			if tt.wantErr != nil || err != nil {

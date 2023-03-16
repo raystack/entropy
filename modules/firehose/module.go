@@ -16,24 +16,18 @@ const (
 	UpgradeAction = "upgrade"
 )
 
-const (
-	releaseCreate = "release_create"
-	releaseUpdate = "release_update"
-	consumerReset = "consumer_reset"
-)
-
-const (
-	stateRunning = "RUNNING"
-	stateStopped = "STOPPED"
-)
-
-const (
-	ResetToDateTime = "DATETIME"
-	ResetToEarliest = "EARLIEST"
-	ResetToLatest   = "LATEST"
-)
-
 const keyKubeDependency = "kube_cluster"
+
+var (
+	//go:embed schema/config.json
+	completeConfigSchema string
+
+	//go:embed schema/scale.json
+	scaleActionSchema string
+
+	//go:embed schema/reset.json
+	resetActionSchema string
+)
 
 var Module = module.Descriptor{
 	Kind: "firehose",
@@ -75,33 +69,7 @@ var Module = module.Descriptor{
 		},
 	},
 	DriverFactory: func(conf json.RawMessage) (module.Driver, error) {
-		fm := firehoseModuleWithDefaultConfigs()
-		err := json.Unmarshal(conf, fm)
-		if err != nil {
-			return nil, err
-		}
-		return fm, nil
-	},
-}
-
-type firehoseModule struct {
-	Config config `json:"config"`
-}
-
-type config struct {
-	ChartRepository string `json:"chart_repository,omitempty"`
-	ChartName       string `json:"chart_name,omitempty"`
-	ChartVersion    string `json:"chart_version,omitempty"`
-	ImageRepository string `json:"image_repository,omitempty"`
-	ImageName       string `json:"image_name,omitempty"`
-	ImageTag        string `json:"image_tag,omitempty"`
-	Namespace       string `json:"namespace,omitempty"`
-	ImagePullPolicy string `json:"image_pull_policy,omitempty"`
-}
-
-func firehoseModuleWithDefaultConfigs() *firehoseModule {
-	return &firehoseModule{
-		config{
+		driverCfg := driverConfig{
 			ChartRepository: "https://odpf.github.io/charts/",
 			ChartName:       "firehose",
 			ChartVersion:    "0.1.3",
@@ -110,6 +78,14 @@ func firehoseModuleWithDefaultConfigs() *firehoseModule {
 			ImageTag:        "latest",
 			Namespace:       "firehose",
 			ImagePullPolicy: "IfNotPresent",
-		},
-	}
+		}
+
+		if err := json.Unmarshal(conf, &driverCfg); err != nil {
+			return nil, err
+		}
+
+		return &firehoseDriver{
+			Config: driverCfg,
+		}, nil
+	},
 }

@@ -18,18 +18,7 @@ const (
 	firehoseConsumerIDStartingSequence = "0001"
 )
 
-var (
-	//go:embed schema/config.json
-	completeConfigSchema string
-
-	//go:embed schema/scale.json
-	scaleActionSchema string
-
-	//go:embed schema/reset.json
-	resetActionSchema string
-)
-
-type moduleConfig struct {
+type Config struct {
 	State    string                 `json:"state"`
 	StopTime *time.Time             `json:"stop_time"`
 	Telegraf map[string]interface{} `json:"telegraf"`
@@ -43,7 +32,7 @@ type moduleConfig struct {
 	} `json:"firehose"`
 }
 
-func (mc *moduleConfig) validateAndSanitize(r resource.Resource) error {
+func (mc *Config) validateAndSanitize(r resource.Resource) error {
 	if mc.StopTime != nil && mc.StopTime.Before(time.Now()) {
 		return errors.ErrInvalid.
 			WithMsgf("value for stop_time must be greater than current time")
@@ -57,7 +46,7 @@ func (mc *moduleConfig) validateAndSanitize(r resource.Resource) error {
 	return nil
 }
 
-func (mc *moduleConfig) GetHelmReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
+func (mc *Config) GetHelmReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
 	var output Output
 	err := json.Unmarshal(r.State.Output, &output)
 	if err != nil {
@@ -102,7 +91,7 @@ func (mc *moduleConfig) GetHelmReleaseConfig(r resource.Resource) (*helm.Release
 	return rc, nil
 }
 
-func (mc *moduleConfig) JSON() []byte {
+func (mc *Config) JSON() []byte {
 	b, err := json.Marshal(mc)
 	if err != nil {
 		panic(err)
@@ -110,7 +99,7 @@ func (mc *moduleConfig) JSON() []byte {
 	return b
 }
 
-func sanitiseDeploymentID(r resource.Resource, mc moduleConfig) (string, error) {
+func sanitiseDeploymentID(r resource.Resource, mc Config) (string, error) {
 	releaseName := mc.Firehose.DeploymentID
 	if len(releaseName) == 0 {
 		releaseName = generateSafeReleaseName(r.Project, r.Name)

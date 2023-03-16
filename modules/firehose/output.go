@@ -11,10 +11,10 @@ import (
 )
 
 type Output struct {
-	Namespace   string     `json:"namespace,omitempty"`
-	ReleaseName string     `json:"release_name,omitempty"`
-	Pods        []kube.Pod `json:"pods,omitempty"`
-	Defaults    config     `json:"defaults,omitempty"`
+	Namespace   string       `json:"namespace,omitempty"`
+	ReleaseName string       `json:"release_name,omitempty"`
+	Pods        []kube.Pod   `json:"pods,omitempty"`
+	Defaults    driverConfig `json:"defaults,omitempty"`
 }
 
 func (out Output) JSON() []byte {
@@ -25,8 +25,8 @@ func (out Output) JSON() []byte {
 	return b
 }
 
-func (m *firehoseModule) Output(ctx context.Context, res module.ExpandedResource) (json.RawMessage, error) {
-	var conf moduleConfig
+func (m *firehoseDriver) Output(ctx context.Context, res module.ExpandedResource) (json.RawMessage, error) {
+	var conf Config
 	if err := json.Unmarshal(res.Resource.Spec.Configs, &conf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 	}
@@ -54,10 +54,10 @@ func (m *firehoseModule) Output(ctx context.Context, res module.ExpandedResource
 	}.JSON(), nil
 }
 
-func (*firehoseModule) podDetails(ctx context.Context, res module.ExpandedResource) ([]kube.Pod, error) {
+func (*firehoseDriver) podDetails(ctx context.Context, res module.ExpandedResource) ([]kube.Pod, error) {
 	r := res.Resource
 
-	var conf moduleConfig
+	var conf Config
 	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
 	}

@@ -36,7 +36,7 @@ func NewAPIServer(resourceService ResourceService) *APIServer {
 }
 
 func (server APIServer) CreateResource(ctx context.Context, request *entropyv1beta1.CreateResourceRequest) (*entropyv1beta1.CreateResourceResponse, error) {
-	res, err := resourceFromProto(request.Resource)
+	res, err := resourceFromProto(request.Resource, false)
 	if err != nil {
 		return nil, serverutils.ToRPCError(err)
 	}
