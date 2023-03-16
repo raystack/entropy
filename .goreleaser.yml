@@ -67,7 +67,7 @@ brews:
     homepage: "https://github.com/goto/entropy"
     description: "Infrastructure orchestration tool."
     tap:
-      owner: odpf
+      owner: goto
       name: homebrew-tap
     license: "Apache 2.0"
     folder: Formula

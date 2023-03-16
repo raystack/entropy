@@ -63,7 +63,7 @@ func TestReleaseCreate(t *testing.T) {
 
 	releaseConfig := DefaultReleaseConfig()
 	releaseConfig.Name = releaseName
-	releaseConfig.Repository = "https://odpf.github.io/charts/"
+	releaseConfig.Repository = "https://goto.github.io/charts/"
 	releaseConfig.Chart = "firehose"
 	releaseConfig.Version = "0.1.1"
 	releaseConfig.Values = jsonUnmarshal(jsonValues)
@@ -83,7 +83,7 @@ func TestReleaseUpdate(t *testing.T) {
 
 	releaseConfig := DefaultReleaseConfig()
 	releaseConfig.Name = releaseName
-	releaseConfig.Repository = "https://odpf.github.io/charts/"
+	releaseConfig.Repository = "https://goto.github.io/charts/"
 	releaseConfig.Chart = "firehose"
 	releaseConfig.Version = "0.1.1"
 	releaseConfig.Values = jsonUnmarshal(jsonValues)
@@ -109,7 +109,7 @@ func TestReleaseDelete(t *testing.T) {
 
 	releaseConfig := DefaultReleaseConfig()
 	releaseConfig.Name = releaseName
-	releaseConfig.Repository = "https://odpf.github.io/charts/"
+	releaseConfig.Repository = "https://goto.github.io/charts/"
 	releaseConfig.Chart = "firehose"
 	releaseConfig.Version = "0.1.1"
 	releaseConfig.Values = jsonUnmarshal(jsonValues)
