@@ -214,12 +214,12 @@ func (*firehoseDriver) podDetails(ctx context.Context, res module.ExpandedResour
 
 	var conf Config
 	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
-		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json").WithCausef(err.Error())
 	}
 
 	var kubeOut kubernetes.Output
 	if err := json.Unmarshal(res.Dependencies[keyKubeDependency].Output, &kubeOut); err != nil {
-		return nil, err
+		return nil, errors.ErrInternal.WithMsgf("invalid kube out").WithCausef(err.Error())
 	}
 
 	hc, err := getHelmReleaseConf(r, conf)
