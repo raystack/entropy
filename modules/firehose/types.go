@@ -3,20 +3,32 @@ package firehose
 import (
 	"crypto/sha256"
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/goto/entropy/core/resource"
 	"github.com/goto/entropy/pkg/errors"
-	"github.com/goto/entropy/pkg/helm"
+	"github.com/goto/entropy/pkg/kube"
 )
 
 const (
 	kubeDeploymentNameLengthLimit      = 53
 	firehoseConsumerIDStartingSequence = "0001"
 )
+
+type Output struct {
+	Namespace   string       `json:"namespace,omitempty"`
+	ReleaseName string       `json:"release_name,omitempty"`
+	Pods        []kube.Pod   `json:"pods,omitempty"`
+	Defaults    driverConfig `json:"defaults,omitempty"`
+}
+
+type moduleData struct {
+	PendingSteps  []string `json:"pending_steps"`
+	ResetTo       string   `json:"reset_to,omitempty"`
+	StateOverride string   `json:"state_override,omitempty"`
+}
 
 type Config struct {
 	State    string                 `json:"state"`
@@ -44,59 +56,6 @@ func (mc *Config) validateAndSanitize(r resource.Resource) error {
 	}
 
 	return nil
-}
-
-func (mc *Config) GetHelmReleaseConfig(r resource.Resource) (*helm.ReleaseConfig, error) {
-	var output Output
-	err := json.Unmarshal(r.State.Output, &output)
-	if err != nil {
-		return nil, errors.ErrInvalid.WithMsgf("invalid output json: %v", err)
-	}
-	defaults := output.Defaults
-
-	relName, err := sanitiseDeploymentID(r, *mc)
-	if err != nil {
-		return nil, err
-	}
-
-	rc := helm.DefaultReleaseConfig()
-	rc.Name = relName
-	rc.Repository = defaults.ChartRepository
-	rc.Chart = defaults.ChartName
-	rc.Namespace = defaults.Namespace
-	rc.ForceUpdate = true
-	rc.Version = defaults.ChartVersion
-
-	fc := mc.Firehose
-	fc.EnvVariables["SOURCE_KAFKA_BROKERS"] = fc.KafkaBrokerAddress
-	fc.EnvVariables["SOURCE_KAFKA_TOPIC"] = fc.KafkaTopic
-	fc.EnvVariables["SOURCE_KAFKA_CONSUMER_GROUP_ID"] = fc.KafkaConsumerID
-
-	hv := map[string]interface{}{
-		"replicaCount": mc.Firehose.Replicas,
-		"firehose": map[string]interface{}{
-			"image": map[string]interface{}{
-				"repository": defaults.ImageRepository,
-				"pullPolicy": defaults.ImagePullPolicy,
-				"tag":        defaults.ImageTag,
-			},
-			"config": fc.EnvVariables,
-		},
-	}
-	if len(mc.Telegraf) > 0 {
-		hv["telegraf"] = mc.Telegraf
-	}
-	rc.Values = hv
-
-	return rc, nil
-}
-
-func (mc *Config) JSON() []byte {
-	b, err := json.Marshal(mc)
-	if err != nil {
-		panic(err)
-	}
-	return b
 }
 
 func sanitiseDeploymentID(r resource.Resource, mc Config) (string, error) {

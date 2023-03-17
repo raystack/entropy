@@ -75,10 +75,6 @@ func (s *Service) execAction(ctx context.Context, res resource.Resource, act mod
 	return &planned.Resource, nil
 }
 
-func isCreate(actionName string) bool {
-	return actionName == module.CreateAction
-}
-
 func (s *Service) planChange(ctx context.Context, res resource.Resource, act module.ActionRequest) (*module.Plan, error) {
 	modSpec, err := s.generateModuleSpec(ctx, res)
 	if err != nil {
@@ -135,4 +131,8 @@ func (s *Service) upsert(ctx context.Context, plan module.Plan, isCreate bool, s
 	}
 
 	return nil
+}
+
+func isCreate(actionName string) bool {
+	return actionName == module.CreateAction
 }

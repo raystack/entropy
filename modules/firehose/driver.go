@@ -127,7 +127,7 @@ func (m *firehoseDriver) Sync(ctx context.Context, res module.ExpandedResource) 
 	return &resource.State{
 		Status:     finalStatus,
 		Output:     output,
-		ModuleData: data.JSON(),
+		ModuleData: mustJSON(data),
 	}, nil
 }
 
@@ -148,7 +148,7 @@ func (*firehoseDriver) Log(ctx context.Context, res module.ExpandedResource, fil
 		filter = make(map[string]string)
 	}
 
-	hc, err := conf.GetHelmReleaseConfig(r)
+	hc, err := getHelmReleaseConf(r, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -180,6 +180,57 @@ func (*firehoseDriver) Log(ctx context.Context, res module.ExpandedResource, fil
 	return mappedLogs, err
 }
 
+func (m *firehoseDriver) Output(ctx context.Context, res module.ExpandedResource) (json.RawMessage, error) {
+	var conf Config
+	if err := json.Unmarshal(res.Resource.Spec.Configs, &conf); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
+	}
+
+	var output Output
+	if err := json.Unmarshal(res.Resource.State.Output, &output); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid output json: %v", err)
+	}
+
+	pods, err := m.podDetails(ctx, res)
+	if err != nil {
+		return nil, err
+	}
+
+	hc, err := getHelmReleaseConf(res.Resource, conf)
+	if err != nil {
+		return nil, err
+	}
+
+	return mustJSON(Output{
+		Namespace:   hc.Namespace,
+		ReleaseName: hc.Name,
+		Pods:        pods,
+		Defaults:    output.Defaults,
+	}), nil
+}
+
+func (*firehoseDriver) podDetails(ctx context.Context, res module.ExpandedResource) ([]kube.Pod, error) {
+	r := res.Resource
+
+	var conf Config
+	if err := json.Unmarshal(r.Spec.Configs, &conf); err != nil {
+		return nil, errors.ErrInvalid.WithMsgf("invalid config json: %v", err)
+	}
+
+	var kubeOut kubernetes.Output
+	if err := json.Unmarshal(res.Dependencies[keyKubeDependency].Output, &kubeOut); err != nil {
+		return nil, err
+	}
+
+	hc, err := getHelmReleaseConf(r, conf)
+	if err != nil {
+		return nil, err
+	}
+
+	kubeCl := kube.NewClient(kubeOut.Configs)
+	return kubeCl.GetPodDetails(ctx, hc.Namespace, map[string]string{"app": hc.Name})
+}
+
 func (m *firehoseDriver) planCreate(res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
 	var plan module.Plan
 	r := res.Resource
@@ -192,16 +243,16 @@ func (m *firehoseDriver) planCreate(res module.ExpandedResource, act module.Acti
 		return nil, err
 	}
 
-	output := Output{
+	output := mustJSON(Output{
 		Defaults: m.Config,
-	}.JSON()
+	})
 
-	r.Spec.Configs = reqConf.JSON()
+	r.Spec.Configs = mustJSON(reqConf)
 	r.State = resource.State{
 		Status: resource.StatusPending,
-		ModuleData: moduleData{
+		ModuleData: mustJSON(moduleData{
 			PendingSteps: []string{releaseCreate},
-		}.JSON(),
+		}),
 		Output: output,
 	}
 
@@ -264,18 +315,18 @@ func (m *firehoseDriver) planChange(res module.ExpandedResource, act module.Acti
 		}
 
 		output.Defaults = m.Config
-		res.State.Output = output.JSON()
+		res.State.Output = mustJSON(output)
 
 		plan.Reason = "firehose upgraded"
 	}
 
-	r.Spec.Configs = conf.JSON()
+	r.Spec.Configs = mustJSON(conf)
 	r.State = resource.State{
 		Status: resource.StatusPending,
 		Output: res.State.Output,
-		ModuleData: moduleData{
+		ModuleData: mustJSON(moduleData{
 			PendingSteps: []string{releaseUpdate},
-		}.JSON(),
+		}),
 	}
 	plan.Resource = r
 	return &plan, nil
@@ -302,15 +353,15 @@ func (*firehoseDriver) planReset(res module.ExpandedResource, act module.ActionR
 		resetValue = resetParams.Datetime
 	}
 
-	r.Spec.Configs = conf.JSON()
+	r.Spec.Configs = mustJSON(conf)
 	r.State = resource.State{
 		Status: resource.StatusPending,
 		Output: res.State.Output,
-		ModuleData: moduleData{
+		ModuleData: mustJSON(moduleData{
 			ResetTo:       resetValue,
 			PendingSteps:  []string{releaseUpdate, consumerReset, releaseUpdate},
 			StateOverride: stateStopped,
-		}.JSON(),
+		}),
 	}
 
 	return &module.Plan{Resource: r, Reason: "firehose consumer reset"}, nil
@@ -323,7 +374,7 @@ func (*firehoseDriver) releaseSync(isCreate bool, conf Config, r resource.Resour
 		conf.Firehose.Replicas = 0
 	}
 
-	hc, err := conf.GetHelmReleaseConfig(r)
+	hc, err := getHelmReleaseConf(r, conf)
 	if err != nil {
 		return err
 	}
@@ -339,7 +390,7 @@ func (*firehoseDriver) releaseSync(isCreate bool, conf Config, r resource.Resour
 }
 
 func (*firehoseDriver) consumerReset(ctx context.Context, conf Config, r resource.Resource, resetTo string, out kubernetes.Output) error {
-	releaseConfig, err := conf.GetHelmReleaseConfig(r)
+	releaseConfig, err := getHelmReleaseConf(r, conf)
 	if err != nil {
 		return err
 	}
@@ -369,4 +420,12 @@ func handleErr(err error) error {
 	default:
 		return err
 	}
+}
+
+func mustJSON(v any) json.RawMessage {
+	bytes, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
 }

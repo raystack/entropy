@@ -33,7 +33,7 @@ worker:
   # Interval between successive polls by a single worker thread. be careful when
   # reducing this since it can cause contention when combined high threads value
   # and lot of entropy instances.
-  poll_interval: 1s
+  poll_interval: 1000000000
 
 # instrumentation/metrics related configurations.
 telemetry:
