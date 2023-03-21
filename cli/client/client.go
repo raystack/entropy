@@ -36,14 +36,14 @@ func Command() *cobra.Command {
 
 	cmd.PersistentFlags().StringP(entropyHostFlag, "E", "", "Entropy host to connect to")
 	cmd.PersistentFlags().DurationP(dialTimeoutFlag, "T", dialTimeout, "Dial timeout")
-	cmd.PersistentFlags().StringP(outFormatFlag, "F", "json", "output format (json, yaml)")
+	cmd.PersistentFlags().StringP(outFormatFlag, "F", "pretty", "output format (json, yaml, pretty)")
 
 	cmd.AddCommand(
-		cmdStreamLogs(),
-		cmdApplyAction(),
 		cmdCreateResource(),
 		cmdViewResource(),
 		cmdEditResource(),
+		cmdStreamLogs(),
+		cmdApplyAction(),
 		cmdDeleteResource(),
 		cmdListRevisions(),
 	)
@@ -55,13 +55,8 @@ func createClient(cmd *cobra.Command) (entropyv1beta1.ResourceServiceClient, fun
 	dialTimeoutVal, _ := cmd.Flags().GetDuration(dialTimeoutFlag)
 	entropyAddr, _ := cmd.Flags().GetString(entropyHostFlag)
 
-	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
-	}
-
 	dialCtx, dialCancel := context.WithTimeout(cmd.Context(), dialTimeoutVal)
-	conn, err := grpc.DialContext(dialCtx, entropyAddr, opts...)
+	conn, err := grpc.DialContext(dialCtx, entropyAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		dialCancel()
 		return nil, nil, err

@@ -22,9 +22,6 @@ func cmdViewResource() *cobra.Command {
 		Short:   "List or View existing resource(s)",
 		Aliases: []string{"view"},
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
-			spinner := printer.Spin("")
-			defer spinner.Stop()
-
 			client, cancel, err := createClient(cmd)
 			if err != nil {
 				return err
@@ -36,6 +33,8 @@ func cmdViewResource() *cobra.Command {
 				req := entropyv1beta1.GetResourceRequest{
 					Urn: args[0],
 				}
+				spinner := printer.Spin("Getting resource...")
+				defer spinner.Stop()
 				res, err := client.GetResource(cmd.Context(), &req)
 				if err != nil {
 					return err
@@ -58,6 +57,9 @@ func cmdViewResource() *cobra.Command {
 				Kind:    kind,
 				Project: project,
 			}
+
+			spinner := printer.Spin("Listing resources...")
+			defer spinner.Stop()
 			res, err := client.ListResources(cmd.Context(), &req)
 			if err != nil {
 				return err
@@ -71,8 +73,8 @@ func cmdViewResource() *cobra.Command {
 				for _, r := range resources {
 					report = append(report, []string{r.Urn, r.Name, r.Kind, r.Project, r.State.Status.String()})
 				}
-				printer.Table(os.Stdout, report)
 				_, _ = fmt.Fprintf(w, "Total: %d\n", len(report)-1)
+				printer.Table(os.Stdout, report)
 				return nil
 			})
 		}),
@@ -88,14 +90,10 @@ func cmdCreateResource() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create <file>",
 		Short: "Create a new resource on Entropy.",
+		Args:  cobra.ExactArgs(1),
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
-			spinner := printer.Spin("")
-			defer spinner.Stop()
-
 			var reqBody entropyv1beta1.Resource
 			if err := parseFile(args[0], &reqBody); err != nil {
-				return err
-			} else if err := reqBody.ValidateAll(); err != nil {
 				return err
 			}
 
@@ -109,6 +107,8 @@ func cmdCreateResource() *cobra.Command {
 				Resource: &reqBody,
 			}
 
+			spinner := printer.Spin("Creating resource...")
+			defer spinner.Stop()
 			res, err := client.CreateResource(cmd.Context(), req)
 			if err != nil {
 				return err
@@ -116,7 +116,11 @@ func cmdCreateResource() *cobra.Command {
 			spinner.Stop()
 
 			resource := res.GetResource()
-			return Display(cmd, resource, nil)
+			return Display(cmd, resource, func(w io.Writer, v any) error {
+				_, _ = fmt.Fprintf(w, "Resource created with URN '%s'.\n", resource.Urn)
+				_, _ = fmt.Fprintln(w, "Use 'entropy resource get <urn>' to view resource.")
+				return nil
+			})
 		}),
 	}
 
@@ -130,9 +134,6 @@ func cmdEditResource() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		Short: "Make updates to an existing resource",
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
-			spinner := printer.Spin("")
-			defer spinner.Stop()
-
 			var newSpec entropyv1beta1.ResourceSpec
 			if err := parseFile(file, &newSpec); err != nil {
 				return err
@@ -152,6 +153,8 @@ func cmdEditResource() *cobra.Command {
 			}
 			defer cancel()
 
+			spinner := printer.Spin("Updating resource...")
+			defer spinner.Stop()
 			resp, err := client.UpdateResource(cmd.Context(), &reqBody)
 			if err != nil {
 				return err
@@ -161,6 +164,7 @@ func cmdEditResource() *cobra.Command {
 			resource := resp.GetResource()
 			return Display(cmd, resource, func(w io.Writer, _ any) error {
 				_, _ = fmt.Fprintln(w, "Update request placed successfully.")
+				_, _ = fmt.Fprintln(w, "Use 'entropy resource get <urn>' to view status.")
 				return nil
 			})
 		}),
@@ -178,9 +182,6 @@ func cmdApplyAction() *cobra.Command {
 		Short:   "Apply an action on an existing resource",
 		Aliases: []string{"execute"},
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
-			spinner := printer.Spin("")
-			defer spinner.Stop()
-
 			var params structpb.Value
 			if file != "" {
 				if err := parseFile(file, &params); err != nil {
@@ -205,6 +206,8 @@ func cmdApplyAction() *cobra.Command {
 			}
 			defer cancel()
 
+			spinner := printer.Spin("Applying action...")
+			defer spinner.Stop()
 			res, err := client.ApplyAction(cmd.Context(), &reqBody)
 			if err != nil {
 				return err
@@ -212,7 +215,11 @@ func cmdApplyAction() *cobra.Command {
 			spinner.Stop()
 
 			resource := res.GetResource()
-			return Display(cmd, resource, nil)
+			return Display(cmd, resource, func(w io.Writer, v any) error {
+				_, _ = fmt.Fprintln(w, "Action request placed successfully.")
+				_, _ = fmt.Fprintln(w, "Use 'entropy resource get <urn>' to view status.")
+				return nil
+			})
 		}),
 	}
 
@@ -229,15 +236,14 @@ func cmdDeleteResource() *cobra.Command {
 		Short:   "Delete an existing resource.",
 		Aliases: []string{"rm", "del"},
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
-			spinner := printer.Spin("")
-			defer spinner.Stop()
-
 			client, cancel, err := createClient(cmd)
 			if err != nil {
 				return err
 			}
 			defer cancel()
 
+			spinner := printer.Spin("Deleting resource...")
+			defer spinner.Stop()
 			_, err = client.DeleteResource(cmd.Context(), &entropyv1beta1.DeleteResourceRequest{Urn: args[0]})
 			if err != nil {
 				return err
@@ -259,9 +265,6 @@ func cmdListRevisions() *cobra.Command {
 		Short:   "List revisions of a resource.",
 		Aliases: []string{"revs"},
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
-			spinner := printer.Spin("")
-			defer spinner.Stop()
-
 			var reqBody entropyv1beta1.GetResourceRevisionsRequest
 			reqBody.Urn = args[0]
 
@@ -272,6 +275,9 @@ func cmdListRevisions() *cobra.Command {
 			defer cancel()
 
 			req := &entropyv1beta1.GetResourceRevisionsRequest{Urn: args[0]}
+
+			spinner := printer.Spin("Retrieving resource revisions...")
+			defer spinner.Stop()
 			res, err := client.GetResourceRevisions(cmd.Context(), req)
 			if err != nil {
 				return err
@@ -303,9 +309,6 @@ func cmdStreamLogs() *cobra.Command {
 		Short:   "Stream real-time logs for an existing resource.",
 		Aliases: []string{"logs"},
 		RunE: handleErr(func(cmd *cobra.Command, args []string) error {
-			spinner := printer.Spin("")
-			defer spinner.Stop()
-
 			client, cancel, err := createClient(cmd)
 			if err != nil {
 				return err
@@ -327,6 +330,8 @@ func cmdStreamLogs() *cobra.Command {
 				return err
 			}
 
+			spinner := printer.Spin("Preparing to stream logs...")
+			defer spinner.Stop()
 			stream, err := client.GetLog(cmd.Context(), reqBody)
 			if err != nil {
 				return err

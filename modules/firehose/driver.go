@@ -66,7 +66,7 @@ type transientData struct {
 	ResetOffsetTo string   `json:"reset_offset_to,omitempty"`
 }
 
-func (fd *firehoseDriver) getHelmRelease(conf Config) *helm.ReleaseConfig {
+func (*firehoseDriver) getHelmRelease(conf Config) *helm.ReleaseConfig {
 	const (
 		chartRepo = "https://odpf.github.io/charts/"
 		chartName = "firehose"
@@ -90,7 +90,7 @@ func (fd *firehoseDriver) getHelmRelease(conf Config) *helm.ReleaseConfig {
 			},
 			"config": conf.EnvVariables,
 		},
-		"telegraf": fd.conf.Telegraf,
+		"telegraf": conf.Telegraf,
 	}
 	return rc
 }

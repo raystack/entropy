@@ -26,5 +26,6 @@ expt/
 
 entropy*.dev.yaml
 entropy*.dev.yml
-
+test_*.yml
+test_*.json
 requests.http
