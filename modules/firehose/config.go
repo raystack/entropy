@@ -52,7 +52,7 @@ func readConfig(r resource.Resource, confJSON json.RawMessage) (*Config, error) 
 	// note: enforce the kubernetes deployment name length limit.
 	if len(cfg.DeploymentID) == 0 {
 		cfg.DeploymentID = generateSafeReleaseName(r.Project, r.Name)
-	} else if len(cfg.DeploymentID) >= kubeDeploymentNameLengthLimit {
+	} else if len(cfg.DeploymentID) > kubeDeploymentNameLengthLimit {
 		return nil, errors.ErrInvalid.WithMsgf("deployment_id must be shorter than 53 chars")
 	}
 
