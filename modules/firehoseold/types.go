@@ -1,4 +1,4 @@
-package firehose
+package firehoseold
 
 import (
 	"crypto/sha256"
@@ -18,10 +18,10 @@ const (
 )
 
 type Output struct {
-	Namespace   string       `json:"namespace,omitempty"`
-	ReleaseName string       `json:"release_name,omitempty"`
 	Pods        []kube.Pod   `json:"pods,omitempty"`
 	Defaults    driverConfig `json:"defaults,omitempty"`
+	Namespace   string       `json:"namespace,omitempty"`
+	ReleaseName string       `json:"release_name,omitempty"`
 }
 
 type moduleData struct {
@@ -32,7 +32,7 @@ type moduleData struct {
 
 type Config struct {
 	State    string                 `json:"state"`
-	StopTime *time.Time             `json:"stop_time"`
+	StopTime *time.Time             `json:"stop_time,omitempty"`
 	Telegraf map[string]interface{} `json:"telegraf"`
 	Firehose struct {
 		Replicas           int               `json:"replicas"`

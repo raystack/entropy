@@ -1,32 +1,29 @@
 package firehose
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
+	"time"
 
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/modules/kubernetes"
+	"github.com/goto/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/helm"
+	"github.com/goto/entropy/pkg/kafka"
+	"github.com/goto/entropy/pkg/kube"
+	"github.com/goto/entropy/pkg/validator"
+	"github.com/goto/entropy/pkg/worker"
 )
 
 const (
-	StopAction    = "stop"
-	StartAction   = "start"
+	keyKubeDependency = "kube_cluster"
+
 	ScaleAction   = "scale"
+	StartAction   = "start"
+	StopAction    = "stop"
 	ResetAction   = "reset"
 	UpgradeAction = "upgrade"
-)
-
-const keyKubeDependency = "kube_cluster"
-
-var (
-	//go:embed schema/config.json
-	completeConfigSchema string
-
-	//go:embed schema/scale.json
-	scaleActionSchema string
-
-	//go:embed schema/reset.json
-	resetActionSchema string
 )
 
 var Module = module.Descriptor{
@@ -37,55 +34,93 @@ var Module = module.Descriptor{
 	Actions: []module.ActionDesc{
 		{
 			Name:        module.CreateAction,
-			Description: "Creates firehose instance.",
-			ParamSchema: completeConfigSchema,
+			Description: "Creates a new firehose",
 		},
 		{
 			Name:        module.UpdateAction,
-			Description: "Updates an existing firehose instance.",
-			ParamSchema: completeConfigSchema,
-		},
-		{
-			Name:        ScaleAction,
-			Description: "Scale-up or scale-down an existing firehose instance.",
-			ParamSchema: scaleActionSchema,
-		},
-		{
-			Name:        StopAction,
-			Description: "Stop firehose and all its components.",
-		},
-		{
-			Name:        StartAction,
-			Description: "Start firehose and all its components.",
+			Description: "Update all configurations of firehose",
 		},
 		{
 			Name:        ResetAction,
-			Description: "Reset firehose kafka consumer group to given timestamp",
-			ParamSchema: resetActionSchema,
+			Description: "Stop firehose, reset consumer group, restart",
+		},
+		{
+			Name:        StopAction,
+			Description: "Stop all replicas of this firehose.",
+		},
+		{
+			Name:        StartAction,
+			Description: "Start the firehose if it is currently stopped.",
+		},
+		{
+			Name:        ScaleAction,
+			Description: "Scale the number of replicas to given number.",
 		},
 		{
 			Name:        UpgradeAction,
-			Description: "Upgrade firehose to current stable version",
+			Description: "Upgrade firehose version",
 		},
 	},
-	DriverFactory: func(conf json.RawMessage) (module.Driver, error) {
-		driverCfg := driverConfig{
-			ChartRepository: "https://odpf.github.io/charts/",
-			ChartName:       "firehose",
-			ChartVersion:    "0.1.3",
-			ImageRepository: "gotocompany/firehose",
-			ImageName:       "firehose",
-			ImageTag:        "latest",
-			Namespace:       "firehose",
-			ImagePullPolicy: "IfNotPresent",
-		}
-
-		if err := json.Unmarshal(conf, &driverCfg); err != nil {
+	DriverFactory: func(confJSON json.RawMessage) (module.Driver, error) {
+		conf := defaultDriverConf // clone the default value
+		if err := json.Unmarshal(confJSON, &conf); err != nil {
+			return nil, err
+		} else if err := validator.TaggedStruct(conf); err != nil {
 			return nil, err
 		}
 
 		return &firehoseDriver{
-			Config: driverCfg,
+			conf: conf,
+			kubeDeploy: func(_ context.Context, isCreate bool, kubeConf kube.Config, hc helm.ReleaseConfig) error {
+				helmCl := helm.NewClient(&helm.Config{Kubernetes: kubeConf})
+
+				var errHelm error
+				if isCreate {
+					_, errHelm = helmCl.Create(&hc)
+				} else {
+					_, errHelm = helmCl.Update(&hc)
+				}
+				return errHelm
+			},
+			kubeGetPod: func(ctx context.Context, conf kube.Config, ns string, labels map[string]string) ([]kube.Pod, error) {
+				kubeCl := kube.NewClient(conf)
+				return kubeCl.GetPodDetails(ctx, ns, labels)
+			},
+			consumerReset: consumerReset,
 		}, nil
 	},
+}
+
+func consumerReset(ctx context.Context, conf Config, out kubernetes.Output, resetTo string) error {
+	const (
+		networkErrorRetryDuration   = 5 * time.Second
+		kubeAPIRetryBackoffDuration = 30 * time.Second
+	)
+
+	var (
+		errNetwork = worker.RetryableError{RetryAfter: networkErrorRetryDuration}
+		errKubeAPI = worker.RetryableError{RetryAfter: kubeAPIRetryBackoffDuration}
+	)
+
+	brokerAddr := conf.EnvVariables[confKeyKafkaBrokers]
+	consumerID := conf.EnvVariables[confKeyConsumerID]
+
+	err := kafka.DoReset(ctx, kube.NewClient(out.Configs), conf.Namespace, brokerAddr, consumerID, resetTo)
+	if err != nil {
+		switch {
+		case errors.Is(err, kube.ErrJobCreationFailed):
+			return errNetwork.WithCause(err)
+
+		case errors.Is(err, kube.ErrJobNotFound):
+			return errKubeAPI.WithCause(err)
+
+		case errors.Is(err, kube.ErrJobExecutionFailed):
+			return errKubeAPI.WithCause(err)
+
+		default:
+			return err
+		}
+	}
+
+	return nil
 }

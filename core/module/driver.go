@@ -34,9 +34,9 @@ type Driver interface {
 
 // Plan represents the changes to be staged and later synced by module.
 type Plan struct {
-	Resource      resource.Resource
-	ScheduleRunAt time.Time
 	Reason        string
+	Resource      resource.Resource
+	ScheduleRunAt *time.Time
 }
 
 // Loggable extension of driver allows streaming log data for a resource.

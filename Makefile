@@ -9,7 +9,7 @@ EXE=entropy
 
 .PHONY: all build clean tidy format test test-coverage proto
 
-all: clean test build format lint
+all: format clean test build 
 
 tidy:
 	@echo "Tidy up go.mod..."

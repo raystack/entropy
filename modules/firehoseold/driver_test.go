@@ -1,4 +1,4 @@
-package firehose
+package firehoseold
 
 import (
 	"context"
@@ -57,7 +57,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 					Name:    "test",
 					Project: "demo",
 					Spec: resource.Spec{
-						Configs: []byte(`{"state":"RUNNING","stop_time":null,"telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+						Configs: []byte(`{"state":"RUNNING","telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 					},
 					State: resource.State{
 						Status:     resource.StatusPending,
@@ -91,7 +91,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 					Name:    "test",
 					Project: "demo",
 					Spec: resource.Spec{
-						Configs: []byte(`{"state":"RUNNING","stop_time":null,"telegraf":null,"firehose":{"replicas":5,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+						Configs: []byte(`{"state":"RUNNING","telegraf":null,"firehose":{"replicas":5,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 					},
 					State: resource.State{
 						Status:     resource.StatusPending,
@@ -115,7 +115,7 @@ func TestFirehoseModule_Plan(t *testing.T) {
 					Name:    "test",
 					Project: "demo",
 					Spec: resource.Spec{
-						Configs: []byte(`{"state":"RUNNING","stop_time":null,"telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
+						Configs: []byte(`{"state":"RUNNING","telegraf":null,"firehose":{"replicas":1,"kafka_broker_address":"localhost:9092","kafka_topic":"test-topic","kafka_consumer_id":"test-consumer-id","env_variables":{}}}`),
 					},
 					State: resource.State{
 						Status:     resource.StatusPending,
@@ -165,17 +165,20 @@ func TestFirehoseModule_Plan(t *testing.T) {
 				assert.True(t, errors.Is(err, tt.wantErr))
 				assert.Nil(t, got)
 			} else {
+				wantJSON := mustJSON(tt.want)
+				gotJSON := mustJSON(got)
+
 				assert.NoError(t, err)
-				assert.Equal(t, tt.want, got, cmp.Diff(tt.want, got))
+				assert.JSONEq(t, string(wantJSON), string(gotJSON), cmp.Diff(wantJSON, gotJSON))
 			}
 		})
 	}
 }
 
-func parseTime(timeString string) time.Time {
+func parseTime(timeString string) *time.Time {
 	t, err := time.Parse(time.RFC3339, timeString)
 	if err != nil {
 		panic(err)
 	}
-	return t
+	return &t
 }
