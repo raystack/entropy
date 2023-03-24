@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/goto/entropy/core/resource"
 	"github.com/goto/entropy/pkg/errors"
@@ -27,6 +28,8 @@ var (
 )
 
 type Config struct {
+	Stopped      bool              `json:"stopped"`
+	StopTime     *time.Time        `json:"stop_time,omitempty"`
 	Telegraf     map[string]any    `json:"telegraf,omitempty"`
 	Replicas     int               `json:"replicas"`
 	Namespace    string            `json:"namespace,omitempty"`

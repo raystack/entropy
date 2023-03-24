@@ -38,9 +38,14 @@ func (fd *firehoseDriver) planChange(exr module.ExpandedResource, act module.Act
 			return nil, err
 		}
 
+		chartVals, err := mergeChartValues(curConf.ChartValues, newConf.ChartValues)
+		if err != nil {
+			return nil, err
+		}
+
 		// restore configs that are not user-controlled.
 		newConf.DeploymentID = curConf.DeploymentID
-		newConf.ChartValues = curConf.ChartValues
+		newConf.ChartValues = chartVals
 		newConf.Namespace = curConf.Namespace
 		newConf.Telegraf = curConf.Telegraf
 
@@ -67,6 +72,7 @@ func (fd *firehoseDriver) planChange(exr module.ExpandedResource, act module.Act
 
 	case UpgradeAction:
 		// upgrade the chart values to the latest project-level config.
+		// Note: upgrade/downgrade will happen based on module-level configs.
 		curConf.ChartValues = &fd.conf.ChartValues
 	}
 
@@ -91,10 +97,15 @@ func (fd *firehoseDriver) planCreate(exr module.ExpandedResource, act module.Act
 		return nil, err
 	}
 
+	chartVals, err := mergeChartValues(&fd.conf.ChartValues, conf.ChartValues)
+	if err != nil {
+		return nil, err
+	}
+
 	// set project defaults.
 	conf.Telegraf = fd.conf.Telegraf
 	conf.Namespace = fd.conf.Namespace
-	conf.ChartValues = &fd.conf.ChartValues
+	conf.ChartValues = chartVals
 
 	exr.Resource.Spec.Configs = mustJSON(conf)
 	exr.Resource.State = resource.State{

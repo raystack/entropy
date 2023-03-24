@@ -41,7 +41,7 @@ func (fd *firehoseDriver) Sync(ctx context.Context, exr module.ExpandedResource)
 			// we want to stop the current deployment. we do this by setting
 			// replicas to 0. But this value will not be persisted to DB since
 			// config changes during Sync() are not saved.
-			if pendingStep == stepReleaseStop {
+			if pendingStep == stepReleaseStop || conf.Stopped {
 				conf.Replicas = 0
 			}
 

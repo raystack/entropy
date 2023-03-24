@@ -3,6 +3,7 @@ package firehose
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/modules/kubernetes"
@@ -16,6 +17,12 @@ const (
 	stepReleaseUpdate = "release_update"
 	stepReleaseStop   = "release_stop"
 	stepKafkaReset    = "consumer_reset"
+)
+
+const (
+	chartRepo = "https://goto.github.io/charts/"
+	chartName = "firehose"
+	imageRepo = "gotocompany/firehose"
 )
 
 var defaultDriverConf = driverConf{
@@ -67,12 +74,6 @@ type transientData struct {
 }
 
 func (*firehoseDriver) getHelmRelease(conf Config) *helm.ReleaseConfig {
-	const (
-		chartRepo = "https://odpf.github.io/charts/"
-		chartName = "firehose"
-		imageRepo = "odpf/firehose"
-	)
-
 	rc := helm.DefaultReleaseConfig()
 	rc.Name = conf.DeploymentID
 	rc.Repository = chartRepo
@@ -93,6 +94,29 @@ func (*firehoseDriver) getHelmRelease(conf Config) *helm.ReleaseConfig {
 		"telegraf": conf.Telegraf,
 	}
 	return rc
+}
+
+func mergeChartValues(cur, newVal *chartValues) (*chartValues, error) {
+	if newVal == nil {
+		return cur, nil
+	}
+
+	merged := chartValues{
+		ImageTag:        cur.ImageTag,
+		ChartVersion:    cur.ChartVersion,
+		ImagePullPolicy: cur.ImagePullPolicy,
+	}
+
+	newTag := strings.TrimSpace(newVal.ImageTag)
+	if newTag != "" {
+		if strings.Contains(newTag, ":") && !strings.HasPrefix(newTag, imageRepo) {
+			return nil, errors.ErrInvalid.
+				WithMsgf("unknown image repo: '%s', must start with '%s'", newTag, imageRepo)
+		}
+		merged.ImageTag = strings.TrimPrefix(newTag, imageRepo)
+	}
+
+	return &merged, nil
 }
 
 func readOutputData(exr module.ExpandedResource) (*Output, error) {

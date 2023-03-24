@@ -71,6 +71,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					Project: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
 					Spec: resource.Spec{
 						Configs: mustJSON(map[string]any{
+							"stopped":       false,
 							"replicas":      1,
 							"namespace":     "firehose",
 							"deployment_id": "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099",
@@ -137,6 +138,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					Project: "foo",
 					Spec: resource.Spec{
 						Configs: mustJSON(map[string]any{
+							"stopped":       false,
 							"replicas":      1,
 							"namespace":     "firehose",
 							"deployment_id": "firehose-foo-fh1",
@@ -224,6 +226,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					Project: "foo",
 					Spec: resource.Spec{
 						Configs: mustJSON(map[string]any{
+							"stopped":       false,
 							"replicas":      10,
 							"deployment_id": "firehose-deployment-x",
 							"env_variables": map[string]string{
@@ -376,6 +379,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					Project: "foo",
 					Spec: resource.Spec{
 						Configs: mustJSON(map[string]any{
+							"stopped":       false,
 							"replicas":      1,
 							"deployment_id": "firehose-deployment-x",
 							"chart_values": map[string]string{
@@ -412,6 +416,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					Project: "foo",
 					Spec: resource.Spec{
 						Configs: mustJSON(map[string]any{
+							"stopped":       false,
 							"replicas":      1,
 							"deployment_id": "firehose-deployment-x",
 							"chart_values": map[string]string{
