@@ -76,5 +76,5 @@ brews:
     install: |-
       bin.install "entropy"
     commit_author:
-      name: Rohil Surana
-      email: rohilsurana96@gmail.com
+      name: github-actions[bot]
+      email: 41898282+github-actions[bot]@users.noreply.github.com
