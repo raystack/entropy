@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -12,23 +13,26 @@ import (
 )
 
 type resourceModel struct {
-	ID              int64     `db:"id"`
-	URN             string    `db:"urn"`
-	Kind            string    `db:"kind"`
-	Name            string    `db:"name"`
-	Project         string    `db:"project"`
-	CreatedAt       time.Time `db:"created_at"`
-	UpdatedAt       time.Time `db:"updated_at"`
-	SpecConfigs     []byte    `db:"spec_configs"`
-	StateStatus     string    `db:"state_status"`
-	StateOutput     []byte    `db:"state_output"`
-	StateModuleData []byte    `db:"state_module_data"`
+	ID              int64           `db:"id"`
+	URN             string          `db:"urn"`
+	Kind            string          `db:"kind"`
+	Name            string          `db:"name"`
+	Project         string          `db:"project"`
+	CreatedAt       time.Time       `db:"created_at"`
+	UpdatedAt       time.Time       `db:"updated_at"`
+	SpecConfigs     []byte          `db:"spec_configs"`
+	StateStatus     string          `db:"state_status"`
+	StateOutput     []byte          `db:"state_output"`
+	StateModuleData []byte          `db:"state_module_data"`
+	StateNextSync   *time.Time      `db:"state_next_sync"`
+	StateSyncResult json.RawMessage `db:"state_sync_result"`
 }
 
 func readResourceRecord(ctx context.Context, r sqlx.QueryerContext, urn string, into *resourceModel) error {
 	cols := []string{
 		"id", "urn", "kind", "project", "name", "created_at", "updated_at",
 		"spec_configs", "state_status", "state_output", "state_module_data",
+		"state_next_sync", "state_sync_result",
 	}
 	builder := sq.Select(cols...).From(tableResources).Where(sq.Eq{"urn": urn})
 

@@ -14,7 +14,9 @@ import (
 
 type kubeDriver struct{}
 
-func (m *kubeDriver) Plan(ctx context.Context, res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
+func (m *kubeDriver) Plan(ctx context.Context, res module.ExpandedResource,
+	act module.ActionRequest,
+) (*resource.Resource, error) {
 	res.Resource.Spec = resource.Spec{
 		Configs:      act.Params,
 		Dependencies: nil,
@@ -30,7 +32,7 @@ func (m *kubeDriver) Plan(ctx context.Context, res module.ExpandedResource, act 
 		Output: output,
 	}
 
-	return &module.Plan{Resource: res.Resource, Reason: "kubernetes cluster details updated"}, nil
+	return &res.Resource, nil
 }
 
 func (*kubeDriver) Sync(_ context.Context, res module.ExpandedResource) (*resource.State, error) {

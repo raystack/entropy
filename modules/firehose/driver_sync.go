@@ -31,6 +31,11 @@ func (fd *firehoseDriver) Sync(ctx context.Context, exr module.ExpandedResource)
 		return nil, errors.ErrInternal.WithMsgf("invalid kube state").WithCausef(err.Error())
 	}
 
+	finalState := resource.State{
+		Status: resource.StatusPending,
+		Output: exr.Resource.State.Output,
+	}
+
 	// pickup the next pending step if available.
 	if len(modData.PendingSteps) > 0 {
 		pendingStep := modData.PendingSteps[0]
@@ -58,24 +63,35 @@ func (fd *firehoseDriver) Sync(ctx context.Context, exr module.ExpandedResource)
 		default:
 			return nil, errors.ErrInternal.WithMsgf("unknown step: '%s'", pendingStep)
 		}
+
+		// we have more pending states, so enqueue resource for another sync
+		// as soon as possible.
+		immediately := fd.timeNow()
+		finalState.NextSyncAt = &immediately
+		finalState.ModuleData = mustJSON(modData)
+
+		return &finalState, nil
+	}
+
+	// even if the resource is in completed state, we check this time to
+	// see if the firehose is expected to be stopped by this time.
+	finalState.NextSyncAt = conf.StopTime
+	if conf.StopTime != nil && conf.StopTime.Before(fd.timeNow()) {
+		conf.Replicas = 0
+		if err := fd.releaseSync(ctx, false, *conf, kubeOut); err != nil {
+			return nil, err
+		}
+		finalState.NextSyncAt = nil
 	}
 
 	finalOut, err := fd.refreshOutput(ctx, *conf, *out, kubeOut)
 	if err != nil {
 		return nil, err
 	}
+	finalState.Output = finalOut
 
-	finalState := resource.State{
-		Status:     resource.StatusPending,
-		Output:     finalOut,
-		ModuleData: mustJSON(modData),
-	}
-
-	if len(modData.PendingSteps) == 0 {
-		finalState.Status = resource.StatusCompleted
-		finalState.ModuleData = nil
-	}
-
+	finalState.Status = resource.StatusCompleted
+	finalState.ModuleData = nil
 	return &finalState, nil
 }
 

@@ -1,6 +1,5 @@
 package core
 
-//go:generate mockery --name=AsyncWorker -r --case underscore --with-expecter --structname AsyncWorker  --filename=async_worker.go --output=./mocks
 //go:generate mockery --name=ModuleService -r --case underscore --with-expecter --structname ModuleService  --filename=module_service.go --output=./mocks
 
 import (
@@ -13,50 +12,47 @@ import (
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/core/resource"
 	"github.com/goto/entropy/pkg/errors"
-	"github.com/goto/entropy/pkg/worker"
 )
 
 type Service struct {
-	logger    *zap.Logger
-	clock     func() time.Time
-	store     resource.Store
-	worker    AsyncWorker
-	moduleSvc ModuleService
+	logger      *zap.Logger
+	clock       func() time.Time
+	store       resource.Store
+	moduleSvc   ModuleService
+	syncBackoff time.Duration
 }
 
 type ModuleService interface {
-	PlanAction(ctx context.Context, res module.ExpandedResource, act module.ActionRequest) (*module.Plan, error)
+	PlanAction(ctx context.Context, res module.ExpandedResource, act module.ActionRequest) (*resource.Resource, error)
 	SyncState(ctx context.Context, res module.ExpandedResource) (*resource.State, error)
 	StreamLogs(ctx context.Context, res module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error)
 	GetOutput(ctx context.Context, res module.ExpandedResource) (json.RawMessage, error)
 }
 
-type AsyncWorker interface {
-	Enqueue(ctx context.Context, jobs ...worker.Job) error
-}
+func New(repo resource.Store, moduleSvc ModuleService, clockFn func() time.Time, lg *zap.Logger) *Service {
+	const defaultSyncBackoff = 5 * time.Second
 
-func New(repo resource.Store, moduleSvc ModuleService, asyncWorker AsyncWorker, clockFn func() time.Time, lg *zap.Logger) *Service {
 	if clockFn == nil {
 		clockFn = time.Now
 	}
 
 	return &Service{
-		logger:    lg,
-		clock:     clockFn,
-		store:     repo,
-		worker:    asyncWorker,
-		moduleSvc: moduleSvc,
+		logger:      lg,
+		clock:       clockFn,
+		store:       repo,
+		syncBackoff: defaultSyncBackoff,
+		moduleSvc:   moduleSvc,
 	}
 }
 
-func (s *Service) generateModuleSpec(ctx context.Context, res resource.Resource) (*module.ExpandedResource, error) {
+func (svc *Service) generateModuleSpec(ctx context.Context, res resource.Resource) (*module.ExpandedResource, error) {
 	modSpec := module.ExpandedResource{
 		Resource:     res,
 		Dependencies: map[string]module.ResolvedDependency{},
 	}
 
 	for key, resURN := range res.Spec.Dependencies {
-		d, err := s.GetResource(ctx, resURN)
+		d, err := svc.GetResource(ctx, resURN)
 		if err != nil {
 			if errors.Is(err, errors.ErrNotFound) {
 				return nil, errors.ErrInvalid.

@@ -20,10 +20,16 @@ const configFlag = "config"
 // Config contains the application configuration.
 type Config struct {
 	Log       logger.LogConfig `mapstructure:"log"`
-	Worker    workerConf       `mapstructure:"worker"`
+	Syncer    syncerConf       `mapstructure:"syncer"`
 	Service   serveConfig      `mapstructure:"service"`
 	PGConnStr string           `mapstructure:"pg_conn_str" default:"postgres://postgres@localhost:5432/entropy?sslmode=disable"`
 	Telemetry telemetry.Config `mapstructure:"telemetry"`
+}
+
+type syncerConf struct {
+	SyncInterval    time.Duration `mapstructure:"sync_interval" default:"1s"`
+	RefreshInterval time.Duration `mapstructure:"refresh_interval" default:"3s"`
+	ExtendLockBy    time.Duration `mapstructure:"extend_lock_by" default:"5s"`
 }
 
 type serveConfig struct {
@@ -31,14 +37,6 @@ type serveConfig struct {
 	Port int    `mapstructure:"port" default:"8080"`
 
 	HTTPAddr string `mapstructure:"http_addr" default:":8081"`
-}
-
-type workerConf struct {
-	QueueName string `mapstructure:"queue_name" default:"entropy_jobs"`
-	QueueSpec string `mapstructure:"queue_spec" default:"postgres://postgres@localhost:5432/entropy?sslmode=disable"`
-
-	Threads      int           `mapstructure:"threads" default:"1"`
-	PollInterval time.Duration `mapstructure:"poll_interval" default:"100ms"`
 }
 
 func (serveCfg serveConfig) httpAddr() string { return serveCfg.HTTPAddr }

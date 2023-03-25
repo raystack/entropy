@@ -17,7 +17,7 @@ tidy:
 
 install: ## install required dependencies
 	@echo "> installing dependencies"
-	go install github.com/vektra/mockery/v2@v2.14.0
+	go install github.com/vektra/mockery/v2@latest
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1
 	go get -d google.golang.org/protobuf/proto@v1.28.1
 	go get -d google.golang.org/grpc@v1.49.0

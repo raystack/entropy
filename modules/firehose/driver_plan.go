@@ -3,7 +3,6 @@ package firehose
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/core/resource"
@@ -11,7 +10,7 @@ import (
 	"github.com/goto/entropy/pkg/kafka"
 )
 
-func (fd *firehoseDriver) Plan(_ context.Context, exr module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
+func (fd *firehoseDriver) Plan(_ context.Context, exr module.ExpandedResource, act module.ActionRequest) (*resource.Resource, error) {
 	switch act.Name {
 	case module.CreateAction:
 		return fd.planCreate(exr, act)
@@ -24,13 +23,12 @@ func (fd *firehoseDriver) Plan(_ context.Context, exr module.ExpandedResource, a
 	}
 }
 
-func (fd *firehoseDriver) planChange(exr module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
+func (fd *firehoseDriver) planChange(exr module.ExpandedResource, act module.ActionRequest) (*resource.Resource, error) {
 	curConf, err := readConfig(exr.Resource, exr.Resource.Spec.Configs)
 	if err != nil {
 		return nil, err
 	}
 
-	enqueueSteps := []string{stepReleaseUpdate}
 	switch act.Name {
 	case module.UpdateAction:
 		newConf, err := readConfig(exr.Resource, act.Params)
@@ -64,11 +62,10 @@ func (fd *firehoseDriver) planChange(exr module.ExpandedResource, act module.Act
 		curConf.Replicas = scaleParams.Replicas
 
 	case StartAction:
-		// nothing to do here since stepReleaseUpdate will automatically
-		// start the firehose with last known value of 'replicas'.
+		curConf.Stopped = false
 
 	case StopAction:
-		enqueueSteps = []string{stepReleaseStop}
+		curConf.Stopped = true
 
 	case UpgradeAction:
 		// upgrade the chart values to the latest project-level config.
@@ -76,22 +73,22 @@ func (fd *firehoseDriver) planChange(exr module.ExpandedResource, act module.Act
 		curConf.ChartValues = &fd.conf.ChartValues
 	}
 
+	immediately := fd.timeNow()
+
 	exr.Resource.Spec.Configs = mustJSON(curConf)
 	exr.Resource.State = resource.State{
 		Status: resource.StatusPending,
 		Output: exr.Resource.State.Output,
 		ModuleData: mustJSON(transientData{
-			PendingSteps: enqueueSteps,
+			PendingSteps: []string{stepReleaseUpdate},
 		}),
+		NextSyncAt: &immediately,
 	}
 
-	return &module.Plan{
-		Reason:   fmt.Sprintf("firehose_%s", act.Name),
-		Resource: exr.Resource,
-	}, nil
+	return &exr.Resource, nil
 }
 
-func (fd *firehoseDriver) planCreate(exr module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
+func (fd *firehoseDriver) planCreate(exr module.ExpandedResource, act module.ActionRequest) (*resource.Resource, error) {
 	conf, err := readConfig(exr.Resource, act.Params)
 	if err != nil {
 		return nil, err
@@ -107,6 +104,8 @@ func (fd *firehoseDriver) planCreate(exr module.ExpandedResource, act module.Act
 	conf.Namespace = fd.conf.Namespace
 	conf.ChartValues = chartVals
 
+	immediately := fd.timeNow()
+
 	exr.Resource.Spec.Configs = mustJSON(conf)
 	exr.Resource.State = resource.State{
 		Status: resource.StatusPending,
@@ -114,37 +113,35 @@ func (fd *firehoseDriver) planCreate(exr module.ExpandedResource, act module.Act
 			Namespace:   conf.Namespace,
 			ReleaseName: conf.DeploymentID,
 		}),
+		NextSyncAt: &immediately,
 		ModuleData: mustJSON(transientData{
 			PendingSteps: []string{stepReleaseCreate},
 		}),
 	}
 
-	return &module.Plan{
-		Reason:   "firehose_create",
-		Resource: exr.Resource,
-	}, nil
+	return &exr.Resource, nil
 }
 
-func (*firehoseDriver) planReset(exr module.ExpandedResource, act module.ActionRequest) (*module.Plan, error) {
+func (fd *firehoseDriver) planReset(exr module.ExpandedResource, act module.ActionRequest) (*resource.Resource, error) {
 	resetValue, err := kafka.ParseResetParams(act.Params)
 	if err != nil {
 		return nil, err
 	}
 
+	immediately := fd.timeNow()
+
 	exr.Resource.State = resource.State{
-		Status: resource.StatusPending,
-		Output: exr.Resource.State.Output,
+		Status:     resource.StatusPending,
+		Output:     exr.Resource.State.Output,
+		NextSyncAt: &immediately,
 		ModuleData: mustJSON(transientData{
 			ResetOffsetTo: resetValue,
 			PendingSteps: []string{
-				stepReleaseStop,
+				stepReleaseStop,   // stop the firehose
 				stepKafkaReset,    // reset the consumer group offset value.
 				stepReleaseUpdate, // restart the deployment.
 			},
 		}),
 	}
-	return &module.Plan{
-		Reason:   "firehose_reset",
-		Resource: exr.Resource,
-	}, nil
+	return &exr.Resource, nil
 }

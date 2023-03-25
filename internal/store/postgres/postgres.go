@@ -3,8 +3,11 @@ package postgres
 import (
 	"context"
 	_ "embed"
+	"time"
 
 	"github.com/jmoiron/sqlx"
+
+	"github.com/goto/entropy/pkg/errors"
 )
 
 const (
@@ -25,7 +28,9 @@ const (
 var schema string
 
 type Store struct {
-	db *sqlx.DB
+	db              *sqlx.DB
+	extendInterval  time.Duration
+	refreshInterval time.Duration
 }
 
 func (st *Store) Migrate(ctx context.Context) error {
@@ -35,11 +40,20 @@ func (st *Store) Migrate(ctx context.Context) error {
 
 func (st *Store) Close() error { return st.db.Close() }
 
-// Open returns store instance backed by PostgreSQL.
-func Open(conStr string) (*Store, error) {
+// Open returns store instance backed by PostgresQL.
+func Open(conStr string, refreshInterval, extendInterval time.Duration) (*Store, error) {
 	db, err := sqlx.Open("postgres", conStr)
 	if err != nil {
 		return nil, err
 	}
-	return &Store{db: db}, nil
+
+	if refreshInterval >= extendInterval {
+		return nil, errors.New("refreshInterval must be lower than extendInterval")
+	}
+
+	return &Store{
+		db:              db,
+		extendInterval:  extendInterval,
+		refreshInterval: refreshInterval,
+	}, nil
 }

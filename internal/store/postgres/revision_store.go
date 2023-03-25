@@ -12,103 +12,83 @@ import (
 )
 
 func (st *Store) Revisions(ctx context.Context, selector resource.RevisionsSelector) ([]resource.Revision, error) {
-	q := sq.Select("id").
-		From(tableRevisions).
-		Where(sq.Eq{"urn": selector.URN})
-
-	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(st.db).QueryContext(ctx)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	defer rows.Close()
-
 	var revs []resource.Revision
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-
-		r, err := st.getRevisionByID(ctx, id)
-		if err != nil {
-			return nil, err
-		}
-		revs = append(revs, *r)
-	}
-
-	return revs, rows.Err()
-}
-
-func (st *Store) getRevisionByID(ctx context.Context, id int64) (*resource.Revision, error) {
-	var rec revisionModel
-	var tags []string
-	deps := map[string]string{}
-
-	readRevisionParts := func(ctx context.Context, tx *sqlx.Tx) error {
-		if err := readRevisionRecord(ctx, tx, id, &rec); err != nil {
-			return err
-		}
-
-		if err := readRevisionTags(ctx, tx, rec.ID, &tags); err != nil {
-			return err
-		}
-
-		resourceID, err := translateURNToID(ctx, tx, rec.URN)
+	txFn := func(ctx context.Context, tx *sqlx.Tx) error {
+		resourceID, err := translateURNToID(ctx, tx, selector.URN)
 		if err != nil {
 			return err
 		}
 
+		deps := map[string]string{}
 		if err := readResourceDeps(ctx, tx, resourceID, deps); err != nil {
 			return err
+		}
+
+		builder := sq.Select("*").
+			From(tableRevisions).
+			Where(sq.Eq{"resource_id": resourceID}).
+			OrderBy("created_at DESC")
+
+		q, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+		if err != nil {
+			return err
+		}
+
+		rows, err := tx.QueryxContext(ctx, q, args...)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = rows.Close() }()
+
+		for rows.Next() {
+			var rm revisionModel
+			if err := rows.StructScan(&rm); err != nil {
+				return err
+			}
+
+			var tags []string
+			if err := readRevisionTags(ctx, tx, rm.ID, &tags); err != nil {
+				return err
+			}
+
+			revs = append(revs, resource.Revision{
+				ID:        rm.ID,
+				URN:       selector.URN,
+				Reason:    rm.Reason,
+				Labels:    tagsToLabelMap(tags),
+				CreatedAt: rm.CreatedAt,
+				Spec: resource.Spec{
+					Configs:      rm.SpecConfigs,
+					Dependencies: deps,
+				},
+			})
 		}
 
 		return nil
 	}
 
-	if txErr := withinTx(ctx, st.db, true, readRevisionParts); txErr != nil {
-		return nil, txErr
+	if err := withinTx(ctx, st.db, true, txFn); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
 	}
-
-	return &resource.Revision{
-		ID:        rec.ID,
-		URN:       rec.URN,
-		Reason:    rec.Reason,
-		Labels:    tagsToLabelMap(tags),
-		CreatedAt: rec.CreatedAt,
-		Spec: resource.Spec{
-			Configs:      rec.SpecConfigs,
-			Dependencies: deps,
-		},
-	}, nil
+	return revs, nil
 }
 
-func insertRevision(ctx context.Context, tx *sqlx.Tx, rev resource.Revision) error {
-	revisionID, err := insertRevisionRecord(ctx, tx, rev)
-	if err != nil {
-		return err
-	}
-
-	if err := setRevisionTags(ctx, tx, revisionID, rev.Labels); err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertRevisionRecord(ctx context.Context, runner sq.BaseRunner, r resource.Revision) (int64, error) {
+func insertRevision(ctx context.Context, tx *sqlx.Tx, resID int64, rev resource.Revision) error {
 	q := sq.Insert(tableRevisions).
-		Columns("urn", "reason", "spec_configs").
-		Values(r.URN, r.Reason, r.Spec.Configs).
+		Columns("resource_id", "reason", "spec_configs").
+		Values(resID, rev.Reason, rev.Spec.Configs).
 		Suffix(`RETURNING "id"`).
 		PlaceholderFormat(sq.Dollar)
 
-	var id int64
-	if err := q.RunWith(runner).QueryRowContext(ctx).Scan(&id); err != nil {
-		return 0, err
+	var revisionID int64
+	if err := q.RunWith(tx).QueryRowContext(ctx).Scan(&revisionID); err != nil {
+		return err
 	}
-	return id, nil
+
+	return setRevisionTags(ctx, tx, revisionID, rev.Labels)
 }
 
 func setRevisionTags(ctx context.Context, runner sq.BaseRunner, id int64, labels map[string]string) error {

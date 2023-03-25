@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"time"
 
 	"github.com/newrelic/go-agent/v3/newrelic"
@@ -17,8 +16,6 @@ import (
 	"github.com/goto/entropy/modules/kubernetes"
 	"github.com/goto/entropy/pkg/logger"
 	"github.com/goto/entropy/pkg/telemetry"
-	"github.com/goto/entropy/pkg/worker"
-	"github.com/goto/entropy/pkg/worker/pgq"
 )
 
 func cmdServe() *cobra.Command {
@@ -52,47 +49,31 @@ func cmdServe() *cobra.Command {
 			newrelic.ConfigLicense(cfg.Telemetry.NewRelicAPIKey),
 		)
 
+		store := setupStorage(zapLog, cfg.PGConnStr, cfg.Syncer)
+		moduleService := module.NewService(setupRegistry(zapLog), store)
+		resourceService := core.New(store, moduleService, time.Now, zapLog)
+
 		if migrate {
 			if migrateErr := runMigrations(cmd.Context(), zapLog, cfg); migrateErr != nil {
 				return migrateErr
 			}
 		}
 
-		asyncWorker := setupWorker(zapLog, cfg.Worker)
 		if spawnWorker {
 			go func() {
-				if runErr := asyncWorker.Run(cmd.Context()); runErr != nil {
-					zapLog.Error("worker exited with error", zap.Error(err))
+				if runErr := resourceService.RunSyncer(cmd.Context(), cfg.Syncer.SyncInterval); runErr != nil {
+					zapLog.Error("syncer exited with error", zap.Error(err))
 				}
 			}()
 		}
 
-		return runServer(cmd.Context(), nrApp, zapLog, cfg, asyncWorker)
+		return entropyserver.Serve(cmd.Context(),
+			cfg.Service.httpAddr(), cfg.Service.grpcAddr(),
+			nrApp, zapLog, resourceService, moduleService,
+		)
 	})
 
 	return cmd
-}
-
-func runServer(baseCtx context.Context, nrApp *newrelic.Application, zapLog *zap.Logger, cfg Config, asyncWorker *worker.Worker) error {
-	ctx, cancel := context.WithCancel(baseCtx)
-	defer cancel()
-
-	store := setupStorage(zapLog, cfg.PGConnStr)
-	moduleService := module.NewService(setupRegistry(zapLog), store)
-	resourceService := core.New(store, moduleService, asyncWorker, time.Now, zapLog)
-
-	if err := asyncWorker.Register(core.JobKindSyncResource, resourceService.HandleSyncJob); err != nil {
-		return err
-	}
-
-	if err := asyncWorker.Register(core.JobKindScheduledSyncResource, resourceService.HandleSyncJob); err != nil {
-		return err
-	}
-
-	return entropyserver.Serve(ctx,
-		cfg.Service.httpAddr(), cfg.Service.grpcAddr(),
-		nrApp, zapLog, resourceService, moduleService,
-	)
 }
 
 func setupRegistry(logger *zap.Logger) module.Registry {
@@ -113,27 +94,8 @@ func setupRegistry(logger *zap.Logger) module.Registry {
 	return registry
 }
 
-func setupWorker(logger *zap.Logger, conf workerConf) *worker.Worker {
-	pgQueue, err := pgq.Open(conf.QueueSpec, conf.QueueName)
-	if err != nil {
-		logger.Fatal("failed to init postgres job-queue", zap.Error(err))
-	}
-
-	opts := []worker.Option{
-		worker.WithLogger(logger.Named("worker")),
-		worker.WithRunConfig(conf.Threads, conf.PollInterval),
-	}
-
-	asyncWorker, err := worker.New(pgQueue, opts...)
-	if err != nil {
-		logger.Fatal("failed to init worker instance", zap.Error(err))
-	}
-
-	return asyncWorker
-}
-
-func setupStorage(logger *zap.Logger, pgConStr string) *postgres.Store {
-	store, err := postgres.Open(pgConStr)
+func setupStorage(logger *zap.Logger, pgConStr string, syncCfg syncerConf) *postgres.Store {
+	store, err := postgres.Open(pgConStr, syncCfg.RefreshInterval, syncCfg.ExtendLockBy)
 	if err != nil {
 		logger.Fatal("failed to connect to Postgres database",
 			zap.Error(err), zap.String("conn_str", pgConStr))

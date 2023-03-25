@@ -70,7 +70,8 @@ var Module = module.Descriptor{
 		}
 
 		return &firehoseDriver{
-			conf: conf,
+			conf:    conf,
+			timeNow: time.Now,
 			kubeDeploy: func(_ context.Context, isCreate bool, kubeConf kube.Config, hc helm.ReleaseConfig) error {
 				helmCl := helm.NewClient(&helm.Config{Kubernetes: kubeConf})
 

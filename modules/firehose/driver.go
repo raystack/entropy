@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/modules/kubernetes"
@@ -38,6 +39,7 @@ var defaultDriverConf = driverConf{
 }
 
 type firehoseDriver struct {
+	timeNow       func() time.Time
 	conf          driverConf
 	kubeDeploy    kubeDeployFn
 	kubeGetPod    kubeGetPodFn

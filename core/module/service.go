@@ -21,7 +21,7 @@ func NewService(registry Registry, store Store) *Service {
 	}
 }
 
-func (mr *Service) PlanAction(ctx context.Context, res ExpandedResource, act ActionRequest) (*Plan, error) {
+func (mr *Service) PlanAction(ctx context.Context, res ExpandedResource, act ActionRequest) (*resource.Resource, error) {
 	mod, err := mr.discoverModule(ctx, res.Kind, res.Project)
 	if err != nil {
 		return nil, err

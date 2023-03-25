@@ -3,6 +3,7 @@ package firehose
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,6 +13,8 @@ import (
 	"github.com/goto/entropy/pkg/errors"
 )
 
+var frozenTime = time.Unix(1679668743, 0)
+
 func TestFirehoseDriver_Plan(t *testing.T) {
 	t.Parallel()
 
@@ -19,7 +22,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 		title   string
 		exr     module.ExpandedResource
 		act     module.ActionRequest
-		want    *module.Plan
+		want    *resource.Resource
 		wantErr error
 	}{
 		// create action tests
@@ -63,47 +66,45 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					},
 				}),
 			},
-			want: &module.Plan{
-				Resource: resource.Resource{
-					URN:     "urn:goto:entropy:ABCDEFGHIJKLMNOPQRSTUVWXYZ:abcdefghijklmnopqrstuvwxyz",
-					Kind:    "firehose",
-					Name:    "abcdefghijklmnopqrstuvwxyz",
-					Project: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-					Spec: resource.Spec{
-						Configs: mustJSON(map[string]any{
-							"stopped":       false,
-							"replicas":      1,
-							"namespace":     "firehose",
-							"deployment_id": "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099",
-							"telegraf": map[string]any{
-								"enabled": false,
-							},
-							"chart_values": map[string]string{
-								"chart_version":     "0.1.3",
-								"image_pull_policy": "IfNotPresent",
-								"image_tag":         "latest",
-							},
-							"env_variables": map[string]string{
-								"SINK_TYPE":                      "LOG",
-								"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
-								"SOURCE_KAFKA_CONSUMER_GROUP_ID": "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099-0001",
-								"SOURCE_KAFKA_BROKERS":           "localhost:9092",
-								"SOURCE_KAFKA_TOPIC":             "foo-log",
-							},
-						}),
-					},
-					State: resource.State{
-						Status: resource.StatusPending,
-						Output: mustJSON(Output{
-							Namespace:   "firehose",
-							ReleaseName: "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099",
-						}),
-						ModuleData: mustJSON(transientData{
-							PendingSteps: []string{stepReleaseCreate},
-						}),
-					},
+			want: &resource.Resource{
+				URN:     "urn:goto:entropy:ABCDEFGHIJKLMNOPQRSTUVWXYZ:abcdefghijklmnopqrstuvwxyz",
+				Kind:    "firehose",
+				Name:    "abcdefghijklmnopqrstuvwxyz",
+				Project: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+				Spec: resource.Spec{
+					Configs: mustJSON(map[string]any{
+						"stopped":       false,
+						"replicas":      1,
+						"namespace":     "firehose",
+						"deployment_id": "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099",
+						"telegraf": map[string]any{
+							"enabled": false,
+						},
+						"chart_values": map[string]string{
+							"chart_version":     "0.1.3",
+							"image_pull_policy": "IfNotPresent",
+							"image_tag":         "latest",
+						},
+						"env_variables": map[string]string{
+							"SINK_TYPE":                      "LOG",
+							"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
+							"SOURCE_KAFKA_CONSUMER_GROUP_ID": "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099-0001",
+							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
+							"SOURCE_KAFKA_TOPIC":             "foo-log",
+						},
+					}),
 				},
-				Reason: "firehose_create",
+				State: resource.State{
+					Status: resource.StatusPending,
+					Output: mustJSON(Output{
+						Namespace:   "firehose",
+						ReleaseName: "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099",
+					}),
+					ModuleData: mustJSON(transientData{
+						PendingSteps: []string{stepReleaseCreate},
+					}),
+					NextSyncAt: &frozenTime,
+				},
 			},
 			wantErr: nil,
 		},
@@ -130,47 +131,45 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					},
 				}),
 			},
-			want: &module.Plan{
-				Resource: resource.Resource{
-					URN:     "urn:goto:entropy:foo:fh1",
-					Kind:    "firehose",
-					Name:    "fh1",
-					Project: "foo",
-					Spec: resource.Spec{
-						Configs: mustJSON(map[string]any{
-							"stopped":       false,
-							"replicas":      1,
-							"namespace":     "firehose",
-							"deployment_id": "firehose-foo-fh1",
-							"telegraf": map[string]any{
-								"enabled": false,
-							},
-							"chart_values": map[string]string{
-								"chart_version":     "0.1.3",
-								"image_pull_policy": "IfNotPresent",
-								"image_tag":         "latest",
-							},
-							"env_variables": map[string]string{
-								"SINK_TYPE":                      "LOG",
-								"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
-								"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
-								"SOURCE_KAFKA_BROKERS":           "localhost:9092",
-								"SOURCE_KAFKA_TOPIC":             "foo-log",
-							},
-						}),
-					},
-					State: resource.State{
-						Status: resource.StatusPending,
-						Output: mustJSON(Output{
-							Namespace:   "firehose",
-							ReleaseName: "firehose-foo-fh1",
-						}),
-						ModuleData: mustJSON(transientData{
-							PendingSteps: []string{stepReleaseCreate},
-						}),
-					},
+			want: &resource.Resource{
+				URN:     "urn:goto:entropy:foo:fh1",
+				Kind:    "firehose",
+				Name:    "fh1",
+				Project: "foo",
+				Spec: resource.Spec{
+					Configs: mustJSON(map[string]any{
+						"stopped":       false,
+						"replicas":      1,
+						"namespace":     "firehose",
+						"deployment_id": "firehose-foo-fh1",
+						"telegraf": map[string]any{
+							"enabled": false,
+						},
+						"chart_values": map[string]string{
+							"chart_version":     "0.1.3",
+							"image_pull_policy": "IfNotPresent",
+							"image_tag":         "latest",
+						},
+						"env_variables": map[string]string{
+							"SINK_TYPE":                      "LOG",
+							"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
+							"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
+							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
+							"SOURCE_KAFKA_TOPIC":             "foo-log",
+						},
+					}),
 				},
-				Reason: "firehose_create",
+				State: resource.State{
+					Status: resource.StatusPending,
+					Output: mustJSON(Output{
+						Namespace:   "firehose",
+						ReleaseName: "firehose-foo-fh1",
+					}),
+					ModuleData: mustJSON(transientData{
+						PendingSteps: []string{stepReleaseCreate},
+					}),
+					NextSyncAt: &frozenTime,
+				},
 			},
 			wantErr: nil,
 		},
@@ -218,38 +217,36 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					},
 				}),
 			},
-			want: &module.Plan{
-				Resource: resource.Resource{
-					URN:     "urn:goto:entropy:foo:fh1",
-					Kind:    "firehose",
-					Name:    "fh1",
-					Project: "foo",
-					Spec: resource.Spec{
-						Configs: mustJSON(map[string]any{
-							"stopped":       false,
-							"replicas":      10,
-							"deployment_id": "firehose-deployment-x",
-							"env_variables": map[string]string{
-								"SINK_TYPE":                      "HTTP",
-								"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
-								"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
-								"SOURCE_KAFKA_BROKERS":           "localhost:9092",
-								"SOURCE_KAFKA_TOPIC":             "foo-log",
-							},
-						}),
-					},
-					State: resource.State{
-						Status: resource.StatusPending,
-						Output: mustJSON(Output{
-							Namespace:   "foo",
-							ReleaseName: "bar",
-						}),
-						ModuleData: mustJSON(transientData{
-							PendingSteps: []string{stepReleaseUpdate},
-						}),
-					},
+			want: &resource.Resource{
+				URN:     "urn:goto:entropy:foo:fh1",
+				Kind:    "firehose",
+				Name:    "fh1",
+				Project: "foo",
+				Spec: resource.Spec{
+					Configs: mustJSON(map[string]any{
+						"stopped":       false,
+						"replicas":      10,
+						"deployment_id": "firehose-deployment-x",
+						"env_variables": map[string]string{
+							"SINK_TYPE":                      "HTTP",
+							"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
+							"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
+							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
+							"SOURCE_KAFKA_TOPIC":             "foo-log",
+						},
+					}),
 				},
-				Reason: "firehose_update",
+				State: resource.State{
+					Status: resource.StatusPending,
+					Output: mustJSON(Output{
+						Namespace:   "foo",
+						ReleaseName: "bar",
+					}),
+					ModuleData: mustJSON(transientData{
+						PendingSteps: []string{stepReleaseUpdate},
+					}),
+					NextSyncAt: &frozenTime,
+				},
 			},
 			wantErr: nil,
 		},
@@ -329,41 +326,39 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					"to": "latest",
 				}),
 			},
-			want: &module.Plan{
-				Reason: "firehose_reset",
-				Resource: resource.Resource{
-					URN:     "urn:goto:entropy:foo:fh1",
-					Kind:    "firehose",
-					Name:    "fh1",
-					Project: "foo",
-					Spec: resource.Spec{
-						Configs: mustJSON(map[string]any{
-							"replicas":      1,
-							"deployment_id": "firehose-deployment-x",
-							"env_variables": map[string]string{
-								"SINK_TYPE":                      "LOG",
-								"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
-								"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
-								"SOURCE_KAFKA_BROKERS":           "localhost:9092",
-								"SOURCE_KAFKA_TOPIC":             "foo-log",
-							},
-						}),
-					},
-					State: resource.State{
-						Status: resource.StatusPending,
-						Output: mustJSON(Output{
-							Namespace:   "foo",
-							ReleaseName: "bar",
-						}),
-						ModuleData: mustJSON(transientData{
-							ResetOffsetTo: "latest",
-							PendingSteps: []string{
-								stepReleaseStop,
-								stepKafkaReset,
-								stepReleaseUpdate,
-							},
-						}),
-					},
+			want: &resource.Resource{
+				URN:     "urn:goto:entropy:foo:fh1",
+				Kind:    "firehose",
+				Name:    "fh1",
+				Project: "foo",
+				Spec: resource.Spec{
+					Configs: mustJSON(map[string]any{
+						"replicas":      1,
+						"deployment_id": "firehose-deployment-x",
+						"env_variables": map[string]string{
+							"SINK_TYPE":                      "LOG",
+							"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
+							"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
+							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
+							"SOURCE_KAFKA_TOPIC":             "foo-log",
+						},
+					}),
+				},
+				State: resource.State{
+					Status: resource.StatusPending,
+					Output: mustJSON(Output{
+						Namespace:   "foo",
+						ReleaseName: "bar",
+					}),
+					ModuleData: mustJSON(transientData{
+						ResetOffsetTo: "latest",
+						PendingSteps: []string{
+							stepReleaseStop,
+							stepKafkaReset,
+							stepReleaseUpdate,
+						},
+					}),
+					NextSyncAt: &frozenTime,
 				},
 			},
 		},
@@ -408,43 +403,41 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 			act: module.ActionRequest{
 				Name: UpgradeAction,
 			},
-			want: &module.Plan{
-				Resource: resource.Resource{
-					URN:     "urn:goto:entropy:foo:fh1",
-					Kind:    "firehose",
-					Name:    "fh1",
-					Project: "foo",
-					Spec: resource.Spec{
-						Configs: mustJSON(map[string]any{
-							"stopped":       false,
-							"replicas":      1,
-							"deployment_id": "firehose-deployment-x",
-							"chart_values": map[string]string{
-								"chart_version":     "0.1.3",
-								"image_pull_policy": "IfNotPresent",
-								"image_tag":         "latest",
-							},
-							"env_variables": map[string]string{
-								"SINK_TYPE":                      "LOG",
-								"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
-								"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
-								"SOURCE_KAFKA_BROKERS":           "localhost:9092",
-								"SOURCE_KAFKA_TOPIC":             "foo-log",
-							},
-						}),
-					},
-					State: resource.State{
-						Status: resource.StatusPending,
-						Output: mustJSON(Output{
-							Namespace:   "foo",
-							ReleaseName: "bar",
-						}),
-						ModuleData: mustJSON(transientData{
-							PendingSteps: []string{stepReleaseUpdate},
-						}),
-					},
+			want: &resource.Resource{
+				URN:     "urn:goto:entropy:foo:fh1",
+				Kind:    "firehose",
+				Name:    "fh1",
+				Project: "foo",
+				Spec: resource.Spec{
+					Configs: mustJSON(map[string]any{
+						"stopped":       false,
+						"replicas":      1,
+						"deployment_id": "firehose-deployment-x",
+						"chart_values": map[string]string{
+							"chart_version":     "0.1.3",
+							"image_pull_policy": "IfNotPresent",
+							"image_tag":         "latest",
+						},
+						"env_variables": map[string]string{
+							"SINK_TYPE":                      "LOG",
+							"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
+							"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
+							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
+							"SOURCE_KAFKA_TOPIC":             "foo-log",
+						},
+					}),
 				},
-				Reason: "firehose_upgrade",
+				State: resource.State{
+					Status: resource.StatusPending,
+					Output: mustJSON(Output{
+						Namespace:   "foo",
+						ReleaseName: "bar",
+					}),
+					ModuleData: mustJSON(transientData{
+						PendingSteps: []string{stepReleaseUpdate},
+					}),
+					NextSyncAt: &frozenTime,
+				},
 			},
 			wantErr: nil,
 		},
@@ -496,7 +489,8 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 	for _, tt := range table {
 		t.Run(tt.title, func(t *testing.T) {
 			dr := &firehoseDriver{
-				conf: defaultDriverConf,
+				conf:    defaultDriverConf,
+				timeNow: func() time.Time { return frozenTime },
 			}
 
 			got, err := dr.Plan(context.Background(), tt.exr, tt.act)

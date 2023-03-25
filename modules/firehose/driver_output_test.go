@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -123,7 +124,8 @@ func TestFirehoseDriver_Output(t *testing.T) {
 	for _, tt := range table {
 		t.Run(tt.title, func(t *testing.T) {
 			fd := &firehoseDriver{
-				conf: defaultDriverConf,
+				conf:    defaultDriverConf,
+				timeNow: func() time.Time { return frozenTime },
 			}
 			if tt.kubeGetPod != nil {
 				fd.kubeGetPod = tt.kubeGetPod(t)

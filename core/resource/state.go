@@ -2,6 +2,7 @@ package resource
 
 import (
 	"encoding/json"
+	"time"
 )
 
 const (
@@ -12,10 +13,18 @@ const (
 	StatusCompleted   = "STATUS_COMPLETED"   // terminal
 )
 
+type SyncResult struct {
+	Retries   int    `json:"retries"`
+	LastError string `json:"last_error"`
+}
+
 type State struct {
 	Status     string          `json:"status"`
 	Output     json.RawMessage `json:"output"`
 	ModuleData json.RawMessage `json:"module_data,omitempty"`
+
+	NextSyncAt *time.Time `json:"next_sync_at,omitempty"`
+	SyncResult SyncResult `json:"sync_result"`
 }
 
 // IsTerminal returns true if state is terminal. A terminal state is

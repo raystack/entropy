@@ -270,7 +270,6 @@ func getVersion(version string) string {
 
 func (p *Client) getChart(name string, cpo *action.ChartPathOptions) (*chart.Chart, error) {
 	// TODO: Add a lock as Load function blows up if accessed concurrently
-
 	path, err := cpo.LocateChart(name, p.cliSettings)
 	if err != nil {
 		return nil, err
@@ -280,7 +279,6 @@ func (p *Client) getChart(name string, cpo *action.ChartPathOptions) (*chart.Cha
 	if err != nil {
 		return nil, err
 	}
-
 	return c, nil
 }
 

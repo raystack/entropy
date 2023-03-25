@@ -37,7 +37,7 @@ func TestService_CreateResource(t *testing.T) {
 					PlanAction(mock.Anything, mock.Anything, mock.Anything).
 					Return(nil, errSample).Once()
 
-				return core.New(nil, mod, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(nil, mod, deadClock, nil)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -59,7 +59,7 @@ func TestService_CreateResource(t *testing.T) {
 					Return(nil, errors.ErrNotFound).
 					Once()
 
-				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -98,7 +98,7 @@ func TestService_CreateResource(t *testing.T) {
 					}, nil).
 					Once()
 
-				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -136,7 +136,7 @@ func TestService_CreateResource(t *testing.T) {
 					}, nil).
 					Once()
 
-				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -158,12 +158,10 @@ func TestService_CreateResource(t *testing.T) {
 				mod := &mocks.ModuleService{}
 				mod.EXPECT().
 					PlanAction(mock.Anything, mock.Anything, mock.Anything).
-					Return(&module.Plan{
-						Resource: resource.Resource{
-							Kind:    "mock",
-							Name:    "child",
-							Project: "project",
-						},
+					Return(&resource.Resource{
+						Kind:    "mock",
+						Name:    "child",
+						Project: "project",
 					}, nil).Once()
 
 				resourceRepo := &mocks.ResourceStore{}
@@ -172,7 +170,7 @@ func TestService_CreateResource(t *testing.T) {
 					Return(errSample).
 					Once()
 
-				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -189,12 +187,10 @@ func TestService_CreateResource(t *testing.T) {
 				mod := &mocks.ModuleService{}
 				mod.EXPECT().
 					PlanAction(mock.Anything, mock.Anything, mock.Anything).
-					Return(&module.Plan{
-						Resource: resource.Resource{
-							Kind:    "mock",
-							Name:    "child",
-							Project: "project",
-						},
+					Return(&resource.Resource{
+						Kind:    "mock",
+						Name:    "child",
+						Project: "project",
 					}, nil).Once()
 
 				resourceRepo := &mocks.ResourceStore{}
@@ -202,7 +198,7 @@ func TestService_CreateResource(t *testing.T) {
 					Create(mock.Anything, mock.Anything, mock.Anything).
 					Return(errors.ErrConflict).Once()
 
-				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -219,13 +215,11 @@ func TestService_CreateResource(t *testing.T) {
 				mod := &mocks.ModuleService{}
 				mod.EXPECT().
 					PlanAction(mock.Anything, mock.Anything, mock.Anything).
-					Return(&module.Plan{
-						Resource: resource.Resource{
-							Kind:    "mock",
-							Name:    "child",
-							Project: "project",
-							State:   resource.State{Status: resource.StatusCompleted},
-						},
+					Return(&resource.Resource{
+						Kind:    "mock",
+						Name:    "child",
+						Project: "project",
+						State:   resource.State{Status: resource.StatusCompleted},
 					}, nil).Once()
 				mod.EXPECT().
 					GetOutput(mock.Anything, mock.Anything).
@@ -247,8 +241,7 @@ func TestService_CreateResource(t *testing.T) {
 				resourceRepo.EXPECT().
 					Create(mock.Anything, mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, r resource.Resource, hooks ...resource.MutationHook) {
-						assert.Len(t, hooks, 1)
-						assert.NoError(t, hooks[0](ctx))
+						assert.Len(t, hooks, 0)
 					}).
 					Return(nil).
 					Once()
@@ -262,7 +255,7 @@ func TestService_CreateResource(t *testing.T) {
 					}).
 					Return(nil)
 
-				return core.New(resourceRepo, mod, mockWorker, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -335,7 +328,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Return(nil, errors.ErrNotFound).
 					Once()
 
-				return core.New(resourceRepo, nil, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, nil, deadClock, nil)
 			},
 			urn: "orn:entropy:mock:project:child",
 			update: resource.UpdateRequest{
@@ -364,7 +357,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Return(&testResource, nil).
 					Once()
 
-				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn: "orn:entropy:mock:project:child",
 			update: resource.UpdateRequest{
@@ -381,7 +374,7 @@ func TestService_UpdateResource(t *testing.T) {
 				mod := &mocks.ModuleService{}
 				mod.EXPECT().
 					PlanAction(mock.Anything, mock.Anything, mock.Anything).
-					Return(&module.Plan{Resource: testResource}, nil).Once()
+					Return(&testResource, nil).Once()
 				mod.EXPECT().
 					GetOutput(mock.Anything, mock.Anything).
 					Return(nil, nil).
@@ -396,8 +389,7 @@ func TestService_UpdateResource(t *testing.T) {
 				resourceRepo.EXPECT().
 					Update(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, r resource.Resource, saveRevision bool, reason string, hooks ...resource.MutationHook) {
-						assert.Len(t, hooks, 1)
-						assert.NoError(t, hooks[0](ctx))
+						assert.Len(t, hooks, 0)
 					}).
 					Return(testErr)
 
@@ -412,7 +404,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Return(nil).
 					Once()
 
-				return core.New(resourceRepo, mod, mockWorker, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn: "orn:entropy:mock:project:child",
 			update: resource.UpdateRequest{
@@ -429,18 +421,16 @@ func TestService_UpdateResource(t *testing.T) {
 				mod := &mocks.ModuleService{}
 				mod.EXPECT().
 					PlanAction(mock.Anything, mock.Anything, mock.Anything).
-					Return(&module.Plan{
-						Resource: resource.Resource{
-							URN:     "orn:entropy:mock:project:child",
-							Kind:    "mock",
-							Name:    "child",
-							Project: "project",
-							Spec: resource.Spec{
-								Configs: []byte(`{"foo": "bar"}`),
-							},
-							State:     resource.State{Status: resource.StatusPending},
-							CreatedAt: frozenTime,
+					Return(&resource.Resource{
+						URN:     "orn:entropy:mock:project:child",
+						Kind:    "mock",
+						Name:    "child",
+						Project: "project",
+						Spec: resource.Spec{
+							Configs: []byte(`{"foo": "bar"}`),
 						},
+						State:     resource.State{Status: resource.StatusPending},
+						CreatedAt: frozenTime,
 					}, nil).Once()
 				mod.EXPECT().
 					GetOutput(mock.Anything, mock.Anything).
@@ -456,23 +446,11 @@ func TestService_UpdateResource(t *testing.T) {
 					Update(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(nil).
 					Run(func(ctx context.Context, r resource.Resource, saveRevision bool, reason string, hooks ...resource.MutationHook) {
-						assert.Len(t, hooks, 1)
-						assert.NoError(t, hooks[0](ctx))
+						assert.Len(t, hooks, 0)
 					}).
 					Twice()
 
-				mockWorker := &mocks.AsyncWorker{}
-				mockWorker.EXPECT().
-					Enqueue(mock.Anything, mock.Anything).
-					Return(nil).
-					Run(func(ctx context.Context, jobs ...worker.Job) {
-						assert.Len(t, jobs, 1)
-						assert.Equal(t, jobs[0].ID, "sync_resource-orn:entropy:mock:project:child-1650536955")
-						assert.Equal(t, jobs[0].Kind, "sync_resource")
-					}).
-					Once()
-
-				return core.New(resourceRepo, mod, mockWorker, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn: "orn:entropy:mock:project:child",
 			update: resource.UpdateRequest{
@@ -535,7 +513,7 @@ func TestService_DeleteResource(t *testing.T) {
 					Return(nil, testErr).
 					Once()
 
-				return core.New(resourceRepo, nil, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, nil, deadClock, nil)
 			},
 			urn:     "orn:entropy:mock:foo:bar",
 			wantErr: testErr,
@@ -547,16 +525,14 @@ func TestService_DeleteResource(t *testing.T) {
 				mod := &mocks.ModuleService{}
 				mod.EXPECT().
 					PlanAction(mock.Anything, mock.Anything, mock.Anything).
-					Return(&module.Plan{
-						Resource: resource.Resource{
-							URN:       "orn:entropy:mock:project:child",
-							Kind:      "mock",
-							Name:      "child",
-							Project:   "project",
-							State:     resource.State{Status: resource.StatusPending},
-							CreatedAt: frozenTime,
-							UpdatedAt: frozenTime,
-						},
+					Return(&resource.Resource{
+						URN:       "orn:entropy:mock:project:child",
+						Kind:      "mock",
+						Name:      "child",
+						Project:   "project",
+						State:     resource.State{Status: resource.StatusPending},
+						CreatedAt: frozenTime,
+						UpdatedAt: frozenTime,
 					}, nil).Once()
 				mod.EXPECT().
 					GetOutput(mock.Anything, mock.Anything).
@@ -582,7 +558,7 @@ func TestService_DeleteResource(t *testing.T) {
 					Return(testErr).
 					Once()
 
-				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:     "orn:entropy:mock:foo:bar",
 			wantErr: errors.ErrInternal,
@@ -594,16 +570,14 @@ func TestService_DeleteResource(t *testing.T) {
 				mod := &mocks.ModuleService{}
 				mod.EXPECT().
 					PlanAction(mock.Anything, mock.Anything, mock.Anything).
-					Return(&module.Plan{
-						Resource: resource.Resource{
-							URN:       "orn:entropy:mock:project:child",
-							Kind:      "mock",
-							Name:      "child",
-							Project:   "project",
-							State:     resource.State{Status: resource.StatusPending},
-							CreatedAt: frozenTime,
-							UpdatedAt: frozenTime,
-						},
+					Return(&resource.Resource{
+						URN:       "orn:entropy:mock:project:child",
+						Kind:      "mock",
+						Name:      "child",
+						Project:   "project",
+						State:     resource.State{Status: resource.StatusPending},
+						CreatedAt: frozenTime,
+						UpdatedAt: frozenTime,
 					}, nil).Once()
 				mod.EXPECT().
 					GetOutput(mock.Anything, mock.Anything).
@@ -629,7 +603,7 @@ func TestService_DeleteResource(t *testing.T) {
 					Return(nil).
 					Once()
 
-				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:     "orn:entropy:mock:foo:bar",
 			wantErr: nil,
@@ -679,7 +653,7 @@ func TestService_ApplyAction(t *testing.T) {
 					Return(nil, errors.ErrNotFound).
 					Once()
 
-				return core.New(resourceRepo, nil, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, nil, deadClock, nil)
 			},
 			urn:     "orn:entropy:mock:foo:bar",
 			action:  sampleAction,
@@ -706,7 +680,7 @@ func TestService_ApplyAction(t *testing.T) {
 					}, nil).
 					Once()
 
-				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:     "orn:entropy:mock:foo:bar",
 			action:  sampleAction,
@@ -739,7 +713,7 @@ func TestService_ApplyAction(t *testing.T) {
 					}, nil).
 					Once()
 
-				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:     "orn:entropy:mock:foo:bar",
 			action:  sampleAction,
@@ -753,14 +727,12 @@ func TestService_ApplyAction(t *testing.T) {
 				mod := &mocks.ModuleService{}
 				mod.EXPECT().
 					PlanAction(mock.Anything, mock.Anything, sampleAction).
-					Return(&module.Plan{
-						Resource: resource.Resource{
-							URN:     "orn:entropy:mock:foo:bar",
-							Kind:    "mock",
-							Project: "foo",
-							Name:    "bar",
-							State:   resource.State{Status: resource.StatusPending},
-						},
+					Return(&resource.Resource{
+						URN:     "orn:entropy:mock:foo:bar",
+						Kind:    "mock",
+						Project: "foo",
+						Name:    "bar",
+						State:   resource.State{Status: resource.StatusPending},
 					}, nil).Once()
 				mod.EXPECT().
 					GetOutput(mock.Anything, mock.Anything).
@@ -784,7 +756,7 @@ func TestService_ApplyAction(t *testing.T) {
 					Return(nil).
 					Once()
 
-				return core.New(resourceRepo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(resourceRepo, mod, deadClock, nil)
 			},
 			urn:    "orn:entropy:mock:foo:bar",
 			action: sampleAction,

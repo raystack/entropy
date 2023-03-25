@@ -2,110 +2,77 @@ package core
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"time"
 
-	"github.com/goto/entropy/core/module"
+	"go.uber.org/zap"
+
 	"github.com/goto/entropy/core/resource"
 	"github.com/goto/entropy/pkg/errors"
-	"github.com/goto/entropy/pkg/worker"
 )
 
-const (
-	JobKindSyncResource          = "sync_resource"
-	JobKindScheduledSyncResource = "sched_sync_resource"
-)
+// RunSyncer runs the syncer thread that keeps performing resource-sync at
+// regular intervals.
+func (svc *Service) RunSyncer(ctx context.Context, interval time.Duration) error {
+	tick := time.NewTimer(interval)
+	defer tick.Stop()
 
-type syncJobPayload struct {
-	ResourceURN string    `json:"resource_urn"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
 
-func (s *Service) enqueueSyncJob(ctx context.Context, res resource.Resource, runAt time.Time, jobType string) error {
-	data := syncJobPayload{
-		ResourceURN: res.URN,
-		UpdatedAt:   res.UpdatedAt,
-	}
+		case <-tick.C:
+			tick.Reset(interval)
 
-	payload, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	job := worker.Job{
-		ID:      fmt.Sprintf(jobType+"-%s-%d", res.URN, runAt.Unix()),
-		Kind:    jobType,
-		RunAt:   runAt,
-		Payload: payload,
-	}
-
-	if err := s.worker.Enqueue(ctx, job); err != nil && !errors.Is(err, worker.ErrJobExists) {
-		return err
-	}
-	return nil
-}
-
-// HandleSyncJob is meant to be invoked by asyncWorker when an enqueued job is
-// ready.
-// TODO: make this private and move the registration of this handler inside New().
-func (s *Service) HandleSyncJob(ctx context.Context, job worker.Job) ([]byte, error) {
-	const retryBackoff = 5 * time.Second
-
-	var data syncJobPayload
-	if err := json.Unmarshal(job.Payload, &data); err != nil {
-		return nil, err
-	}
-
-	syncedRes, err := s.syncChange(ctx, data.ResourceURN)
-	if err != nil {
-		if errors.Is(err, errors.ErrInternal) {
-			return nil, &worker.RetryableError{
-				Cause:      err,
-				RetryAfter: retryBackoff,
+			err := svc.store.SyncOne(ctx, svc.handleSync)
+			if err != nil {
+				svc.logger.Warn("SyncOne() failed", zap.Error(err))
 			}
 		}
-		return nil, err
 	}
-
-	return json.Marshal(map[string]interface{}{
-		"status": syncedRes.State.Status,
-	})
 }
 
-func (s *Service) syncChange(ctx context.Context, urn string) (*resource.Resource, error) {
-	res, err := s.GetResource(ctx, urn)
+func (svc *Service) handleSync(ctx context.Context, res resource.Resource) (*resource.Resource, error) {
+	logEntry := svc.logger.With(
+		zap.String("resource_urn", res.URN),
+		zap.String("resource_status", res.State.Status),
+		zap.Int("retries", res.State.SyncResult.Retries),
+		zap.String("last_err", res.State.SyncResult.LastError),
+	)
+
+	modSpec, err := svc.generateModuleSpec(ctx, res)
 	if err != nil {
+		logEntry.Error("SyncOne() failed", zap.Error(err))
 		return nil, err
 	}
 
-	modSpec, err := s.generateModuleSpec(ctx, *res)
-	if err != nil {
-		return nil, err
-	}
-
-	oldState := res.State.Clone()
-	newState, err := s.moduleSvc.SyncState(ctx, *modSpec)
+	newState, err := svc.moduleSvc.SyncState(ctx, *modSpec)
 	if err != nil {
 		if errors.Is(err, errors.ErrInvalid) {
-			return nil, err
+			// ErrInvalid is expected to be returned when config is invalid.
+			// There is no point in retrying in this case.
+			res.State.Status = resource.StatusError
+			res.State.NextSyncAt = nil
+		} else {
+			// Some other error occurred. need to backoff and retry in some time.
+			tryAgainAt := svc.clock().Add(svc.syncBackoff)
+			res.State.NextSyncAt = &tryAgainAt
 		}
-		return nil, errors.ErrInternal.WithMsgf("sync() failed").WithCausef(err.Error())
-	}
-	res.UpdatedAt = s.clock()
-	res.State = *newState
+		res.State.SyncResult.LastError = err.Error()
+		res.State.SyncResult.Retries++
 
-	// TODO: clarify on behaviour when resource schedule for deletion reaches error.
-	shouldDelete := oldState.InDeletion() && newState.IsTerminal()
-	if shouldDelete {
-		if err := s.DeleteResource(ctx, urn); err != nil {
-			return nil, err
-		}
+		logEntry.Error("SyncOne() failed", zap.Error(err))
 	} else {
-		if err := s.upsert(ctx, module.Plan{Resource: *res}, false, false, ""); err != nil {
-			return nil, err
-		}
+		res.State.SyncResult.Retries = 0
+		res.State.SyncResult.LastError = ""
+		res.UpdatedAt = svc.clock()
+		res.State = *newState
+
+		logEntry.Info("SyncOne() finished",
+			zap.String("final_status", res.State.Status),
+			zap.Timep("next_sync", res.State.NextSyncAt),
+		)
 	}
 
-	return res, nil
+	return &res, nil
 }

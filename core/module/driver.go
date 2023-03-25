@@ -6,7 +6,6 @@ package module
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/goto/entropy/core/resource"
 )
@@ -17,7 +16,7 @@ type Driver interface {
 	// Plan SHOULD validate the action on the current version of the resource,
 	// return the resource with config/status/state changes (if any) applied.
 	// Plan SHOULD NOT have side effects on anything other than the resource.
-	Plan(ctx context.Context, res ExpandedResource, act ActionRequest) (*Plan, error)
+	Plan(ctx context.Context, res ExpandedResource, act ActionRequest) (*resource.Resource, error)
 
 	// Sync is called repeatedly by Entropy core until the returned state is
 	// a terminal status. Driver implementation is free to execute an action
@@ -30,13 +29,6 @@ type Driver interface {
 	// Output returns the current external state of the resource
 	// Output should not have any side effects on any external resource
 	Output(ctx context.Context, res ExpandedResource) (json.RawMessage, error)
-}
-
-// Plan represents the changes to be staged and later synced by module.
-type Plan struct {
-	Reason        string
-	Resource      resource.Resource
-	ScheduleRunAt *time.Time
 }
 
 // Loggable extension of driver allows streaming log data for a resource.

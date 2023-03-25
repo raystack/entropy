@@ -36,6 +36,6 @@ func cmdMigrate() *cobra.Command {
 }
 
 func runMigrations(ctx context.Context, zapLog *zap.Logger, cfg Config) error {
-	store := setupStorage(zapLog, cfg.PGConnStr)
+	store := setupStorage(zapLog, cfg.PGConnStr, cfg.Syncer)
 	return store.Migrate(ctx)
 }

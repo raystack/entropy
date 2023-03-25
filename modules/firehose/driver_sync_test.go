@@ -3,6 +3,7 @@ package firehose
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -181,16 +182,12 @@ func TestFirehoseDriver_Sync(t *testing.T) {
 				}
 			},
 			want: &resource.State{
-				Status: resource.StatusCompleted,
-				Output: mustJSON(Output{
-					Pods: []kube.Pod{
-						{
-							Name:       "foo-1",
-							Containers: []string{"firehose"},
-						},
-					},
+				Status: resource.StatusPending,
+				Output: mustJSON(Output{}),
+				ModuleData: mustJSON(transientData{
+					PendingSteps: []string{},
 				}),
-				ModuleData: nil,
+				NextSyncAt: &frozenTime,
 			},
 		},
 		{
@@ -224,16 +221,12 @@ func TestFirehoseDriver_Sync(t *testing.T) {
 				}
 			},
 			want: &resource.State{
-				Status: resource.StatusCompleted,
-				Output: mustJSON(Output{
-					Pods: []kube.Pod{
-						{
-							Name:       "foo-1",
-							Containers: []string{"firehose"},
-						},
-					},
+				Status: resource.StatusPending,
+				Output: mustJSON(Output{}),
+				ModuleData: mustJSON(transientData{
+					PendingSteps: []string{},
 				}),
-				ModuleData: nil,
+				NextSyncAt: &frozenTime,
 			},
 		},
 	}
@@ -241,7 +234,8 @@ func TestFirehoseDriver_Sync(t *testing.T) {
 	for _, tt := range table {
 		t.Run(tt.title, func(t *testing.T) {
 			fd := &firehoseDriver{
-				conf: defaultDriverConf,
+				conf:    defaultDriverConf,
+				timeNow: func() time.Time { return frozenTime },
 			}
 
 			if tt.kubeGetPod != nil {

@@ -32,7 +32,7 @@ func TestService_GetResource(t *testing.T) {
 					GetByURN(mock.Anything, mock.Anything).
 					Return(nil, errors.ErrNotFound).
 					Once()
-				return core.New(repo, nil, &mocks.AsyncWorker{}, nil, nil)
+				return core.New(repo, nil, nil, nil)
 			},
 			urn:     "foo:bar:baz",
 			wantErr: errors.ErrNotFound,
@@ -52,7 +52,7 @@ func TestService_GetResource(t *testing.T) {
 					Return(nil, nil).
 					Once()
 
-				return core.New(repo, mod, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(repo, mod, deadClock, nil)
 			},
 			urn:     "foo:bar:baz",
 			want:    &sampleResource,
@@ -99,7 +99,7 @@ func TestService_ListResources(t *testing.T) {
 					List(mock.Anything, mock.Anything).
 					Return(nil, nil).
 					Once()
-				return core.New(repo, nil, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(repo, nil, deadClock, nil)
 			},
 			want:    nil,
 			wantErr: nil,
@@ -113,7 +113,7 @@ func TestService_ListResources(t *testing.T) {
 					List(mock.Anything, mock.Anything).
 					Return(nil, errStoreFailure).
 					Once()
-				return core.New(repo, nil, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(repo, nil, deadClock, nil)
 			},
 			want:    nil,
 			wantErr: errors.ErrInternal,
@@ -127,7 +127,7 @@ func TestService_ListResources(t *testing.T) {
 					List(mock.Anything, mock.Anything).
 					Return([]resource.Resource{sampleResource}, nil).
 					Once()
-				return core.New(repo, nil, &mocks.AsyncWorker{}, deadClock, nil)
+				return core.New(repo, nil, deadClock, nil)
 			},
 			want:    []resource.Resource{sampleResource},
 			wantErr: nil,

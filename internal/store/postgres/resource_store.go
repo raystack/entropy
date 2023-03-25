@@ -3,6 +3,8 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -36,6 +38,15 @@ func (st *Store) GetByURN(ctx context.Context, urn string) (*resource.Resource, 
 		return nil, txErr
 	}
 
+	var syncResult resource.SyncResult
+	if len(rec.StateSyncResult) > 0 {
+		if err := json.Unmarshal(rec.StateSyncResult, &syncResult); err != nil {
+			return nil, errors.ErrInternal.
+				WithMsgf("failed to json unmarshal state_sync_result").
+				WithCausef(err.Error())
+		}
+	}
+
 	return &resource.Resource{
 		URN:       rec.URN,
 		Kind:      rec.Kind,
@@ -52,6 +63,8 @@ func (st *Store) GetByURN(ctx context.Context, urn string) (*resource.Resource, 
 			Status:     rec.StateStatus,
 			Output:     rec.StateOutput,
 			ModuleData: rec.StateModuleData,
+			NextSyncAt: rec.StateNextSync,
+			SyncResult: syncResult,
 		},
 	}, nil
 }
@@ -118,10 +131,10 @@ func (st *Store) Create(ctx context.Context, r resource.Resource, hooks ...resou
 			URN:    r.URN,
 			Spec:   r.Spec,
 			Labels: r.Labels,
-			Reason: "resource created",
+			Reason: "action:create",
 		}
 
-		if err := insertRevision(ctx, tx, rev); err != nil {
+		if err := insertRevision(ctx, tx, id, rev); err != nil {
 			return translateErr(err)
 		}
 
@@ -150,6 +163,8 @@ func (st *Store) Update(ctx context.Context, r resource.Resource, saveRevision b
 				"state_status":      r.State.Status,
 				"state_output":      r.State.Output,
 				"state_module_data": r.State.ModuleData,
+				"state_next_sync":   r.State.NextSyncAt,
+				"state_sync_result": syncResultAsJSON(r.State.SyncResult),
 			}).
 			PlaceholderFormat(sq.Dollar)
 
@@ -173,7 +188,7 @@ func (st *Store) Update(ctx context.Context, r resource.Resource, saveRevision b
 				Reason: reason,
 			}
 
-			if err := insertRevision(ctx, tx, rev); err != nil {
+			if err := insertRevision(ctx, tx, id, rev); err != nil {
 				return translateErr(err)
 			}
 		}
@@ -219,17 +234,113 @@ func (st *Store) Delete(ctx context.Context, urn string, hooks ...resource.Mutat
 	return withinTx(ctx, st.db, false, deleteFn)
 }
 
-func insertResourceRecord(ctx context.Context, runner sq.BaseRunner, r resource.Resource) (int64, error) {
-	q := sq.Insert(tableResources).
+func (st *Store) SyncOne(ctx context.Context, syncFn resource.SyncFn) error {
+	urn, err := st.fetchResourceForSync(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// No resource available for sync.
+			return nil
+		}
+		return err
+	}
+
+	cur, err := st.GetByURN(ctx, urn)
+	if err != nil {
+		return err
+	}
+
+	synced, err := st.handleDequeued(ctx, *cur, syncFn)
+	if err != nil {
+		return err
+	}
+
+	return st.Update(ctx, *synced, false, "sync")
+}
+
+func (st *Store) handleDequeued(baseCtx context.Context, res resource.Resource, fn resource.SyncFn) (*resource.Resource, error) {
+	runCtx, cancel := context.WithCancel(baseCtx)
+	defer cancel()
+
+	// Run heartbeat to keep the resource being picked up by some other syncer
+	// thread. If heartbeat exits, runCtx will be cancelled and fn should exit.
+	go st.runHeartbeat(runCtx, cancel, res.URN)
+
+	return fn(runCtx, res)
+}
+
+func (st *Store) fetchResourceForSync(ctx context.Context) (string, error) {
+	var urn string
+
+	// find a resource ready for sync, extend it next sync time atomically.
+	// this ensures multiple workers do not pick up same resources for sync.
+	err := withinTx(ctx, st.db, false, func(ctx context.Context, tx *sqlx.Tx) error {
+		builder := sq.
+			Select("urn").
+			From(tableResources).
+			Where(sq.Expr("state_next_sync <= current_timestamp")).
+			Suffix("FOR UPDATE SKIP LOCKED")
+
+		query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+		if err != nil {
+			return err
+		}
+
+		if err := st.db.QueryRowxContext(ctx, query, args...).Scan(&urn); err != nil {
+			return err
+		}
+
+		return st.extendWaitTime(ctx, tx, urn)
+	})
+
+	return urn, err
+}
+
+func (st *Store) runHeartbeat(ctx context.Context, cancel context.CancelFunc, id string) {
+	defer cancel()
+
+	tick := time.NewTicker(st.refreshInterval)
+	defer tick.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case <-tick.C:
+			if err := st.extendWaitTime(ctx, st.db, id); err != nil {
+				return
+			}
+		}
+	}
+}
+
+func (st *Store) extendWaitTime(ctx context.Context, r sq.BaseRunner, urn string) error {
+	extendTo := sq.Expr("current_timestamp + (? ||' seconds')::interval ", st.extendInterval.Seconds())
+	extendQuery := sq.Update(tableResources).
+		Set("state_next_sync", extendTo).
+		Where(sq.Eq{"urn": urn})
+
+	_, err := extendQuery.PlaceholderFormat(sq.Dollar).RunWith(r).ExecContext(ctx)
+	return err
+}
+
+func insertResourceRecord(ctx context.Context, runner sqlx.QueryerContext, r resource.Resource) (int64, error) {
+	builder := sq.Insert(tableResources).
 		Columns("urn", "kind", "project", "name", "created_at", "updated_at",
-			"spec_configs", "state_status", "state_output", "state_module_data").
+			"spec_configs", "state_status", "state_output", "state_module_data",
+			"state_next_sync", "state_sync_result").
 		Values(r.URN, r.Kind, r.Project, r.Name, r.CreatedAt, r.UpdatedAt,
-			r.Spec.Configs, r.State.Status, r.State.Output, r.State.ModuleData).
-		Suffix(`RETURNING "id"`).
-		PlaceholderFormat(sq.Dollar)
+			r.Spec.Configs, r.State.Status, r.State.Output, r.State.ModuleData,
+			r.State.NextSyncAt, syncResultAsJSON(r.State.SyncResult)).
+		Suffix(`RETURNING "id"`)
+
+	q, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return 0, err
+	}
 
 	var id int64
-	if err := q.RunWith(runner).QueryRowContext(ctx).Scan(&id); err != nil {
+	if err := runner.QueryRowxContext(ctx, q, args...).Scan(&id); err != nil {
 		return 0, err
 	}
 	return id, nil
@@ -264,4 +375,15 @@ func setDependencies(ctx context.Context, runner sq.BaseRunner, id int64, deps m
 	}
 
 	return nil
+}
+
+func syncResultAsJSON(syncRes resource.SyncResult) json.RawMessage {
+	if syncRes == (resource.SyncResult{}) {
+		return nil
+	}
+	val, err := json.Marshal(syncRes)
+	if err != nil {
+		panic(err)
+	}
+	return val
 }

@@ -70,10 +70,10 @@ func TestRegistry_GetDriver(t *testing.T) {
 
 func TestRegistry_Register(t *testing.T) {
 	t.Parallel()
-	reg := &modules.Registry{}
 
 	t.Run("FirstRegistration_NoError", func(t *testing.T) {
 		t.Parallel()
+		reg := &modules.Registry{}
 		desc := module.Descriptor{
 			Kind: "foo",
 			DriverFactory: func(conf json.RawMessage) (module.Driver, error) {
@@ -92,6 +92,7 @@ func TestRegistry_Register(t *testing.T) {
 
 	t.Run("SecondRegistration_Conflict", func(t *testing.T) {
 		t.Parallel()
+		reg := &modules.Registry{}
 		desc := module.Descriptor{
 			Kind: "foo",
 			DriverFactory: func(conf json.RawMessage) (module.Driver, error) {
@@ -99,6 +100,10 @@ func TestRegistry_Register(t *testing.T) {
 			},
 		}
 
+		// first attempt.
+		assert.NoError(t, reg.Register(desc))
+
+		// second attempt.
 		err := reg.Register(desc)
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, errors.ErrConflict))
@@ -119,6 +124,7 @@ func TestRegistry_Register(t *testing.T) {
 				},
 			},
 		}
+		reg := &modules.Registry{}
 		got := reg.Register(desc)
 		assert.Error(t, got)
 		assert.True(t, errors.Is(got, errors.ErrInvalid), cmp.Diff(got, errors.ErrInvalid))

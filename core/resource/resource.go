@@ -25,7 +25,11 @@ type Store interface {
 	Delete(ctx context.Context, urn string, hooks ...MutationHook) error
 
 	Revisions(ctx context.Context, selector RevisionsSelector) ([]Revision, error)
+
+	SyncOne(ctx context.Context, syncFn SyncFn) error
 }
+
+type SyncFn func(ctx context.Context, res Resource) (*Resource, error)
 
 // MutationHook values are passed to mutation operations of resource storage
 // to handle any transactional requirements.
