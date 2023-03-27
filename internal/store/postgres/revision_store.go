@@ -46,22 +46,25 @@ func (st *Store) Revisions(ctx context.Context, selector resource.RevisionsSelec
 				return err
 			}
 
-			var tags []string
-			if err := readRevisionTags(ctx, tx, rm.ID, &tags); err != nil {
-				return err
-			}
-
 			revs = append(revs, resource.Revision{
 				ID:        rm.ID,
 				URN:       selector.URN,
 				Reason:    rm.Reason,
-				Labels:    tagsToLabelMap(tags),
 				CreatedAt: rm.CreatedAt,
 				Spec: resource.Spec{
 					Configs:      rm.SpecConfigs,
 					Dependencies: deps,
 				},
 			})
+		}
+		_ = rows.Close()
+
+		for i, rev := range revs {
+			var tags []string
+			if err := readRevisionTags(ctx, tx, rev.ID, &tags); err != nil {
+				return err
+			}
+			revs[i].Labels = tagsToLabelMap(tags)
 		}
 
 		return nil
