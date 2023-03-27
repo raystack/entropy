@@ -31,7 +31,7 @@ var defaultDriverConf = driverConf{
 	Telegraf: map[string]any{
 		"enabled": false,
 	},
-	ChartValues: chartValues{
+	ChartValues: ChartValues{
 		ImageTag:        "latest",
 		ChartVersion:    "0.1.3",
 		ImagePullPolicy: "IfNotPresent",
@@ -55,13 +55,7 @@ type (
 type driverConf struct {
 	Telegraf    map[string]any `json:"telegraf"`
 	Namespace   string         `json:"namespace" validate:"required"`
-	ChartValues chartValues    `json:"chart_values" validate:"required"`
-}
-
-type chartValues struct {
-	ImageTag        string `json:"image_tag" validate:"required"`
-	ChartVersion    string `json:"chart_version" validate:"required"`
-	ImagePullPolicy string `json:"image_pull_policy" validate:"required"`
+	ChartValues ChartValues    `json:"chart_values" validate:"required"`
 }
 
 type Output struct {
@@ -98,12 +92,12 @@ func (*firehoseDriver) getHelmRelease(conf Config) *helm.ReleaseConfig {
 	return rc
 }
 
-func mergeChartValues(cur, newVal *chartValues) (*chartValues, error) {
+func mergeChartValues(cur, newVal *ChartValues) (*ChartValues, error) {
 	if newVal == nil {
 		return cur, nil
 	}
 
-	merged := chartValues{
+	merged := ChartValues{
 		ImageTag:        cur.ImageTag,
 		ChartVersion:    cur.ChartVersion,
 		ImagePullPolicy: cur.ImagePullPolicy,

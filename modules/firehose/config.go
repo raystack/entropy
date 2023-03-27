@@ -34,8 +34,14 @@ type Config struct {
 	Replicas     int               `json:"replicas"`
 	Namespace    string            `json:"namespace,omitempty"`
 	DeploymentID string            `json:"deployment_id,omitempty"`
-	ChartValues  *chartValues      `json:"chart_values,omitempty"`
+	ChartValues  *ChartValues      `json:"chart_values,omitempty"`
 	EnvVariables map[string]string `json:"env_variables,omitempty"`
+}
+
+type ChartValues struct {
+	ImageTag        string `json:"image_tag" validate:"required"`
+	ChartVersion    string `json:"chart_version" validate:"required"`
+	ImagePullPolicy string `json:"image_pull_policy" validate:"required"`
 }
 
 func readConfig(r resource.Resource, confJSON json.RawMessage) (*Config, error) {
