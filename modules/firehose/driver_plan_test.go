@@ -48,9 +48,9 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 			title: "Create_LongName",
 			exr: module.ExpandedResource{
 				Resource: resource.Resource{
-					URN:     "urn:goto:entropy:ABCDEFGHIJKLMNOPQRSTUVWXYZ:abcdefghijklmnopqrstuvwxyz123",
+					URN:     "urn:goto:entropy:ABCDEFGHIJKLMNOPQRSTUVWXYZ:abcdefghijklmnopqrstuvwxyz",
 					Kind:    "firehose",
-					Name:    "abcdefghijklmnopqrstuvwxyz123",
+					Name:    "abcdefghijklmnopqrstuvwxyz",
 					Project: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
 				},
 			},
@@ -67,16 +67,16 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 				}),
 			},
 			want: &resource.Resource{
-				URN:     "urn:goto:entropy:ABCDEFGHIJKLMNOPQRSTUVWXYZ:abcdefghijklmnopqrstuvwxyz123",
+				URN:     "urn:goto:entropy:ABCDEFGHIJKLMNOPQRSTUVWXYZ:abcdefghijklmnopqrstuvwxyz",
 				Kind:    "firehose",
-				Name:    "abcdefghijklmnopqrstuvwxyz123",
+				Name:    "abcdefghijklmnopqrstuvwxyz",
 				Project: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
 				Spec: resource.Spec{
 					Configs: mustJSON(map[string]any{
 						"stopped":       false,
 						"replicas":      1,
 						"namespace":     "firehose",
-						"deployment_id": "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghijklmnopqrst-f1d02d",
+						"deployment_id": "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099",
 						"chart_values": map[string]string{
 							"chart_version":     "0.1.3",
 							"image_pull_policy": "IfNotPresent",
@@ -85,7 +85,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 						"env_variables": map[string]string{
 							"SINK_TYPE":                      "LOG",
 							"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
-							"SOURCE_KAFKA_CONSUMER_GROUP_ID": "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghijklmnopqrst-f1d02d-0001",
+							"SOURCE_KAFKA_CONSUMER_GROUP_ID": "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099-0001",
 							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
 							"SOURCE_KAFKA_TOPIC":             "foo-log",
 						},
@@ -95,7 +95,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					Status: resource.StatusPending,
 					Output: mustJSON(Output{
 						Namespace:   "firehose",
-						ReleaseName: "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghijklmnopqrst-f1d02d",
+						ReleaseName: "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099",
 					}),
 					ModuleData: mustJSON(transientData{
 						PendingSteps: []string{stepReleaseCreate},

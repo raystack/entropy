@@ -18,7 +18,7 @@ const (
 	confKeyKafkaBrokers = "SOURCE_KAFKA_BROKERS"
 )
 
-const kubeDeploymentNameLengthLimit = 63
+const kubeDeploymentNameLengthLimit = 53
 
 var (
 	//go:embed schema/config.json
