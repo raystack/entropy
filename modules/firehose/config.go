@@ -39,10 +39,14 @@ type Config struct {
 }
 
 type Telegraf struct {
-	Enabled   bool           `json:"enabled"`
-	Image     string         `json:"image,omitempty"`
-	ConfigTpl string         `json:"config_tpl,omitempty"`
-	TplValues map[string]any `json:"tpl_values,omitempty"`
+	Enabled bool         `json:"enabled,omitempty"`
+	Image   ChartValues  `json:"image,omitempty"`
+	Config  TelegrafConf `json:"config,omitempty"`
+}
+
+type TelegrafConf struct {
+	Output         map[string]any    `json:"output"`
+	AdditionalTags map[string]string `json:"additional_global_tags"`
 }
 
 type ChartValues struct {

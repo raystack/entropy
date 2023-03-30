@@ -100,7 +100,7 @@ func (fd *firehoseDriver) planCreate(exr module.ExpandedResource, act module.Act
 	}
 
 	// set project defaults.
-	conf.Telegraf = &fd.conf.Telegraf
+	conf.Telegraf = fd.conf.Telegraf
 	conf.Namespace = fd.conf.Namespace
 	conf.ChartValues = chartVals
 

@@ -48,20 +48,26 @@ func (svc *Service) handleSync(ctx context.Context, res resource.Resource) (*res
 
 	newState, err := svc.moduleSvc.SyncState(ctx, *modSpec)
 	if err != nil {
+		logEntry.Error("SyncOne() failed", zap.Error(err))
+
+		res.State.SyncResult.LastError = err.Error()
+		res.State.SyncResult.Retries++
 		if errors.Is(err, errors.ErrInvalid) {
 			// ErrInvalid is expected to be returned when config is invalid.
 			// There is no point in retrying in this case.
 			res.State.Status = resource.StatusError
 			res.State.NextSyncAt = nil
+		} else if svc.maxSyncRetries > 0 && res.State.SyncResult.Retries >= svc.maxSyncRetries {
+			// Some other error occurred and no more retries remaining.
+			// move the resource to failure state.
+			res.State.Status = resource.StatusError
+			res.State.NextSyncAt = nil
 		} else {
-			// Some other error occurred. need to backoff and retry in some time.
+			// Some other error occurred and we still have remaining retries.
+			// need to backoff and retry in some time.
 			tryAgainAt := svc.clock().Add(svc.syncBackoff)
 			res.State.NextSyncAt = &tryAgainAt
 		}
-		res.State.SyncResult.LastError = err.Error()
-		res.State.SyncResult.Retries++
-
-		logEntry.Error("SyncOne() failed", zap.Error(err))
 	} else {
 		res.State.SyncResult.Retries = 0
 		res.State.SyncResult.LastError = ""

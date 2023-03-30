@@ -15,11 +15,12 @@ import (
 )
 
 type Service struct {
-	logger      *zap.Logger
-	clock       func() time.Time
-	store       resource.Store
-	moduleSvc   ModuleService
-	syncBackoff time.Duration
+	logger         *zap.Logger
+	clock          func() time.Time
+	store          resource.Store
+	moduleSvc      ModuleService
+	syncBackoff    time.Duration
+	maxSyncRetries int
 }
 
 type ModuleService interface {
@@ -30,18 +31,22 @@ type ModuleService interface {
 }
 
 func New(repo resource.Store, moduleSvc ModuleService, clockFn func() time.Time, lg *zap.Logger) *Service {
-	const defaultSyncBackoff = 5 * time.Second
+	const (
+		defaultMaxRetries  = 10
+		defaultSyncBackoff = 5 * time.Second
+	)
 
 	if clockFn == nil {
 		clockFn = time.Now
 	}
 
 	return &Service{
-		logger:      lg,
-		clock:       clockFn,
-		store:       repo,
-		syncBackoff: defaultSyncBackoff,
-		moduleSvc:   moduleSvc,
+		logger:         lg,
+		clock:          clockFn,
+		store:          repo,
+		syncBackoff:    defaultSyncBackoff,
+		maxSyncRetries: defaultMaxRetries,
+		moduleSvc:      moduleSvc,
 	}
 }
 

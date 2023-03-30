@@ -77,9 +77,6 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 						"replicas":      1,
 						"namespace":     "firehose",
 						"deployment_id": "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099",
-						"telegraf": map[string]any{
-							"enabled": false,
-						},
 						"chart_values": map[string]string{
 							"chart_version":     "0.1.3",
 							"image_pull_policy": "IfNotPresent",
@@ -142,9 +139,6 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 						"replicas":      1,
 						"namespace":     "firehose",
 						"deployment_id": "firehose-foo-fh1",
-						"telegraf": map[string]any{
-							"enabled": false,
-						},
 						"chart_values": map[string]string{
 							"chart_version":     "0.1.3",
 							"image_pull_policy": "IfNotPresent",
