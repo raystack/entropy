@@ -30,6 +30,10 @@ func Test_safeReleaseName(t *testing.T) {
 			str:  "ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghi---klmnopqrstuvwxyz",
 			want: "ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghi-81c192-firehose",
 		},
+		{
+			str:  "ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghijklmnopqr-stuvwxyz1234567890",
+			want: "ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-bac696-firehose",
+		},
 	}
 
 	for i, tt := range table {

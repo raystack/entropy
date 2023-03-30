@@ -85,7 +85,7 @@ func readConfig(r resource.Resource, confJSON json.RawMessage) (*Config, error) 
 
 func safeReleaseName(concatName string) string {
 	const randomHashLen = 6
-	var suffix = "-firehose"
+	suffix := "-firehose"
 
 	// remove suffix if already there.
 	concatName = strings.TrimSuffix(concatName, suffix)
@@ -100,7 +100,8 @@ func safeReleaseName(concatName string) string {
 
 	// truncate and make room for the suffix. also trim any leading, trailing
 	// hyphens to prevent '--' (not allowed in deployment names).
-	truncated := concatName[0 : len(concatName)-len(suffix)]
+	truncLen := helmReleaseNameMaxLength - len(suffix)
+	truncated := concatName[0:truncLen]
 	truncated = strings.Trim(truncated, "-")
 	return truncated + suffix
 }
