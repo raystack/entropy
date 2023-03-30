@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/goto/entropy/core/module"
+	"github.com/goto/entropy/core/resource"
 	"github.com/goto/entropy/modules/kubernetes"
 	"github.com/goto/entropy/pkg/errors"
 )
@@ -25,13 +26,17 @@ func (fd *firehoseDriver) Output(ctx context.Context, exr module.ExpandedResourc
 		return nil, errors.ErrInternal.WithMsgf("invalid kube state").WithCausef(err.Error())
 	}
 
-	return fd.refreshOutput(ctx, *conf, *output, kubeOut)
+	return fd.refreshOutput(ctx, exr.Resource, *conf, *output, kubeOut)
 }
 
 func (fd *firehoseDriver) refreshOutput(ctx context.Context,
-	conf Config, output Output, kubeOut kubernetes.Output,
+	r resource.Resource, conf Config, output Output, kubeOut kubernetes.Output,
 ) (json.RawMessage, error) {
-	rc := fd.getHelmRelease(conf)
+	rc, err := fd.getHelmRelease(r.Labels, conf)
+	if err != nil {
+		return nil, errors.ErrInternal.WithCausef(err.Error())
+	}
+
 	pods, err := fd.kubeGetPod(ctx, kubeOut.Configs, rc.Namespace, map[string]string{"app": rc.Name})
 	if err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())

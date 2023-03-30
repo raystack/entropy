@@ -1,9 +1,11 @@
 package firehose
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/goto/entropy/core/module"
@@ -28,8 +30,8 @@ const (
 
 var defaultDriverConf = driverConf{
 	Namespace: "firehose",
-	Telegraf: map[string]any{
-		"enabled": false,
+	Telegraf: Telegraf{
+		Enabled: false,
 	},
 	ChartValues: ChartValues{
 		ImageTag:        "latest",
@@ -53,9 +55,9 @@ type (
 )
 
 type driverConf struct {
-	Telegraf    map[string]any `json:"telegraf"`
-	Namespace   string         `json:"namespace" validate:"required"`
-	ChartValues ChartValues    `json:"chart_values" validate:"required"`
+	Telegraf    Telegraf    `json:"telegraf"`
+	Namespace   string      `json:"namespace" validate:"required"`
+	ChartValues ChartValues `json:"chart_values" validate:"required"`
 }
 
 type Output struct {
@@ -69,7 +71,19 @@ type transientData struct {
 	ResetOffsetTo string   `json:"reset_offset_to,omitempty"`
 }
 
-func (*firehoseDriver) getHelmRelease(conf Config) *helm.ReleaseConfig {
+func (*firehoseDriver) getHelmRelease(labels map[string]string, conf Config) (*helm.ReleaseConfig, error) {
+	var telegrafConfig bytes.Buffer
+	telegrafConfigTpl, err := template.New("").Parse(conf.Telegraf.ConfigTpl)
+	if err != nil {
+		return nil, err
+	} else if err := telegrafConfigTpl.Execute(&telegrafConfig, map[string]any{
+		"Labels": labels,
+		"Config": conf,
+		"Values": conf.Telegraf.TplValues,
+	}); err != nil {
+		return nil, err
+	}
+
 	rc := helm.DefaultReleaseConfig()
 	rc.Name = conf.DeploymentID
 	rc.Repository = chartRepo
@@ -87,9 +101,13 @@ func (*firehoseDriver) getHelmRelease(conf Config) *helm.ReleaseConfig {
 			},
 			"config": conf.EnvVariables,
 		},
-		"telegraf": conf.Telegraf,
+		"telegraf": map[string]any{
+			"enabled": conf.Telegraf.Enabled,
+			"image":   conf.Telegraf.Image,
+			"config":  telegrafConfig.String(),
+		},
 	}
-	return rc
+	return rc, nil
 }
 
 func mergeChartValues(cur, newVal *ChartValues) (*ChartValues, error) {
@@ -109,7 +127,7 @@ func mergeChartValues(cur, newVal *ChartValues) (*ChartValues, error) {
 			return nil, errors.ErrInvalid.
 				WithMsgf("unknown image repo: '%s', must start with '%s'", newTag, imageRepo)
 		}
-		merged.ImageTag = strings.TrimPrefix(newTag, imageRepo)
+		merged.ImageTag = strings.TrimPrefix(newTag, imageRepo+":")
 	}
 
 	return &merged, nil

@@ -30,12 +30,19 @@ var (
 type Config struct {
 	Stopped      bool              `json:"stopped"`
 	StopTime     *time.Time        `json:"stop_time,omitempty"`
-	Telegraf     map[string]any    `json:"telegraf,omitempty"`
+	Telegraf     *Telegraf         `json:"telegraf,omitempty"`
 	Replicas     int               `json:"replicas"`
 	Namespace    string            `json:"namespace,omitempty"`
 	DeploymentID string            `json:"deployment_id,omitempty"`
 	ChartValues  *ChartValues      `json:"chart_values,omitempty"`
 	EnvVariables map[string]string `json:"env_variables,omitempty"`
+}
+
+type Telegraf struct {
+	Enabled   bool           `json:"enabled"`
+	Image     string         `json:"image,omitempty"`
+	ConfigTpl string         `json:"config_tpl,omitempty"`
+	TplValues map[string]any `json:"tpl_values,omitempty"`
 }
 
 type ChartValues struct {
