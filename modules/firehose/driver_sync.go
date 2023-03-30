@@ -51,7 +51,7 @@ func (fd *firehoseDriver) Sync(ctx context.Context, exr module.ExpandedResource)
 			}
 
 			isCreate := pendingStep == stepReleaseCreate
-			if err := fd.releaseSync(ctx, isCreate, *conf, kubeOut); err != nil {
+			if err := fd.releaseSync(ctx, exr.Resource, isCreate, *conf, kubeOut); err != nil {
 				return nil, err
 			}
 
@@ -78,13 +78,13 @@ func (fd *firehoseDriver) Sync(ctx context.Context, exr module.ExpandedResource)
 	finalState.NextSyncAt = conf.StopTime
 	if conf.StopTime != nil && conf.StopTime.Before(fd.timeNow()) {
 		conf.Replicas = 0
-		if err := fd.releaseSync(ctx, false, *conf, kubeOut); err != nil {
+		if err := fd.releaseSync(ctx, exr.Resource, false, *conf, kubeOut); err != nil {
 			return nil, err
 		}
 		finalState.NextSyncAt = nil
 	}
 
-	finalOut, err := fd.refreshOutput(ctx, *conf, *out, kubeOut)
+	finalOut, err := fd.refreshOutput(ctx, exr.Resource, *conf, *out, kubeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +95,12 @@ func (fd *firehoseDriver) Sync(ctx context.Context, exr module.ExpandedResource)
 	return &finalState, nil
 }
 
-func (fd *firehoseDriver) releaseSync(ctx context.Context, isCreate bool, conf Config, kubeOut kubernetes.Output) error {
-	rc := fd.getHelmRelease(conf)
+func (fd *firehoseDriver) releaseSync(ctx context.Context, r resource.Resource,
+	isCreate bool, conf Config, kubeOut kubernetes.Output) error {
+	rc, err := fd.getHelmRelease(r.Labels, conf)
+	if err != nil {
+		return err
+	}
 
 	if err := fd.kubeDeploy(ctx, isCreate, kubeOut.Configs, *rc); err != nil {
 		return errors.ErrInternal.WithCausef(err.Error())

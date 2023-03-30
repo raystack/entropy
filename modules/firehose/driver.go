@@ -1,9 +1,11 @@
 package firehose
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/goto/entropy/core/module"
@@ -66,7 +68,34 @@ type transientData struct {
 	ResetOffsetTo string   `json:"reset_offset_to,omitempty"`
 }
 
-func (*firehoseDriver) getHelmRelease(conf Config) *helm.ReleaseConfig {
+func (*firehoseDriver) getHelmRelease(labels map[string]string, conf Config) (*helm.ReleaseConfig, error) {
+	var telegrafConf Telegraf
+	if conf.Telegraf != nil && conf.Telegraf.Enabled {
+		telegrafTags := map[string]string{}
+		for k, v := range conf.Telegraf.Config.AdditionalTags {
+			var buf bytes.Buffer
+			t, err := template.New("").Parse(v)
+			if err != nil {
+				return nil, errors.ErrInvalid.
+					WithMsgf("label template for '%s' is invalid", k).WithCausef(err.Error())
+			} else if err := t.Execute(&buf, labels); err != nil {
+				return nil, errors.ErrInvalid.
+					WithMsgf("failed to render label template").WithCausef(err.Error())
+			}
+
+			telegrafTags[k] = buf.String()
+		}
+
+		telegrafConf = Telegraf{
+			Enabled: true,
+			Image:   conf.Telegraf.Image,
+			Config: TelegrafConf{
+				Output:         conf.Telegraf.Config.Output,
+				AdditionalTags: telegrafTags,
+			},
+		}
+	}
+
 	rc := helm.DefaultReleaseConfig()
 	rc.Name = conf.DeploymentID
 	rc.Repository = chartRepo
@@ -84,9 +113,10 @@ func (*firehoseDriver) getHelmRelease(conf Config) *helm.ReleaseConfig {
 			},
 			"config": conf.EnvVariables,
 		},
-		"telegraf": conf.Telegraf,
+		"telegraf": telegrafConf,
 	}
-	return rc
+
+	return rc, nil
 }
 
 func mergeChartValues(cur, newVal *ChartValues) (*ChartValues, error) {
