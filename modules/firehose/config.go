@@ -18,7 +18,7 @@ const (
 	confKeyKafkaBrokers = "SOURCE_KAFKA_BROKERS"
 )
 
-const kubeDeploymentNameLengthLimit = 53
+const helmReleaseNameMaxLength = 53
 
 var (
 	//go:embed schema/config.json
@@ -71,9 +71,9 @@ func readConfig(r resource.Resource, confJSON json.RawMessage) (*Config, error) 
 
 	// note: enforce the kubernetes deployment name length limit.
 	if len(cfg.DeploymentID) == 0 {
-		cfg.DeploymentID = generateSafeReleaseName(r.Project, r.Name)
-	} else if len(cfg.DeploymentID) > kubeDeploymentNameLengthLimit {
-		return nil, errors.ErrInvalid.WithMsgf("deployment_id must be shorter than 53 chars")
+		cfg.DeploymentID = safeReleaseName(fmt.Sprintf("%s-%s", r.Project, r.Name))
+	} else if len(cfg.DeploymentID) > helmReleaseNameMaxLength {
+		return nil, errors.ErrInvalid.WithMsgf("deployment_id must not have more than 53 chars")
 	}
 
 	if consumerID := cfg.EnvVariables[confKeyConsumerID]; consumerID == "" {
@@ -83,18 +83,24 @@ func readConfig(r resource.Resource, confJSON json.RawMessage) (*Config, error) 
 	return &cfg, nil
 }
 
-func generateSafeReleaseName(project, name string) string {
-	const prefix = "firehose-"
+func safeReleaseName(concatName string) string {
 	const randomHashLen = 6
+	var suffix = "-firehose"
 
-	releaseName := fmt.Sprintf("%s%s-%s", prefix, project, name)
-	if len(releaseName) >= kubeDeploymentNameLengthLimit {
-		releaseName = strings.Trim(releaseName[:kubeDeploymentNameLengthLimit-randomHashLen-1], "-")
+	// remove suffix if already there.
+	concatName = strings.TrimSuffix(concatName, suffix)
 
-		val := sha256.Sum256([]byte(releaseName))
-		hash := fmt.Sprintf("%x", val)
-		releaseName = releaseName + "-" + hash[:randomHashLen]
+	if len(concatName) <= helmReleaseNameMaxLength-len(suffix) {
+		return concatName + suffix
 	}
 
-	return releaseName
+	val := sha256.Sum256([]byte(concatName))
+	hash := fmt.Sprintf("%x", val)
+	suffix = fmt.Sprintf("-%s%s", hash[:randomHashLen], suffix)
+
+	// truncate and make room for the suffix. also trim any leading, trailing
+	// hyphens to prevent '--' (not allowed in deployment names).
+	truncated := concatName[0 : len(concatName)-len(suffix)]
+	truncated = strings.Trim(truncated, "-")
+	return truncated + suffix
 }

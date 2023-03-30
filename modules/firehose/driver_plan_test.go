@@ -76,7 +76,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 						"stopped":       false,
 						"replicas":      1,
 						"namespace":     "firehose",
-						"deployment_id": "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099",
+						"deployment_id": "ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-3801d0-firehose",
 						"chart_values": map[string]string{
 							"chart_version":     "0.1.3",
 							"image_pull_policy": "IfNotPresent",
@@ -85,7 +85,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 						"env_variables": map[string]string{
 							"SINK_TYPE":                      "LOG",
 							"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
-							"SOURCE_KAFKA_CONSUMER_GROUP_ID": "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099-0001",
+							"SOURCE_KAFKA_CONSUMER_GROUP_ID": "ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-3801d0-firehose-0001",
 							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
 							"SOURCE_KAFKA_TOPIC":             "foo-log",
 						},
@@ -95,7 +95,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					Status: resource.StatusPending,
 					Output: mustJSON(Output{
 						Namespace:   "firehose",
-						ReleaseName: "firehose-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-9bf099",
+						ReleaseName: "ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghij-3801d0-firehose",
 					}),
 					ModuleData: mustJSON(transientData{
 						PendingSteps: []string{stepReleaseCreate},
@@ -138,7 +138,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 						"stopped":       false,
 						"replicas":      1,
 						"namespace":     "firehose",
-						"deployment_id": "firehose-foo-fh1",
+						"deployment_id": "foo-fh1-firehose",
 						"chart_values": map[string]string{
 							"chart_version":     "0.1.3",
 							"image_pull_policy": "IfNotPresent",
@@ -157,7 +157,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					Status: resource.StatusPending,
 					Output: mustJSON(Output{
 						Namespace:   "firehose",
-						ReleaseName: "firehose-foo-fh1",
+						ReleaseName: "foo-fh1-firehose",
 					}),
 					ModuleData: mustJSON(transientData{
 						PendingSteps: []string{stepReleaseCreate},
