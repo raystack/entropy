@@ -96,7 +96,8 @@ func (fd *firehoseDriver) Sync(ctx context.Context, exr module.ExpandedResource)
 }
 
 func (fd *firehoseDriver) releaseSync(ctx context.Context, r resource.Resource,
-	isCreate bool, conf Config, kubeOut kubernetes.Output) error {
+	isCreate bool, conf Config, kubeOut kubernetes.Output,
+) error {
 	rc, err := fd.getHelmRelease(r.Labels, conf)
 	if err != nil {
 		return err
