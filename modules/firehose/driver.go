@@ -72,7 +72,7 @@ func (*firehoseDriver) getHelmRelease(labels map[string]string, conf Config) (*h
 	var telegrafConf Telegraf
 	if conf.Telegraf != nil && conf.Telegraf.Enabled {
 		telegrafTags := map[string]string{}
-		for k, v := range conf.Telegraf.Config.AdditionalTags {
+		for k, v := range conf.Telegraf.Config.AdditionalGlobalTags {
 			var buf bytes.Buffer
 			t, err := template.New("").Parse(v)
 			if err != nil {
@@ -90,8 +90,8 @@ func (*firehoseDriver) getHelmRelease(labels map[string]string, conf Config) (*h
 			Enabled: true,
 			Image:   conf.Telegraf.Image,
 			Config: TelegrafConf{
-				Output:         conf.Telegraf.Config.Output,
-				AdditionalTags: telegrafTags,
+				Output:               conf.Telegraf.Config.Output,
+				AdditionalGlobalTags: telegrafTags,
 			},
 		}
 	}
@@ -113,7 +113,14 @@ func (*firehoseDriver) getHelmRelease(labels map[string]string, conf Config) (*h
 			},
 			"config": conf.EnvVariables,
 		},
-		"telegraf": telegrafConf,
+		"telegraf": map[string]interface{}{
+			"enabled": telegrafConf.Enabled,
+			"image":   telegrafConf.Image,
+			"config": map[string]any{
+				"output":                 telegrafConf.Config.Output,
+				"additional_global_tags": telegrafConf.Config.AdditionalGlobalTags,
+			},
+		},
 	}
 
 	return rc, nil

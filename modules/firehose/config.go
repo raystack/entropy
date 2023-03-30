@@ -45,8 +45,8 @@ type Telegraf struct {
 }
 
 type TelegrafConf struct {
-	Output         map[string]any    `json:"output"`
-	AdditionalTags map[string]string `json:"additional_global_tags"`
+	Output               map[string]any    `json:"output"`
+	AdditionalGlobalTags map[string]string `json:"additional_global_tags"`
 }
 
 type ChartValues struct {
