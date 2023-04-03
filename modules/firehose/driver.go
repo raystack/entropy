@@ -52,9 +52,10 @@ type (
 )
 
 type driverConf struct {
-	Telegraf    *Telegraf   `json:"telegraf"`
-	Namespace   string      `json:"namespace" validate:"required"`
-	ChartValues ChartValues `json:"chart_values" validate:"required"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	Telegraf    *Telegraf         `json:"telegraf"`
+	Namespace   string            `json:"namespace" validate:"required"`
+	ChartValues ChartValues       `json:"chart_values" validate:"required"`
 }
 
 type Output struct {
@@ -68,22 +69,12 @@ type transientData struct {
 	ResetOffsetTo string   `json:"reset_offset_to,omitempty"`
 }
 
-func (*firehoseDriver) getHelmRelease(labels map[string]string, conf Config) (*helm.ReleaseConfig, error) {
+func (fd *firehoseDriver) getHelmRelease(labels map[string]string, conf Config) (*helm.ReleaseConfig, error) {
 	var telegrafConf Telegraf
 	if conf.Telegraf != nil && conf.Telegraf.Enabled {
-		telegrafTags := map[string]string{}
-		for k, v := range conf.Telegraf.Config.AdditionalGlobalTags {
-			var buf bytes.Buffer
-			t, err := template.New("").Parse(v)
-			if err != nil {
-				return nil, errors.ErrInvalid.
-					WithMsgf("label template for '%s' is invalid", k).WithCausef(err.Error())
-			} else if err := t.Execute(&buf, labels); err != nil {
-				return nil, errors.ErrInvalid.
-					WithMsgf("failed to render label template").WithCausef(err.Error())
-			}
-
-			telegrafTags[k] = buf.String()
+		telegrafTags, err := renderLabels(conf.Telegraf.Config.AdditionalGlobalTags, labels)
+		if err != nil {
+			return nil, err
 		}
 
 		telegrafConf = Telegraf{
@@ -96,6 +87,11 @@ func (*firehoseDriver) getHelmRelease(labels map[string]string, conf Config) (*h
 		}
 	}
 
+	deploymentLabels, err := renderLabels(fd.conf.Labels, labels)
+	if err != nil {
+		return nil, err
+	}
+
 	rc := helm.DefaultReleaseConfig()
 	rc.Name = conf.DeploymentID
 	rc.Repository = chartRepo
@@ -104,6 +100,10 @@ func (*firehoseDriver) getHelmRelease(labels map[string]string, conf Config) (*h
 	rc.ForceUpdate = true
 	rc.Version = conf.ChartValues.ChartVersion
 	rc.Values = map[string]interface{}{
+		"labels": cloneAndMergeMaps(deploymentLabels, map[string]string{
+			"deployment":   conf.DeploymentID,
+			"orchestrator": "entropy",
+		}),
 		"replicaCount": conf.Replicas,
 		"firehose": map[string]interface{}{
 			"image": map[string]interface{}{
@@ -124,6 +124,24 @@ func (*firehoseDriver) getHelmRelease(labels map[string]string, conf Config) (*h
 	}
 
 	return rc, nil
+}
+
+func renderLabels(labelsTpl map[string]string, labelsValues map[string]string) (map[string]string, error) {
+	finalLabels := map[string]string{}
+	for k, v := range labelsTpl {
+		var buf bytes.Buffer
+		t, err := template.New("").Parse(v)
+		if err != nil {
+			return nil, errors.ErrInvalid.
+				WithMsgf("label template for '%s' is invalid", k).WithCausef(err.Error())
+		} else if err := t.Execute(&buf, labelsValues); err != nil {
+			return nil, errors.ErrInvalid.
+				WithMsgf("failed to render label template").WithCausef(err.Error())
+		}
+
+		finalLabels[k] = buf.String()
+	}
+	return finalLabels, nil
 }
 
 func mergeChartValues(cur, newVal *ChartValues) (*ChartValues, error) {
@@ -170,9 +188,20 @@ func readTransientData(exr module.ExpandedResource) (*transientData, error) {
 }
 
 func mustJSON(v any) json.RawMessage {
-	bytes, err := json.Marshal(v)
+	b, err := json.Marshal(v)
 	if err != nil {
 		panic(err)
 	}
-	return bytes
+	return b
+}
+
+func cloneAndMergeMaps(m1, m2 map[string]string) map[string]string {
+	res := map[string]string{}
+	for k, v := range m1 {
+		res[k] = v
+	}
+	for k, v := range m2 {
+		res[k] = v
+	}
+	return res
 }
