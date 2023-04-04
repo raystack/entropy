@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/goto/entropy/core/module"
+	"github.com/goto/entropy/core/resource"
 	"github.com/goto/entropy/modules/kubernetes"
 	"github.com/goto/entropy/pkg/errors"
 	"github.com/goto/entropy/pkg/helm"
@@ -69,10 +70,10 @@ type transientData struct {
 	ResetOffsetTo string   `json:"reset_offset_to,omitempty"`
 }
 
-func (fd *firehoseDriver) getHelmRelease(labels map[string]string, conf Config) (*helm.ReleaseConfig, error) {
+func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config) (*helm.ReleaseConfig, error) {
 	var telegrafConf Telegraf
 	if conf.Telegraf != nil && conf.Telegraf.Enabled {
-		telegrafTags, err := renderLabels(conf.Telegraf.Config.AdditionalGlobalTags, labels)
+		telegrafTags, err := renderLabels(conf.Telegraf.Config.AdditionalGlobalTags, res.Labels)
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +88,13 @@ func (fd *firehoseDriver) getHelmRelease(labels map[string]string, conf Config) 
 		}
 	}
 
-	deploymentLabels, err := renderLabels(fd.conf.Labels, labels)
+	labelTpl := cloneAndMergeMaps(res.Labels, map[string]string{
+		"name":         res.Name,
+		"deployment":   conf.DeploymentID,
+		"orchestrator": "entropy",
+	})
+
+	deploymentLabels, err := renderLabels(fd.conf.Labels, labelTpl)
 	if err != nil {
 		return nil, err
 	}
@@ -99,21 +106,18 @@ func (fd *firehoseDriver) getHelmRelease(labels map[string]string, conf Config) 
 	rc.Namespace = conf.Namespace
 	rc.ForceUpdate = true
 	rc.Version = conf.ChartValues.ChartVersion
-	rc.Values = map[string]interface{}{
-		"labels": cloneAndMergeMaps(deploymentLabels, map[string]string{
-			"deployment":   conf.DeploymentID,
-			"orchestrator": "entropy",
-		}),
+	rc.Values = map[string]any{
+		"labels":       deploymentLabels,
 		"replicaCount": conf.Replicas,
-		"firehose": map[string]interface{}{
-			"image": map[string]interface{}{
+		"firehose": map[string]any{
+			"image": map[string]any{
 				"repository": imageRepo,
 				"pullPolicy": conf.ChartValues.ImagePullPolicy,
 				"tag":        conf.ChartValues.ImageTag,
 			},
 			"config": conf.EnvVariables,
 		},
-		"telegraf": map[string]interface{}{
+		"telegraf": map[string]any{
 			"enabled": telegrafConf.Enabled,
 			"image":   telegrafConf.Image,
 			"config": map[string]any{
@@ -127,16 +131,23 @@ func (fd *firehoseDriver) getHelmRelease(labels map[string]string, conf Config) 
 }
 
 func renderLabels(labelsTpl map[string]string, labelsValues map[string]string) (map[string]string, error) {
+	const useZeroValueForMissingKey = "missingkey=zero"
+
 	finalLabels := map[string]string{}
 	for k, v := range labelsTpl {
 		var buf bytes.Buffer
-		t, err := template.New("").Parse(v)
+		t, err := template.New("").Option(useZeroValueForMissingKey).Parse(v)
 		if err != nil {
 			return nil, errors.ErrInvalid.
 				WithMsgf("label template for '%s' is invalid", k).WithCausef(err.Error())
 		} else if err := t.Execute(&buf, labelsValues); err != nil {
 			return nil, errors.ErrInvalid.
 				WithMsgf("failed to render label template").WithCausef(err.Error())
+		}
+
+		labelVal := strings.TrimSpace(buf.String())
+		if labelVal == "" {
+			continue
 		}
 
 		finalLabels[k] = buf.String()
