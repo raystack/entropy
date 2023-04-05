@@ -627,6 +627,39 @@ func (m *ResourceState) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for SyncRetries
+
+	// no validation rules for SyncLastError
+
+	if all {
+		switch v := interface{}(m.GetNextSyncAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ResourceStateValidationError{
+					field:  "NextSyncAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ResourceStateValidationError{
+					field:  "NextSyncAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetNextSyncAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ResourceStateValidationError{
+				field:  "NextSyncAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if len(errors) > 0 {
 		return ResourceStateMultiError(errors)
 	}
@@ -953,6 +986,8 @@ func (m *ListResourcesRequest) validate(all bool) error {
 	// no validation rules for Project
 
 	// no validation rules for Kind
+
+	// no validation rules for Labels
 
 	if len(errors) > 0 {
 		return ListResourcesRequestMultiError(errors)

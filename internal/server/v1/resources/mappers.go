@@ -52,10 +52,19 @@ func resourceStateToProto(state resource.State) (*entropyv1beta1.ResourceState, 
 		protoStatus = entropyv1beta1.ResourceState_Status(resourceStatus)
 	}
 
+	var nextSyncAt *timestamppb.Timestamp
+	if state.NextSyncAt != nil {
+		nextSyncAt = timestamppb.New(*state.NextSyncAt)
+	}
+
 	return &entropyv1beta1.ResourceState{
-		Status:     protoStatus,
-		Output:     outputVal,
-		ModuleData: state.ModuleData,
+		Status:        protoStatus,
+		Output:        outputVal,
+		ModuleData:    state.ModuleData,
+		LogOptions:    nil,
+		SyncRetries:   int32(state.SyncResult.Retries),
+		SyncLastError: state.SyncResult.LastError,
+		NextSyncAt:    nextSyncAt,
 	}, nil
 }
 

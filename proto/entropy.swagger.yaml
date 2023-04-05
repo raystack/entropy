@@ -510,9 +510,21 @@ definitions:
       module_data:
         type: string
         format: byte
+      next_sync_at:
+        type: string
+        format: date-time
       output: {}
       status:
         $ref: '#/definitions/ResourceState.Status'
+      sync_last_error:
+        type: string
+      sync_retries:
+        type: integer
+        format: int32
+        description: |-
+          information about the ongoing sync process.
+          if status is ERROR / PENDING, this value can be used to understand
+          the issue.
   ResourceState.Status:
     type: string
     enum:

@@ -102,7 +102,7 @@ func (server APIServer) ListResources(ctx context.Context, request *entropyv1bet
 	filter := resource.Filter{
 		Kind:    request.GetKind(),
 		Project: request.GetProject(),
-		Labels:  nil,
+		Labels:  request.Labels,
 	}
 
 	resources, err := server.resourceSvc.ListResources(ctx, filter)
