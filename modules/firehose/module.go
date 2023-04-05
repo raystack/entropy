@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"helm.sh/helm/v3/pkg/release"
+
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/modules/kubernetes"
 	"github.com/goto/entropy/pkg/errors"
@@ -73,14 +75,25 @@ var Module = module.Descriptor{
 			conf:    conf,
 			timeNow: time.Now,
 			kubeDeploy: func(_ context.Context, isCreate bool, kubeConf kube.Config, hc helm.ReleaseConfig) error {
-				helmCl := helm.NewClient(&helm.Config{Kubernetes: kubeConf})
+				canUpdate := func(rel *release.Release) bool {
+					curLabels, ok := rel.Config[labelsConfKey].(map[string]any)
+					if !ok {
+						return false
+					}
+					newLabels, ok := hc.Values[labelsConfKey].(map[string]string)
+					if !ok {
+						return false
+					}
 
-				var errHelm error
-				if isCreate {
-					_, errHelm = helmCl.Create(&hc)
-				} else {
-					_, errHelm = helmCl.Update(&hc)
+					isManagedByEntropy := curLabels[labelOrchestrator] == orchestratorLabelValue
+					isSameProject := curLabels[labelProject] == newLabels[labelProject]
+					isSameName := curLabels[labelName] == newLabels[labelName]
+
+					return isManagedByEntropy && isSameProject && isSameName
 				}
+
+				helmCl := helm.NewClient(&helm.Config{Kubernetes: kubeConf})
+				_, errHelm := helmCl.Upsert(&hc, canUpdate)
 				return errHelm
 			},
 			kubeGetPod: func(ctx context.Context, conf kube.Config, ns string, labels map[string]string) ([]kube.Pod, error) {

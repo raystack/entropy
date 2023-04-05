@@ -29,6 +29,17 @@ const (
 	imageRepo = "gotocompany/firehose"
 )
 
+const (
+	labelsConfKey = "labels"
+
+	labelName         = "name"
+	labelProject      = "project"
+	labelDeployment   = "deployment"
+	labelOrchestrator = "orchestrator"
+
+	orchestratorLabelValue = "entropy"
+)
+
 var defaultDriverConf = driverConf{
 	Namespace: "firehose",
 	ChartValues: ChartValues{
@@ -88,13 +99,14 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config) (*h
 		}
 	}
 
-	labelTpl := cloneAndMergeMaps(res.Labels, map[string]string{
-		"name":         res.Name,
-		"deployment":   conf.DeploymentID,
-		"orchestrator": "entropy",
-	})
+	entropyLabels := map[string]string{
+		labelName:         res.Name,
+		labelProject:      res.Project,
+		labelDeployment:   conf.DeploymentID,
+		labelOrchestrator: orchestratorLabelValue,
+	}
 
-	deploymentLabels, err := renderLabels(fd.conf.Labels, labelTpl)
+	deploymentLabels, err := renderLabels(fd.conf.Labels, cloneAndMergeMaps(res.Labels, entropyLabels))
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +119,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config) (*h
 	rc.ForceUpdate = true
 	rc.Version = conf.ChartValues.ChartVersion
 	rc.Values = map[string]any{
-		"labels":       deploymentLabels,
+		labelsConfKey:  cloneAndMergeMaps(deploymentLabels, entropyLabels),
 		"replicaCount": conf.Replicas,
 		"firehose": map[string]any{
 			"image": map[string]any{
