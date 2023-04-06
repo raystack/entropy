@@ -32,8 +32,6 @@ const (
 const (
 	labelsConfKey = "labels"
 
-	labelName         = "name"
-	labelProject      = "project"
 	labelDeployment   = "deployment"
 	labelOrchestrator = "orchestrator"
 
@@ -100,8 +98,6 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config) (*h
 	}
 
 	entropyLabels := map[string]string{
-		labelName:         res.Name,
-		labelProject:      res.Project,
 		labelDeployment:   conf.DeploymentID,
 		labelOrchestrator: orchestratorLabelValue,
 	}

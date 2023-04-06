@@ -86,10 +86,9 @@ var Module = module.Descriptor{
 					}
 
 					isManagedByEntropy := curLabels[labelOrchestrator] == orchestratorLabelValue
-					isSameProject := curLabels[labelProject] == newLabels[labelProject]
-					isSameName := curLabels[labelName] == newLabels[labelName]
+					isSameDeployment := curLabels[labelDeployment] == newLabels[labelDeployment]
 
-					return isManagedByEntropy && isSameProject && isSameName
+					return isManagedByEntropy && isSameDeployment
 				}
 
 				helmCl := helm.NewClient(&helm.Config{Kubernetes: kubeConf})
