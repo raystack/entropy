@@ -92,11 +92,10 @@ func (svc *Service) planChange(ctx context.Context, res resource.Resource, act m
 		return nil, errors.ErrInternal.WithMsgf("plan() failed").WithCausef(err.Error())
 	}
 
-	planned.Labels = act.Labels
+	planned.Labels = mergeLabels(res.Labels, act.Labels)
 	if err := planned.Validate(isCreate(act.Name)); err != nil {
 		return nil, err
 	}
-
 	return planned, nil
 }
 
@@ -122,4 +121,25 @@ func (svc *Service) upsert(ctx context.Context, res resource.Resource, isCreate 
 
 func isCreate(actionName string) bool {
 	return actionName == module.CreateAction
+}
+
+func mergeLabels(m1, m2 map[string]string) map[string]string {
+	if m1 == nil && m2 == nil {
+		return nil
+	}
+	res := map[string]string{}
+	for k, v := range m1 {
+		res[k] = v
+	}
+	for k, v := range m2 {
+		res[k] = v
+	}
+
+	// clean the empty values.
+	for k, v := range res {
+		if v == "" {
+			delete(res, k)
+		}
+	}
+	return res
 }
