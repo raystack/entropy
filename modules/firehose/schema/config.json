@@ -51,7 +51,8 @@
             "PROMETHEUS",
             "BIGQUERY",
             "BLOB",
-            "BIGTABLE"
+            "BIGTABLE",
+            "JDBC"
           ]
         },
         "KAFKA_RECORD_PARSER_MODE": {
