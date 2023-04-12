@@ -10,8 +10,8 @@ import (
 	"github.com/goto/entropy/pkg/kube"
 )
 
-func (*firehoseDriver) Log(ctx context.Context, res module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error) {
-	conf, err := readConfig(res.Resource, res.Spec.Configs)
+func (fd *firehoseDriver) Log(ctx context.Context, res module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error) {
+	conf, err := readConfig(res.Resource, res.Spec.Configs, fd.conf)
 	if err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}

@@ -36,6 +36,8 @@ type Config struct {
 	DeploymentID string            `json:"deployment_id,omitempty"`
 	ChartValues  *ChartValues      `json:"chart_values,omitempty"`
 	EnvVariables map[string]string `json:"env_variables,omitempty"`
+	Limits       UsageSpec         `json:"limits,omitempty"`
+	Requests     UsageSpec         `json:"requests,omitempty"`
 }
 
 type Telegraf struct {
@@ -55,7 +57,7 @@ type ChartValues struct {
 	ImagePullPolicy string `json:"image_pull_policy" validate:"required"`
 }
 
-func readConfig(r resource.Resource, confJSON json.RawMessage) (*Config, error) {
+func readConfig(r resource.Resource, confJSON json.RawMessage, dc driverConf) (*Config, error) {
 	var cfg Config
 	if err := json.Unmarshal(confJSON, &cfg); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json").WithCausef(err.Error())
@@ -79,6 +81,9 @@ func readConfig(r resource.Resource, confJSON json.RawMessage) (*Config, error) 
 	if consumerID := cfg.EnvVariables[confKeyConsumerID]; consumerID == "" {
 		cfg.EnvVariables[confKeyConsumerID] = fmt.Sprintf("%s-0001", cfg.DeploymentID)
 	}
+
+	cfg.Limits = dc.Limits.merge(cfg.Limits)
+	cfg.Requests = dc.Requests.merge(cfg.Requests)
 
 	return &cfg, nil
 }

@@ -16,7 +16,7 @@ func (fd *firehoseDriver) Output(ctx context.Context, exr module.ExpandedResourc
 		return nil, err
 	}
 
-	conf, err := readConfig(exr.Resource, exr.Spec.Configs)
+	conf, err := readConfig(exr.Resource, exr.Spec.Configs, fd.conf)
 	if err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}

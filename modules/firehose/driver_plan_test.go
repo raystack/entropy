@@ -82,6 +82,14 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 							"image_pull_policy": "IfNotPresent",
 							"image_tag":         "latest",
 						},
+						"limits": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
+						},
+						"requests": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
+						},
 						"env_variables": map[string]string{
 							"SINK_TYPE":                      "LOG",
 							"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
@@ -143,6 +151,14 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 							"chart_version":     "0.1.3",
 							"image_pull_policy": "IfNotPresent",
 							"image_tag":         "latest",
+						},
+						"limits": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
+						},
+						"requests": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
 						},
 						"env_variables": map[string]string{
 							"SINK_TYPE":                      "LOG",
@@ -228,6 +244,14 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
 							"SOURCE_KAFKA_TOPIC":             "foo-log",
 						},
+						"limits": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
+						},
+						"requests": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
+						},
 					}),
 				},
 				State: resource.State{
@@ -303,6 +327,14 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 								"SOURCE_KAFKA_BROKERS":           "localhost:9092",
 								"SOURCE_KAFKA_TOPIC":             "foo-log",
 							},
+							"limits": map[string]any{
+								"cpu":    "200m",
+								"memory": "512Mi",
+							},
+							"requests": map[string]any{
+								"cpu":    "200m",
+								"memory": "512Mi",
+							},
 						}),
 					},
 					State: resource.State{
@@ -335,6 +367,14 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 							"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
 							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
 							"SOURCE_KAFKA_TOPIC":             "foo-log",
+						},
+						"limits": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
+						},
+						"requests": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
 						},
 					}),
 				},
@@ -411,6 +451,14 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 							"chart_version":     "0.1.3",
 							"image_pull_policy": "IfNotPresent",
 							"image_tag":         "latest",
+						},
+						"limits": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
+						},
+						"requests": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
 						},
 						"env_variables": map[string]string{
 							"SINK_TYPE":                      "LOG",

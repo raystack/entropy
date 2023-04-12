@@ -24,14 +24,14 @@ func (fd *firehoseDriver) Plan(_ context.Context, exr module.ExpandedResource, a
 }
 
 func (fd *firehoseDriver) planChange(exr module.ExpandedResource, act module.ActionRequest) (*resource.Resource, error) {
-	curConf, err := readConfig(exr.Resource, exr.Resource.Spec.Configs)
+	curConf, err := readConfig(exr.Resource, exr.Resource.Spec.Configs, fd.conf)
 	if err != nil {
 		return nil, err
 	}
 
 	switch act.Name {
 	case module.UpdateAction:
-		newConf, err := readConfig(exr.Resource, act.Params)
+		newConf, err := readConfig(exr.Resource, act.Params, fd.conf)
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +89,7 @@ func (fd *firehoseDriver) planChange(exr module.ExpandedResource, act module.Act
 }
 
 func (fd *firehoseDriver) planCreate(exr module.ExpandedResource, act module.ActionRequest) (*resource.Resource, error) {
-	conf, err := readConfig(exr.Resource, act.Params)
+	conf, err := readConfig(exr.Resource, act.Params, fd.conf)
 	if err != nil {
 		return nil, err
 	}

@@ -45,6 +45,14 @@ var defaultDriverConf = driverConf{
 		ChartVersion:    "0.1.3",
 		ImagePullPolicy: "IfNotPresent",
 	},
+	Limits: UsageSpec{
+		CPU:    "200m",
+		Memory: "512Mi",
+	},
+	Requests: UsageSpec{
+		CPU:    "200m",
+		Memory: "512Mi",
+	},
 }
 
 type firehoseDriver struct {
@@ -66,6 +74,13 @@ type driverConf struct {
 	Telegraf    *Telegraf         `json:"telegraf"`
 	Namespace   string            `json:"namespace" validate:"required"`
 	ChartValues ChartValues       `json:"chart_values" validate:"required"`
+	Limits      UsageSpec         `json:"limits,omitempty" validate:"required"`
+	Requests    UsageSpec         `json:"requests,omitempty" validate:"required"`
+}
+
+type UsageSpec struct {
+	CPU    string `json:"cpu,omitempty" validate:"required"`
+	Memory string `json:"memory,omitempty" validate:"required"`
 }
 
 type Output struct {
@@ -124,6 +139,16 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config) (*h
 				"tag":        conf.ChartValues.ImageTag,
 			},
 			"config": conf.EnvVariables,
+			"resources": map[string]any{
+				"limits": map[string]any{
+					"cpu":    conf.Limits.CPU,
+					"memory": conf.Limits.Memory,
+				},
+				"requests": map[string]any{
+					"cpu":    conf.Requests.CPU,
+					"memory": conf.Requests.Memory,
+				},
+			},
 		},
 		"telegraf": map[string]any{
 			"enabled": telegrafConf.Enabled,
@@ -223,4 +248,18 @@ func cloneAndMergeMaps(m1, m2 map[string]string) map[string]string {
 		res[k] = v
 	}
 	return res
+}
+
+func (us UsageSpec) merge(overide UsageSpec) UsageSpec {
+	clone := us
+
+	if overide.CPU != "" {
+		clone.CPU = overide.CPU
+	}
+
+	if overide.Memory != "" {
+		clone.Memory = overide.Memory
+	}
+
+	return clone
 }

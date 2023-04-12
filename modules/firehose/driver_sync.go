@@ -21,7 +21,7 @@ func (fd *firehoseDriver) Sync(ctx context.Context, exr module.ExpandedResource)
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
 
-	conf, err := readConfig(exr.Resource, exr.Spec.Configs)
+	conf, err := readConfig(exr.Resource, exr.Spec.Configs, fd.conf)
 	if err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
