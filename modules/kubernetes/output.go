@@ -9,8 +9,16 @@ import (
 )
 
 type Output struct {
-	Configs    kube.Config  `json:"configs"`
-	ServerInfo version.Info `json:"server_info"`
+	Configs     kube.Config             `json:"configs"`
+	ServerInfo  version.Info            `json:"server_info"`
+	Tolerations map[string][]Toleration `json:"tolerations"`
+}
+
+type Toleration struct {
+	Key      string `json:"key"`
+	Value    string `json:"value"`
+	Effect   string `json:"effect"`
+	Operator string `json:"operator"`
 }
 
 func (out Output) JSON() []byte {

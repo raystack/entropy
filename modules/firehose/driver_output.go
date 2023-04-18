@@ -32,7 +32,7 @@ func (fd *firehoseDriver) Output(ctx context.Context, exr module.ExpandedResourc
 func (fd *firehoseDriver) refreshOutput(ctx context.Context, r resource.Resource,
 	conf Config, output Output, kubeOut kubernetes.Output,
 ) (json.RawMessage, error) {
-	rc, err := fd.getHelmRelease(r, conf)
+	rc, err := fd.getHelmRelease(r, conf, kubeOut)
 	if err != nil {
 		return nil, err
 	}

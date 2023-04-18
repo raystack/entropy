@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"text/template"
 	"time"
@@ -70,12 +71,36 @@ type (
 )
 
 type driverConf struct {
-	Labels      map[string]string `json:"labels,omitempty"`
-	Telegraf    *Telegraf         `json:"telegraf"`
-	Namespace   string            `json:"namespace" validate:"required"`
-	ChartValues ChartValues       `json:"chart_values" validate:"required"`
-	Limits      UsageSpec         `json:"limits,omitempty" validate:"required"`
-	Requests    UsageSpec         `json:"requests,omitempty" validate:"required"`
+	Labels        map[string]string     `json:"labels,omitempty"`
+	Telegraf      *Telegraf             `json:"telegraf"`
+	Namespace     string                `json:"namespace" validate:"required"`
+	ChartValues   ChartValues           `json:"chart_values" validate:"required"`
+	Limits        UsageSpec             `json:"limits,omitempty" validate:"required"`
+	Requests      UsageSpec             `json:"requests,omitempty" validate:"required"`
+	Tolerations   map[string]Toleration `json:"tolerations"`
+	InitContainer InitContainer         `json:"init_container"`
+
+	GCSSinkCredential      string `json:"gcs_sink_credential,omitempty"`
+	DLQGCSSinkCredential   string `json:"dlq_gcs_sink_credential,omitempty"`
+	BigQuerySinkCredential string `json:"big_query_sink_credential,omitempty"`
+}
+
+type InitContainer struct {
+	Enabled bool `json:"enabled"`
+
+	Args    []string `json:"args"`
+	Command []string `json:"command"`
+
+	Repository string `json:"repository"`
+	ImageTag   string `json:"image_tag"`
+	PullPolicy string `json:"pull_policy"`
+}
+
+type Toleration struct {
+	Key      string `json:"key"`
+	Value    string `json:"value"`
+	Effect   string `json:"effect"`
+	Operator string `json:"operator"`
 }
 
 type UsageSpec struct {
@@ -94,7 +119,9 @@ type transientData struct {
 	ResetOffsetTo string   `json:"reset_offset_to,omitempty"`
 }
 
-func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config) (*helm.ReleaseConfig, error) {
+func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
+	kubeOut kubernetes.Output,
+) (*helm.ReleaseConfig, error) {
 	var telegrafConf Telegraf
 	if conf.Telegraf != nil && conf.Telegraf.Enabled {
 		telegrafTags, err := renderLabels(conf.Telegraf.Config.AdditionalGlobalTags, res.Labels)
@@ -112,6 +139,17 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config) (*h
 		}
 	}
 
+	tolerationKey := fmt.Sprintf("firehose_%s", conf.EnvVariables["SINK_TYPE"])
+	var tolerations []map[string]any
+	for _, t := range kubeOut.Tolerations[tolerationKey] {
+		tolerations = append(tolerations, map[string]any{
+			"key":      t.Key,
+			"value":    t.Value,
+			"effect":   t.Effect,
+			"operator": t.Operator,
+		})
+	}
+
 	entropyLabels := map[string]string{
 		labelDeployment:   conf.DeploymentID,
 		labelOrchestrator: orchestratorLabelValue,
@@ -120,6 +158,55 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config) (*h
 	deploymentLabels, err := renderLabels(fd.conf.Labels, cloneAndMergeMaps(res.Labels, entropyLabels))
 	if err != nil {
 		return nil, err
+	}
+
+	var volumes []map[string]any
+	var volumeMounts []map[string]any
+
+	newVolume := func(name string) map[string]any {
+		const mountMode = 420
+		return map[string]any{
+			"name":        name,
+			"items":       []map[string]any{{"key": "token", "path": "auth.json"}},
+			"secretName":  name,
+			"defaultMode": mountMode,
+		}
+	}
+
+	if fd.conf.GCSSinkCredential != "" {
+		const mountPath = "/etc/secret/blob-gcs-sink"
+		const credentialPath = mountPath + "/auth.json"
+
+		volumes = append(volumes, newVolume(fd.conf.GCSSinkCredential))
+		volumeMounts = append(volumeMounts, map[string]any{
+			"name":      fd.conf.GCSSinkCredential,
+			"mountPath": mountPath,
+		})
+		conf.EnvVariables["SINK_BLOB_GCS_CREDENTIAL_PATH"] = credentialPath
+	}
+
+	if fd.conf.DLQGCSSinkCredential != "" {
+		const mountPath = "/etc/secret/dlq-gcs"
+		const credentialPath = mountPath + "/auth.json"
+
+		volumes = append(volumes, newVolume(fd.conf.DLQGCSSinkCredential))
+		volumeMounts = append(volumeMounts, map[string]any{
+			"name":      fd.conf.DLQGCSSinkCredential,
+			"mountPath": mountPath,
+		})
+		conf.EnvVariables["DLQ_GCS_CREDENTIAL_PATH"] = credentialPath
+	}
+
+	if fd.conf.BigQuerySinkCredential != "" {
+		const mountPath = "/etc/secret/bigquery-sink"
+		const credentialPath = mountPath + "/auth.json"
+
+		volumes = append(volumes, newVolume(fd.conf.BigQuerySinkCredential))
+		volumeMounts = append(volumeMounts, map[string]any{
+			"name":      fd.conf.BigQuerySinkCredential,
+			"mountPath": mountPath,
+		})
+		conf.EnvVariables["SINK_BIGQUERY_CREDENTIAL_PATH"] = credentialPath
 	}
 
 	rc := helm.DefaultReleaseConfig()
@@ -149,6 +236,19 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config) (*h
 					"memory": conf.Requests.Memory,
 				},
 			},
+			"tolerations":  tolerations,
+			"volumeMounts": volumeMounts,
+			"volumes":      volumes,
+		},
+		"init-firehose": map[string]any{
+			"enabled": fd.conf.InitContainer.Enabled,
+			"image": map[string]any{
+				"repository": fd.conf.InitContainer.Repository,
+				"pullPolicy": fd.conf.InitContainer.PullPolicy,
+				"tag":        fd.conf.InitContainer.ImageTag,
+			},
+			"command": fd.conf.InitContainer.Command,
+			"args":    fd.conf.InitContainer.Args,
 		},
 		"telegraf": map[string]any{
 			"enabled": telegrafConf.Enabled,

@@ -41,18 +41,18 @@
         "SINK_TYPE": {
           "type": "string",
           "enum": [
-            "LOG",
+            "JDBC",
             "HTTP",
-            "POSTGRES",
             "INFLUXDB",
-            "ELASTIC",
-            "REDIS",
+            "ELASTICSEARCH",
             "GRPC",
             "PROMETHEUS",
-            "BIGQUERY",
             "BLOB",
-            "BIGTABLE",
-            "JDBC"
+            "MONGODB",
+            "LOG",
+            "REDIS",
+            "BIGQUERY",
+            "BIGTABLE"
           ]
         },
         "KAFKA_RECORD_PARSER_MODE": {
