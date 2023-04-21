@@ -177,7 +177,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 		return nil, err
 	}
 
-	var volumes []map[string]any
+	var secretsAsVolumes []map[string]any
 	var volumeMounts []map[string]any
 	var requiredDuringSchedulingIgnoredDuringExecution []Preference
 	var preferredDuringSchedulingIgnoredDuringExecution []WeightedPreference
@@ -199,7 +199,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 		const mountPath = "/etc/secret/blob-gcs-sink"
 		const credentialPath = mountPath + "/auth.json"
 
-		volumes = append(volumes, newVolume(fd.conf.GCSSinkCredential))
+		secretsAsVolumes = append(secretsAsVolumes, newVolume(fd.conf.GCSSinkCredential))
 		volumeMounts = append(volumeMounts, map[string]any{
 			"name":      fd.conf.GCSSinkCredential,
 			"mountPath": mountPath,
@@ -211,7 +211,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 		const mountPath = "/etc/secret/dlq-gcs"
 		const credentialPath = mountPath + "/auth.json"
 
-		volumes = append(volumes, newVolume(fd.conf.DLQGCSSinkCredential))
+		secretsAsVolumes = append(secretsAsVolumes, newVolume(fd.conf.DLQGCSSinkCredential))
 		volumeMounts = append(volumeMounts, map[string]any{
 			"name":      fd.conf.DLQGCSSinkCredential,
 			"mountPath": mountPath,
@@ -223,7 +223,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 		const mountPath = "/etc/secret/bigquery-sink"
 		const credentialPath = mountPath + "/auth.json"
 
-		volumes = append(volumes, newVolume(fd.conf.BigQuerySinkCredential))
+		secretsAsVolumes = append(secretsAsVolumes, newVolume(fd.conf.BigQuerySinkCredential))
 		volumeMounts = append(volumeMounts, map[string]any{
 			"name":      fd.conf.BigQuerySinkCredential,
 			"mountPath": mountPath,
@@ -260,8 +260,8 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 			},
 			"volumeMounts": volumeMounts,
 		},
-		"volumes":     volumes,
-		"tolerations": tolerations,
+		"secretsAsVolumes": secretsAsVolumes,
+		"tolerations":      tolerations,
 		"nodeAffinityMatchExpressions": map[string]any{
 			"requiredDuringSchedulingIgnoredDuringExecution":  requiredDuringSchedulingIgnoredDuringExecution,
 			"preferredDuringSchedulingIgnoredDuringExecution": preferredDuringSchedulingIgnoredDuringExecution,
