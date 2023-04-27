@@ -12,7 +12,9 @@ import (
 	"github.com/goto/entropy/pkg/kube"
 )
 
-type kubeDriver struct{}
+type kubeDriver struct {
+	Tolerations map[string][]Toleration `json:"tolerations"`
+}
 
 func (m *kubeDriver) Plan(ctx context.Context, res module.ExpandedResource,
 	act module.ActionRequest,
@@ -43,7 +45,7 @@ func (*kubeDriver) Sync(_ context.Context, res module.ExpandedResource) (*resour
 	}, nil
 }
 
-func (*kubeDriver) Output(_ context.Context, res module.ExpandedResource) (json.RawMessage, error) {
+func (m *kubeDriver) Output(_ context.Context, res module.ExpandedResource) (json.RawMessage, error) {
 	conf := kube.DefaultClientConfig()
 	if err := json.Unmarshal(res.Spec.Configs, &conf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid json config value").WithCausef(err.Error())
@@ -62,7 +64,8 @@ func (*kubeDriver) Output(_ context.Context, res module.ExpandedResource) (json.
 	}
 
 	return Output{
-		Configs:    conf,
-		ServerInfo: *info,
+		Configs:     conf,
+		ServerInfo:  *info,
+		Tolerations: m.Tolerations,
 	}.JSON(), nil
 }

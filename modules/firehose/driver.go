@@ -71,15 +71,15 @@ type (
 )
 
 type driverConf struct {
-	Labels                       map[string]string            `json:"labels,omitempty"`
-	Telegraf                     *Telegraf                    `json:"telegraf"`
-	Namespace                    string                       `json:"namespace" validate:"required"`
-	ChartValues                  ChartValues                  `json:"chart_values" validate:"required"`
-	Limits                       UsageSpec                    `json:"limits,omitempty" validate:"required"`
-	Requests                     UsageSpec                    `json:"requests,omitempty" validate:"required"`
-	Tolerations                  map[string]Toleration        `json:"tolerations"`
-	InitContainer                InitContainer                `json:"init_container"`
-	NodeAffinityMatchExpressions NodeAffinityMatchExpressions `json:"node_affinity_match_expressions"`
+	Labels                       map[string]string                `json:"labels,omitempty"`
+	Telegraf                     *Telegraf                        `json:"telegraf"`
+	Namespace                    string                           `json:"namespace" validate:"required"`
+	ChartValues                  ChartValues                      `json:"chart_values" validate:"required"`
+	Limits                       UsageSpec                        `json:"limits,omitempty" validate:"required"`
+	Requests                     UsageSpec                        `json:"requests,omitempty" validate:"required"`
+	Tolerations                  map[string]kubernetes.Toleration `json:"tolerations"`
+	InitContainer                InitContainer                    `json:"init_container"`
+	NodeAffinityMatchExpressions NodeAffinityMatchExpressions     `json:"node_affinity_match_expressions"`
 
 	GCSSinkCredential      string `json:"gcs_sink_credential,omitempty"`
 	DLQGCSSinkCredential   string `json:"dlq_gcs_sink_credential,omitempty"`
@@ -111,13 +111,6 @@ type InitContainer struct {
 	Repository string `json:"repository"`
 	ImageTag   string `json:"image_tag"`
 	PullPolicy string `json:"pull_policy"`
-}
-
-type Toleration struct {
-	Key      string `json:"key"`
-	Value    string `json:"value"`
-	Effect   string `json:"effect"`
-	Operator string `json:"operator"`
 }
 
 type UsageSpec struct {
