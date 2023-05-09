@@ -39,6 +39,8 @@ const (
 	orchestratorLabelValue = "entropy"
 )
 
+const defaultKey = "default"
+
 var defaultDriverConf = driverConf{
 	Namespace: "firehose",
 	ChartValues: ChartValues{
@@ -46,13 +48,17 @@ var defaultDriverConf = driverConf{
 		ChartVersion:    "0.1.3",
 		ImagePullPolicy: "IfNotPresent",
 	},
-	Limits: UsageSpec{
-		CPU:    "200m",
-		Memory: "512Mi",
-	},
-	Requests: UsageSpec{
-		CPU:    "200m",
-		Memory: "512Mi",
+	RequestsAndLimits: map[string]RequestsAndLimits{
+		defaultKey: {
+			Limits: UsageSpec{
+				CPU:    "200m",
+				Memory: "512Mi",
+			},
+			Requests: UsageSpec{
+				CPU:    "200m",
+				Memory: "512Mi",
+			},
+		},
 	},
 }
 
@@ -71,19 +77,48 @@ type (
 )
 
 type driverConf struct {
-	Labels                       map[string]string                `json:"labels,omitempty"`
-	Telegraf                     *Telegraf                        `json:"telegraf"`
-	Namespace                    string                           `json:"namespace" validate:"required"`
-	ChartValues                  ChartValues                      `json:"chart_values" validate:"required"`
-	Limits                       UsageSpec                        `json:"limits,omitempty" validate:"required"`
-	Requests                     UsageSpec                        `json:"requests,omitempty" validate:"required"`
-	Tolerations                  map[string]kubernetes.Toleration `json:"tolerations"`
-	InitContainer                InitContainer                    `json:"init_container"`
-	NodeAffinityMatchExpressions NodeAffinityMatchExpressions     `json:"node_affinity_match_expressions"`
+	// Labels to be injected to the chart during deployment. Values can be Go templates.
+	Labels map[string]string `json:"labels,omitempty"`
 
-	GCSSinkCredential      string `json:"gcs_sink_credential,omitempty"`
-	DLQGCSSinkCredential   string `json:"dlq_gcs_sink_credential,omitempty"`
+	// Telegraf is the telegraf configuration for the deployment.
+	Telegraf *Telegraf `json:"telegraf"`
+
+	// Namespace is the kubernetes namespace where firehoses will be deployed.
+	Namespace string `json:"namespace" validate:"required"`
+
+	// ChartValues is the chart and image version information.
+	ChartValues ChartValues `json:"chart_values" validate:"required"`
+
+	// Tolerations represents the tolerations to be set for the deployment.
+	// The key in the map is the sink-type in upper case.
+	Tolerations map[string]kubernetes.Toleration `json:"tolerations"`
+
+	// InitContainer can be set to have a container that is used as init_container on the
+	// deployment.
+	InitContainer InitContainer `json:"init_container"`
+
+	// GCSSinkCredential can be set to the name of kubernetes secret containing GCS credential.
+	// The secret must already exist on the target kube cluster in the same namespace.
+	// The secret will be mounted as a volume and the appropriate credential path will be set.
+	GCSSinkCredential string `json:"gcs_sink_credential,omitempty"`
+
+	// DLQGCSSinkCredential is same as GCSSinkCredential but for DLQ.
+	DLQGCSSinkCredential string `json:"dlq_gcs_sink_credential,omitempty"`
+
+	// BigQuerySinkCredential is same as GCSSinkCredential but for BigQuery credential.
 	BigQuerySinkCredential string `json:"big_query_sink_credential,omitempty"`
+
+	// RequestsAndLimits can be set to configure the container cpu/memory requests & limits.
+	// 'default' key will be used as base and any sink-type will be used as the override.
+	RequestsAndLimits map[string]RequestsAndLimits `json:"requests_and_limits" validate:"required"`
+
+	// NodeAffinityMatchExpressions can be used to set node-affinity for the deployment.
+	NodeAffinityMatchExpressions NodeAffinityMatchExpressions `json:"node_affinity_match_expressions"`
+}
+
+type RequestsAndLimits struct {
+	Limits   UsageSpec `json:"limits,omitempty"`
+	Requests UsageSpec `json:"requests,omitempty"`
 }
 
 type NodeAffinityMatchExpressions struct {

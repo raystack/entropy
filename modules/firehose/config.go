@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	confSinkType        = "SINK_TYPE"
 	confKeyConsumerID   = "SOURCE_KAFKA_CONSUMER_GROUP_ID"
 	confKeyKafkaBrokers = "SOURCE_KAFKA_BROKERS"
 )
@@ -28,16 +29,31 @@ var (
 )
 
 type Config struct {
-	Stopped      bool              `json:"stopped"`
-	StopTime     *time.Time        `json:"stop_time,omitempty"`
-	Telegraf     *Telegraf         `json:"telegraf,omitempty"`
-	Replicas     int               `json:"replicas"`
-	Namespace    string            `json:"namespace,omitempty"`
-	DeploymentID string            `json:"deployment_id,omitempty"`
-	ChartValues  *ChartValues      `json:"chart_values,omitempty"`
+	// Stopped flag when set forces the firehose to be stopped on next sync.
+	Stopped bool `json:"stopped"`
+
+	// StopTime can be set to schedule the firehose to be stopped at given time.
+	StopTime *time.Time `json:"stop_time,omitempty"`
+
+	// Replicas is the number of firehose instances to run.
+	Replicas int `json:"replicas"`
+
+	// Namespace is the target namespace where firehose should be deployed.
+	// Inherits from driver config.
+	Namespace string `json:"namespace,omitempty"`
+
+	// DeploymentID will be used as the release-name for the deployment.
+	// Must be shorter than 53 chars if set. If not set, one will be generated
+	// automatically.
+	DeploymentID string `json:"deployment_id,omitempty"`
+
+	// EnvVariables contains all the firehose environment config values.
 	EnvVariables map[string]string `json:"env_variables,omitempty"`
-	Limits       UsageSpec         `json:"limits,omitempty"`
-	Requests     UsageSpec         `json:"requests,omitempty"`
+
+	Limits      UsageSpec    `json:"limits,omitempty"`
+	Requests    UsageSpec    `json:"requests,omitempty"`
+	Telegraf    *Telegraf    `json:"telegraf,omitempty"`
+	ChartValues *ChartValues `json:"chart_values,omitempty"`
 }
 
 type Telegraf struct {
@@ -82,8 +98,13 @@ func readConfig(r resource.Resource, confJSON json.RawMessage, dc driverConf) (*
 		cfg.EnvVariables[confKeyConsumerID] = fmt.Sprintf("%s-0001", cfg.DeploymentID)
 	}
 
-	cfg.Limits = dc.Limits.merge(cfg.Limits)
-	cfg.Requests = dc.Requests.merge(cfg.Requests)
+	rl := dc.RequestsAndLimits[defaultKey]
+	if overrides, ok := dc.RequestsAndLimits[cfg.EnvVariables[confSinkType]]; ok {
+		rl.Limits = rl.Limits.merge(overrides.Limits)
+		rl.Requests = rl.Requests.merge(overrides.Requests)
+	}
+	cfg.Limits = rl.Limits
+	cfg.Requests = rl.Requests
 
 	return &cfg, nil
 }
