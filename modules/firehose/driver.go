@@ -93,6 +93,8 @@ type driverConf struct {
 	// The key in the map is the sink-type in upper case.
 	Tolerations map[string]kubernetes.Toleration `json:"tolerations"`
 
+	EnvVariables map[string]string `json:"env_variables,omitempty"`
+
 	// InitContainer can be set to have a container that is used as init_container on the
 	// deployment.
 	InitContainer InitContainer `json:"init_container"`

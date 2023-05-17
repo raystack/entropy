@@ -79,6 +79,8 @@ func readConfig(r resource.Resource, confJSON json.RawMessage, dc driverConf) (*
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json").WithCausef(err.Error())
 	}
 
+	cfg.EnvVariables = cloneAndMergeMaps(dc.EnvVariables, cfg.EnvVariables)
+
 	if cfg.Replicas <= 0 {
 		cfg.Replicas = 1
 	}
