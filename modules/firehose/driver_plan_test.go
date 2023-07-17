@@ -368,6 +368,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
 							"SOURCE_KAFKA_TOPIC":             "foo-log",
 						},
+						"reset_offset": "latest",
 						"limits": map[string]any{
 							"cpu":    "200m",
 							"memory": "512Mi",
@@ -376,6 +377,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 							"cpu":    "200m",
 							"memory": "512Mi",
 						},
+						"stopped": false,
 					}),
 				},
 				State: resource.State{

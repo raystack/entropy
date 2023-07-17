@@ -130,6 +130,14 @@ func (fd *firehoseDriver) planReset(exr module.ExpandedResource, act module.Acti
 
 	immediately := fd.timeNow()
 
+	curConf, err := readConfig(exr.Resource, exr.Resource.Spec.Configs, fd.conf)
+	if err != nil {
+		return nil, err
+	}
+
+	curConf.ResetOffset = resetValue
+
+	exr.Resource.Spec.Configs = mustJSON(curConf)
 	exr.Resource.State = resource.State{
 		Status:     resource.StatusPending,
 		Output:     exr.Resource.State.Output,

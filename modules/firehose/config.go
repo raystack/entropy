@@ -50,6 +50,9 @@ type Config struct {
 	// EnvVariables contains all the firehose environment config values.
 	EnvVariables map[string]string `json:"env_variables,omitempty"`
 
+	// ResetOffset represents the value to which kafka consumer offset was set to
+	ResetOffset string `json:"reset_offset,omitempty"`
+
 	Limits      UsageSpec    `json:"limits,omitempty"`
 	Requests    UsageSpec    `json:"requests,omitempty"`
 	Telegraf    *Telegraf    `json:"telegraf,omitempty"`
