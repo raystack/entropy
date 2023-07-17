@@ -41,6 +41,11 @@ const (
 
 const defaultKey = "default"
 
+const (
+	metricStatsdHost = "localhost"
+	metricStatsdPort = "8152"
+)
+
 var defaultDriverConf = driverConf{
 	Namespace: "firehose",
 	ChartValues: ChartValues{
@@ -171,7 +176,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 ) (*helm.ReleaseConfig, error) {
 	var telegrafConf Telegraf
 	if conf.Telegraf != nil && conf.Telegraf.Enabled {
-		telegrafTags, err := renderLabels(conf.Telegraf.Config.AdditionalGlobalTags, res.Labels)
+		telegrafTags, err := renderTpl(conf.Telegraf.Config.AdditionalGlobalTags, res.Labels)
 		if err != nil {
 			return nil, err
 		}
@@ -202,7 +207,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 		labelOrchestrator: orchestratorLabelValue,
 	}
 
-	deploymentLabels, err := renderLabels(fd.conf.Labels, cloneAndMergeMaps(res.Labels, entropyLabels))
+	deploymentLabels, err := renderTpl(fd.conf.Labels, cloneAndMergeMaps(res.Labels, entropyLabels))
 	if err != nil {
 		return nil, err
 	}
@@ -259,6 +264,16 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 			"mountPath": mountPath,
 		})
 		conf.EnvVariables["SINK_BIGQUERY_CREDENTIAL_PATH"] = credentialPath
+	}
+
+	if telegrafConf.Enabled {
+		conf.EnvVariables, err = renderTpl(conf.EnvVariables, cloneAndMergeMaps(conf.EnvVariables, cloneAndMergeMaps(deploymentLabels, cloneAndMergeMaps(res.Labels, entropyLabels))))
+		if err != nil {
+			return nil, err
+		}
+
+		conf.EnvVariables["METRIC_STATSD_HOST"] = metricStatsdHost
+		conf.EnvVariables["METRIC_STATSD_PORT"] = metricStatsdPort
 	}
 
 	rc := helm.DefaultReleaseConfig()
@@ -319,7 +334,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 	return rc, nil
 }
 
-func renderLabels(labelsTpl map[string]string, labelsValues map[string]string) (map[string]string, error) {
+func renderTpl(labelsTpl map[string]string, labelsValues map[string]string) (map[string]string, error) {
 	const useZeroValueForMissingKey = "missingkey=zero"
 
 	finalLabels := map[string]string{}
