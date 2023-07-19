@@ -3,6 +3,7 @@ package firehose
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/core/resource"
@@ -62,7 +63,16 @@ func (fd *firehoseDriver) planChange(exr module.ExpandedResource, act module.Act
 		curConf.Replicas = scaleParams.Replicas
 
 	case StartAction:
+		var startParams struct {
+			StopTime *time.Time `json:"stop_time"`
+		}
+		if err := json.Unmarshal(act.Params, &startParams); err != nil {
+			return nil, errors.ErrInvalid.WithMsgf("invalid params for start action").WithCausef(err.Error())
+		}
 		curConf.Stopped = false
+		if startParams.StopTime != nil {
+			curConf.StopTime = startParams.StopTime
+		}
 
 	case StopAction:
 		curConf.Stopped = true
