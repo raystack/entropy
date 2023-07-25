@@ -28,6 +28,14 @@ var (
 	validateConfig = validator.FromJSONSchema(configSchemaRaw)
 )
 
+type ScaleParams struct {
+	Replicas int `json:"replicas"`
+}
+
+type StartParams struct {
+	StopTime *time.Time `json:"stop_time"`
+}
+
 type Config struct {
 	// Stopped flag when set forces the firehose to be stopped on next sync.
 	Stopped bool `json:"stopped"`
