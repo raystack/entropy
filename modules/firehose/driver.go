@@ -35,16 +35,12 @@ const (
 
 	labelDeployment   = "deployment"
 	labelOrchestrator = "orchestrator"
+	labelURN          = "urn"
 
 	orchestratorLabelValue = "entropy"
 )
 
 const defaultKey = "default"
-
-const (
-	metricStatsdHost = "localhost"
-	metricStatsdPort = "8152"
-)
 
 var defaultDriverConf = driverConf{
 	Namespace: "firehose",
@@ -207,6 +203,10 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 		labelOrchestrator: orchestratorLabelValue,
 	}
 
+	otherLabels := map[string]string{
+		labelURN: res.URN,
+	}
+
 	deploymentLabels, err := renderTpl(fd.conf.Labels, cloneAndMergeMaps(res.Labels, entropyLabels))
 	if err != nil {
 		return nil, err
@@ -267,13 +267,10 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 	}
 
 	if telegrafConf.Enabled {
-		conf.EnvVariables, err = renderTpl(conf.EnvVariables, cloneAndMergeMaps(conf.EnvVariables, cloneAndMergeMaps(deploymentLabels, cloneAndMergeMaps(res.Labels, entropyLabels))))
+		conf.EnvVariables, err = renderTpl(conf.EnvVariables, cloneAndMergeMaps(cloneAndMergeMaps(conf.EnvVariables, cloneAndMergeMaps(deploymentLabels, cloneAndMergeMaps(res.Labels, entropyLabels))), otherLabels))
 		if err != nil {
 			return nil, err
 		}
-
-		conf.EnvVariables["METRIC_STATSD_HOST"] = metricStatsdHost
-		conf.EnvVariables["METRIC_STATSD_PORT"] = metricStatsdPort
 	}
 
 	rc := helm.DefaultReleaseConfig()
