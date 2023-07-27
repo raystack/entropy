@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -148,7 +149,11 @@ func TestAPIServer_CreateResource(t *testing.T) {
 			t.Parallel()
 			srv := tt.setup(t)
 
-			got, err := srv.CreateResource(context.Background(), tt.request)
+			ctx := context.Background()
+			md := metadata.New(map[string]string{"user-id": "john.doe@goto.com"})
+			ctx = metadata.NewIncomingContext(ctx, md)
+
+			got, err := srv.CreateResource(ctx, tt.request)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.Truef(t, errors.Is(err, tt.wantErr), "'%s' != '%s'", tt.wantErr, err)
@@ -273,7 +278,11 @@ func TestAPIServer_UpdateResource(t *testing.T) {
 			t.Parallel()
 			srv := tt.setup(t)
 
-			got, err := srv.UpdateResource(context.Background(), tt.request)
+			ctx := context.Background()
+			md := metadata.New(map[string]string{"user-id": "john.doe@goto.com"})
+			ctx = metadata.NewIncomingContext(ctx, md)
+
+			got, err := srv.UpdateResource(ctx, tt.request)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))
@@ -647,7 +656,11 @@ func TestAPIServer_ApplyAction(t *testing.T) {
 			t.Parallel()
 			srv := tt.setup(t)
 
-			got, err := srv.ApplyAction(context.Background(), tt.request)
+			ctx := context.Background()
+			md := metadata.New(map[string]string{"user-id": "john.doe@goto.com"})
+			ctx = metadata.NewIncomingContext(ctx, md)
+
+			got, err := srv.ApplyAction(ctx, tt.request)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))

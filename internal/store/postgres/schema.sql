@@ -69,3 +69,9 @@ CREATE TABLE IF NOT EXISTS revision_tags
 );
 CREATE INDEX IF NOT EXISTS idx_revision_tags_revision_id ON revision_tags (revision_id);
 CREATE INDEX IF NOT EXISTS idx_revision_tags_tag ON revision_tags (tag);
+
+ALTER TABLE resources
+    ADD COLUMN IF NOT EXISTS created_by TEXT NOT NULL DEFAULT '<unknown>',
+    ADD COLUMN IF NOT EXISTS updated_by TEXT NOT NULL DEFAULT '<unknown>';
+
+ALTER TABLE revisions ADD COLUMN IF NOT EXISTS created_by TEXT NOT NULL DEFAULT '<unknown>';

@@ -274,7 +274,7 @@ func local_request_ResourceService_DeleteResource_0(ctx context.Context, marshal
 }
 
 var (
-	filter_ResourceService_ApplyAction_0 = &utilities.DoubleArray{Encoding: map[string]int{"params": 0, "urn": 1, "action": 2}, Base: []int{1, 1, 2, 3, 0, 0, 0}, Check: []int{0, 1, 1, 1, 2, 3, 4}}
+	filter_ResourceService_ApplyAction_0 = &utilities.DoubleArray{Encoding: map[string]int{"params": 0, "urn": 1, "action": 2}, Base: []int{1, 2, 4, 6, 0, 0, 0, 0, 0, 0}, Check: []int{0, 1, 1, 1, 2, 2, 3, 3, 4, 4}}
 )
 
 func request_ResourceService_ApplyAction_0(ctx context.Context, marshaler runtime.Marshaler, client ResourceServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -380,7 +380,7 @@ func local_request_ResourceService_ApplyAction_0(ctx context.Context, marshaler 
 }
 
 var (
-	filter_ResourceService_GetLog_0 = &utilities.DoubleArray{Encoding: map[string]int{"urn": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_ResourceService_GetLog_0 = &utilities.DoubleArray{Encoding: map[string]int{"urn": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
 )
 
 func request_ResourceService_GetLog_0(ctx context.Context, marshaler runtime.Marshaler, client ResourceServiceClient, req *http.Request, pathParams map[string]string) (ResourceService_GetLogClient, runtime.ServerMetadata, error) {
@@ -670,7 +670,7 @@ func RegisterResourceServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 // RegisterResourceServiceHandlerFromEndpoint is same as RegisterResourceServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
 func RegisterResourceServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
-	conn, err := grpc.Dial(endpoint, opts...)
+	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
 		return err
 	}

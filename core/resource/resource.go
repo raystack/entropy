@@ -45,6 +45,8 @@ type Resource struct {
 	Labels    map[string]string `json:"labels"`
 	CreatedAt time.Time         `json:"created_at"`
 	UpdatedAt time.Time         `json:"updated_at"`
+	UpdatedBy string            `json:"updated_by"`
+	CreatedBy string            `json:"created_by"`
 	Spec      Spec              `json:"spec"`
 	State     State             `json:"state"`
 }
@@ -63,6 +65,7 @@ type Filter struct {
 type UpdateRequest struct {
 	Spec   Spec              `json:"spec"`
 	Labels map[string]string `json:"labels"`
+	UserID string
 }
 
 type RevisionsSelector struct {
@@ -75,6 +78,7 @@ type Revision struct {
 	Reason    string            `json:"reason"`
 	Labels    map[string]string `json:"labels"`
 	CreatedAt time.Time         `json:"created_at"`
+	CreatedBy string            `json:"created_by"`
 
 	Spec Spec `json:"spec"`
 }

@@ -20,6 +20,8 @@ type resourceModel struct {
 	Project         string          `db:"project"`
 	CreatedAt       time.Time       `db:"created_at"`
 	UpdatedAt       time.Time       `db:"updated_at"`
+	CreatedBy       string          `db:"created_by"`
+	UpdatedBy       string          `db:"updated_by"`
 	SpecConfigs     []byte          `db:"spec_configs"`
 	StateStatus     string          `db:"state_status"`
 	StateOutput     []byte          `db:"state_output"`
@@ -30,7 +32,7 @@ type resourceModel struct {
 
 func readResourceRecord(ctx context.Context, r sqlx.QueryerContext, urn string, into *resourceModel) error {
 	cols := []string{
-		"id", "urn", "kind", "project", "name", "created_at", "updated_at",
+		"id", "urn", "kind", "project", "name", "created_at", "updated_at", "created_by", "updated_by",
 		"spec_configs", "state_status", "state_output", "state_module_data",
 		"state_next_sync", "state_sync_result",
 	}

@@ -35,6 +35,8 @@ func resourceToProto(res resource.Resource) (*entropyv1beta1.Resource, error) {
 		UpdatedAt: timestamppb.New(res.UpdatedAt),
 		Spec:      spec,
 		State:     protoState,
+		CreatedBy: res.CreatedBy,
+		UpdatedBy: res.UpdatedBy,
 	}, nil
 }
 
@@ -155,6 +157,7 @@ func revisionToProto(revision resource.Revision) (*entropyv1beta1.ResourceRevisi
 		Reason:    revision.Reason,
 		Labels:    revision.Labels,
 		CreatedAt: timestamppb.New(revision.CreatedAt),
+		CreatedBy: revision.CreatedBy,
 		Spec:      spec,
 	}, nil
 }

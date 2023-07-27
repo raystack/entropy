@@ -89,6 +89,7 @@ func (m *GetVersionRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return GetVersionRequestMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -219,6 +220,7 @@ func (m *GetVersionResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return GetVersionResponseMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -358,6 +360,7 @@ func (m *Version) validate(all bool) error {
 	if len(errors) > 0 {
 		return VersionMultiError(errors)
 	}
+
 	return nil
 }
 

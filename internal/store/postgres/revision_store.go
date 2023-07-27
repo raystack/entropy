@@ -51,6 +51,7 @@ func (st *Store) Revisions(ctx context.Context, selector resource.RevisionsSelec
 				URN:       selector.URN,
 				Reason:    rm.Reason,
 				CreatedAt: rm.CreatedAt,
+				CreatedBy: rm.CreatedBy,
 				Spec: resource.Spec{
 					Configs:      rm.SpecConfigs,
 					Dependencies: deps,
@@ -81,8 +82,8 @@ func (st *Store) Revisions(ctx context.Context, selector resource.RevisionsSelec
 
 func insertRevision(ctx context.Context, tx *sqlx.Tx, resID int64, rev resource.Revision) error {
 	q := sq.Insert(tableRevisions).
-		Columns("resource_id", "reason", "spec_configs").
-		Values(resID, rev.Reason, rev.Spec.Configs).
+		Columns("resource_id", "reason", "spec_configs", "created_by").
+		Values(resID, rev.Reason, rev.Spec.Configs, rev.CreatedBy).
 		Suffix(`RETURNING "id"`).
 		PlaceholderFormat(sq.Dollar)
 

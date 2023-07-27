@@ -55,6 +55,8 @@ func (st *Store) GetByURN(ctx context.Context, urn string) (*resource.Resource, 
 		Labels:    tagsToLabelMap(tags),
 		CreatedAt: rec.CreatedAt,
 		UpdatedAt: rec.UpdatedAt,
+		CreatedBy: rec.CreatedBy,
+		UpdatedBy: rec.UpdatedBy,
 		Spec: resource.Spec{
 			Configs:      rec.SpecConfigs,
 			Dependencies: deps,
@@ -128,10 +130,11 @@ func (st *Store) Create(ctx context.Context, r resource.Resource, hooks ...resou
 		}
 
 		rev := resource.Revision{
-			URN:    r.URN,
-			Spec:   r.Spec,
-			Labels: r.Labels,
-			Reason: "action:create",
+			URN:       r.URN,
+			Spec:      r.Spec,
+			Labels:    r.Labels,
+			Reason:    "action:create",
+			CreatedBy: r.UpdatedBy,
 		}
 
 		if err := insertRevision(ctx, tx, id, rev); err != nil {
@@ -159,6 +162,7 @@ func (st *Store) Update(ctx context.Context, r resource.Resource, saveRevision b
 			Where(sq.Eq{"id": id}).
 			SetMap(map[string]interface{}{
 				"updated_at":        sq.Expr("current_timestamp"),
+				"updated_by":        r.UpdatedBy,
 				"spec_configs":      r.Spec.Configs,
 				"state_status":      r.State.Status,
 				"state_output":      r.State.Output,
@@ -182,10 +186,11 @@ func (st *Store) Update(ctx context.Context, r resource.Resource, saveRevision b
 
 		if saveRevision {
 			rev := resource.Revision{
-				URN:    r.URN,
-				Spec:   r.Spec,
-				Labels: r.Labels,
-				Reason: reason,
+				URN:       r.URN,
+				Spec:      r.Spec,
+				Labels:    r.Labels,
+				Reason:    reason,
+				CreatedBy: r.UpdatedBy,
 			}
 
 			if err := insertRevision(ctx, tx, id, rev); err != nil {
@@ -326,10 +331,10 @@ func (st *Store) extendWaitTime(ctx context.Context, r sq.BaseRunner, urn string
 
 func insertResourceRecord(ctx context.Context, runner sqlx.QueryerContext, r resource.Resource) (int64, error) {
 	builder := sq.Insert(tableResources).
-		Columns("urn", "kind", "project", "name", "created_at", "updated_at",
+		Columns("urn", "kind", "project", "name", "created_at", "updated_at", "created_by", "updated_by",
 			"spec_configs", "state_status", "state_output", "state_module_data",
 			"state_next_sync", "state_sync_result").
-		Values(r.URN, r.Kind, r.Project, r.Name, r.CreatedAt, r.UpdatedAt,
+		Values(r.URN, r.Kind, r.Project, r.Name, r.CreatedAt, r.UpdatedAt, r.CreatedBy, r.UpdatedBy,
 			r.Spec.Configs, r.State.Status, r.State.Output, r.State.ModuleData,
 			r.State.NextSyncAt, syncResultAsJSON(r.State.SyncResult)).
 		Suffix(`RETURNING "id"`)

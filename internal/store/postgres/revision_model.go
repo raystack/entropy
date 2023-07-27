@@ -11,6 +11,7 @@ type revisionModel struct {
 	ID          int64     `db:"id"`
 	Reason      string    `db:"reason"`
 	CreatedAt   time.Time `db:"created_at"`
+	CreatedBy   string    `db:"created_by"`
 	ResourceID  int64     `db:"resource_id"`
 	SpecConfigs []byte    `db:"spec_configs"`
 }

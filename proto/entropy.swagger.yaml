@@ -214,12 +214,12 @@ paths:
           schema:
             type: object
             properties:
+              new_spec:
+                $ref: '#/definitions/ResourceSpec'
               labels:
                 type: object
                 additionalProperties:
                   type: string
-              new_spec:
-                $ref: '#/definitions/ResourceSpec'
       tags:
         - ResourceService
   /v1beta1/resources/{urn}/actions/{action}:
@@ -258,10 +258,10 @@ paths:
           schema:
             type: object
             properties:
-              error:
-                $ref: '#/definitions/rpc.Status'
               result:
                 $ref: '#/definitions/GetLogResponse'
+              error:
+                $ref: '#/definitions/rpc.Status'
             title: Stream result of GetLogResponse
         default:
           description: An unexpected error response.
@@ -360,6 +360,7 @@ definitions:
       revisions:
         type: array
         items:
+          type: object
           $ref: '#/definitions/ResourceRevision'
   GetVersionRequest:
     type: object
@@ -377,6 +378,7 @@ definitions:
       modules:
         type: array
         items:
+          type: object
           $ref: '#/definitions/Module'
   ListResourcesResponse:
     type: object
@@ -384,6 +386,7 @@ definitions:
       resources:
         type: array
         items:
+          type: object
           $ref: '#/definitions/Resource'
   ListString:
     type: object
@@ -412,19 +415,19 @@ definitions:
   Module:
     type: object
     properties:
-      configs: {}
-      created_at:
+      urn:
         type: string
-        format: date-time
       name:
         type: string
       project:
         type: string
+      created_at:
+        type: string
+        format: date-time
       updated_at:
         type: string
         format: date-time
-      urn:
-        type: string
+      configs: {}
   NullValue:
     type: string
     enum:
@@ -440,27 +443,31 @@ definitions:
   Resource:
     type: object
     properties:
-      created_at:
+      urn:
         type: string
-        format: date-time
       kind:
+        type: string
+      name:
+        type: string
+      project:
         type: string
       labels:
         type: object
         additionalProperties:
           type: string
-      name:
+      created_at:
         type: string
-      project:
+        format: date-time
+      updated_at:
         type: string
+        format: date-time
       spec:
         $ref: '#/definitions/ResourceSpec'
       state:
         $ref: '#/definitions/ResourceState'
-      updated_at:
+      created_by:
         type: string
-        format: date-time
-      urn:
+      updated_by:
         type: string
   ResourceDependency:
     type: object
@@ -476,20 +483,22 @@ definitions:
   ResourceRevision:
     type: object
     properties:
-      created_at:
-        type: string
-        format: date-time
       id:
+        type: string
+      urn:
         type: string
       labels:
         type: object
         additionalProperties:
           type: string
-      reason:
+      created_at:
         type: string
+        format: date-time
       spec:
         $ref: '#/definitions/ResourceSpec'
-      urn:
+      reason:
+        type: string
+      created_by:
         type: string
   ResourceSpec:
     type: object
@@ -498,6 +507,7 @@ definitions:
       dependencies:
         type: array
         items:
+          type: object
           $ref: '#/definitions/ResourceDependency'
         description: |-
           dependencies can be used to refer to other existing resources
@@ -505,19 +515,14 @@ definitions:
   ResourceState:
     type: object
     properties:
-      log_options:
-        $ref: '#/definitions/LogOptions'
+      status:
+        $ref: '#/definitions/ResourceState.Status'
+      output: {}
       module_data:
         type: string
         format: byte
-      next_sync_at:
-        type: string
-        format: date-time
-      output: {}
-      status:
-        $ref: '#/definitions/ResourceState.Status'
-      sync_last_error:
-        type: string
+      log_options:
+        $ref: '#/definitions/LogOptions'
       sync_retries:
         type: integer
         format: int32
@@ -525,6 +530,11 @@ definitions:
           information about the ongoing sync process.
           if status is ERROR / PENDING, this value can be used to understand
           the issue.
+      sync_last_error:
+        type: string
+      next_sync_at:
+        type: string
+        format: date-time
   ResourceState.Status:
     type: string
     enum:
@@ -547,18 +557,18 @@ definitions:
   Version:
     type: object
     properties:
-      architecture:
+      version:
+        type: string
+      commit:
         type: string
       build_time:
         type: string
         format: date-time
-      commit:
-        type: string
       lang_version:
         type: string
       os:
         type: string
-      version:
+      architecture:
         type: string
   rpc.Status:
     type: object
@@ -566,11 +576,12 @@ definitions:
       code:
         type: integer
         format: int32
+      message:
+        type: string
       details:
         type: array
         items:
+          type: object
           $ref: '#/definitions/Any'
-      message:
-        type: string
 externalDocs:
   description: Common endpoints for all services

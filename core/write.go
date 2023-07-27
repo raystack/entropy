@@ -18,6 +18,7 @@ func (svc *Service) CreateResource(ctx context.Context, res resource.Resource) (
 		Name:   module.CreateAction,
 		Params: res.Spec.Configs,
 		Labels: res.Labels,
+		UserID: res.CreatedBy,
 	}
 	res.Spec.Configs = nil
 
@@ -35,6 +36,7 @@ func (svc *Service) UpdateResource(ctx context.Context, urn string, req resource
 		Name:   module.UpdateAction,
 		Params: req.Spec.Configs,
 		Labels: req.Labels,
+		UserID: req.UserID,
 	})
 }
 
@@ -66,9 +68,12 @@ func (svc *Service) execAction(ctx context.Context, res resource.Resource, act m
 	if isCreate(act.Name) {
 		planned.CreatedAt = svc.clock()
 		planned.UpdatedAt = planned.CreatedAt
+		planned.CreatedBy = act.UserID
+		planned.UpdatedBy = act.UserID
 	} else {
 		planned.CreatedAt = res.CreatedAt
 		planned.UpdatedAt = svc.clock()
+		planned.UpdatedBy = act.UserID
 	}
 
 	reason := fmt.Sprintf("action:%s", act.Name)

@@ -152,6 +152,7 @@ func (m *Module) validate(all bool) error {
 	if len(errors) > 0 {
 		return ModuleMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -252,6 +253,7 @@ func (m *ListModulesRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return ListModulesRequestMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -387,6 +389,7 @@ func (m *ListModulesResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return ListModulesResponseMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -490,6 +493,7 @@ func (m *GetModuleRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return GetModuleRequestMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -618,6 +622,7 @@ func (m *GetModuleResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return GetModuleResponseMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -748,6 +753,7 @@ func (m *CreateModuleRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return CreateModuleRequestMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -878,6 +884,7 @@ func (m *CreateModuleResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return CreateModuleResponseMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -1010,6 +1017,7 @@ func (m *UpdateModuleRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return UpdateModuleRequestMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -1140,6 +1148,7 @@ func (m *UpdateModuleResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return UpdateModuleResponseMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -1243,6 +1252,7 @@ func (m *DeleteModuleRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return DeleteModuleRequestMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -1344,6 +1354,7 @@ func (m *DeleteModuleResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return DeleteModuleResponseMultiError(errors)
 	}
+
 	return nil
 }
 

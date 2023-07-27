@@ -41,6 +41,13 @@ func (server APIServer) CreateResource(ctx context.Context, request *entropyv1be
 		return nil, serverutils.ToRPCError(err)
 	}
 
+	userIdentifier, err := serverutils.GetUserIdentifier(ctx)
+	if err != nil {
+		return nil, serverutils.ToRPCError(err)
+	}
+	res.CreatedBy = userIdentifier
+	res.UpdatedBy = userIdentifier
+
 	result, err := server.resourceSvc.CreateResource(ctx, *res)
 	if err != nil {
 		return nil, serverutils.ToRPCError(err)
@@ -62,9 +69,15 @@ func (server APIServer) UpdateResource(ctx context.Context, request *entropyv1be
 		return nil, serverutils.ToRPCError(err)
 	}
 
+	userIdentifier, err := serverutils.GetUserIdentifier(ctx)
+	if err != nil {
+		return nil, serverutils.ToRPCError(err)
+	}
+
 	updateRequest := resource.UpdateRequest{
 		Spec:   *newSpec,
 		Labels: request.Labels,
+		UserID: userIdentifier,
 	}
 
 	res, err := server.resourceSvc.UpdateResource(ctx, request.GetUrn(), updateRequest)
@@ -139,10 +152,16 @@ func (server APIServer) ApplyAction(ctx context.Context, request *entropyv1beta1
 		return nil, err
 	}
 
+	userIdentifier, err := serverutils.GetUserIdentifier(ctx)
+	if err != nil {
+		return nil, serverutils.ToRPCError(err)
+	}
+
 	action := module.ActionRequest{
 		Name:   request.GetAction(),
 		Params: paramsJSON,
 		Labels: request.Labels,
+		UserID: userIdentifier,
 	}
 
 	updatedRes, err := server.resourceSvc.ApplyAction(ctx, request.GetUrn(), action)

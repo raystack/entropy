@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"github.com/goto/entropy/internal/server/serverutils"
 	modulesv1 "github.com/goto/entropy/internal/server/v1/modules"
 	resourcesv1 "github.com/goto/entropy/internal/server/v1/resources"
 	"github.com/goto/entropy/pkg/common"
@@ -52,15 +53,18 @@ func Serve(ctx context.Context, httpAddr, grpcAddr string, nrApp *newrelic.Appli
 		grpc.StatsHandler(&ocgrpc.ServerHandler{}),
 	}
 	grpcServer := grpc.NewServer(grpcOpts...)
-	rpcHTTPGateway := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
-		MarshalOptions: protojson.MarshalOptions{
-			UseProtoNames:   true,
-			EmitUnpopulated: true,
-		},
-		UnmarshalOptions: protojson.UnmarshalOptions{
-			DiscardUnknown: true,
-		},
-	}))
+	rpcHTTPGateway := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+			MarshalOptions: protojson.MarshalOptions{
+				UseProtoNames:   true,
+				EmitUnpopulated: true,
+			},
+			UnmarshalOptions: protojson.UnmarshalOptions{
+				DiscardUnknown: true,
+			},
+		}),
+		runtime.WithMetadata(serverutils.ExtractRequestMetadata),
+	)
 
 	reflection.Register(grpcServer)
 

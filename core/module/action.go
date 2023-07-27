@@ -20,6 +20,7 @@ type ActionRequest struct {
 	Name   string            `json:"name"`
 	Params json.RawMessage   `json:"params"`
 	Labels map[string]string `json:"labels"`
+	UserID string
 }
 
 // ActionDesc is a descriptor for an action supported by a module.
