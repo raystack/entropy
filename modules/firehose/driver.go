@@ -171,8 +171,30 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 	kubeOut kubernetes.Output,
 ) (*helm.ReleaseConfig, error) {
 	var telegrafConf Telegraf
+
+	entropyLabels := map[string]string{
+		labelDeployment:   conf.DeploymentID,
+		labelOrchestrator: orchestratorLabelValue,
+	}
+
+	otherLabels := map[string]string{
+		labelURN: res.URN,
+	}
+
+	deploymentLabels, err := renderTpl(fd.conf.Labels, cloneAndMergeMaps(res.Labels, entropyLabels))
+	if err != nil {
+		return nil, err
+	}
+
 	if conf.Telegraf != nil && conf.Telegraf.Enabled {
-		telegrafTags, err := renderTpl(conf.Telegraf.Config.AdditionalGlobalTags, res.Labels)
+		mergedLabelsAndEnvVariablesMap := cloneAndMergeMaps(cloneAndMergeMaps(conf.EnvVariables, cloneAndMergeMaps(deploymentLabels, cloneAndMergeMaps(res.Labels, entropyLabels))), otherLabels)
+
+		conf.EnvVariables, err = renderTpl(conf.EnvVariables, mergedLabelsAndEnvVariablesMap)
+		if err != nil {
+			return nil, err
+		}
+
+		telegrafTags, err := renderTpl(conf.Telegraf.Config.AdditionalGlobalTags, mergedLabelsAndEnvVariablesMap)
 		if err != nil {
 			return nil, err
 		}
@@ -196,20 +218,6 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 			"effect":   t.Effect,
 			"operator": t.Operator,
 		})
-	}
-
-	entropyLabels := map[string]string{
-		labelDeployment:   conf.DeploymentID,
-		labelOrchestrator: orchestratorLabelValue,
-	}
-
-	otherLabels := map[string]string{
-		labelURN: res.URN,
-	}
-
-	deploymentLabels, err := renderTpl(fd.conf.Labels, cloneAndMergeMaps(res.Labels, entropyLabels))
-	if err != nil {
-		return nil, err
 	}
 
 	var secretsAsVolumes []map[string]any
@@ -264,13 +272,6 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 			"mountPath": mountPath,
 		})
 		conf.EnvVariables["SINK_BIGQUERY_CREDENTIAL_PATH"] = credentialPath
-	}
-
-	if telegrafConf.Enabled {
-		conf.EnvVariables, err = renderTpl(conf.EnvVariables, cloneAndMergeMaps(cloneAndMergeMaps(conf.EnvVariables, cloneAndMergeMaps(deploymentLabels, cloneAndMergeMaps(res.Labels, entropyLabels))), otherLabels))
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	rc := helm.DefaultReleaseConfig()
