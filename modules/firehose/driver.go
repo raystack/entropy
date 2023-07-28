@@ -210,7 +210,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 	}
 
 	tolerationKey := fmt.Sprintf("firehose_%s", conf.EnvVariables["SINK_TYPE"])
-	var tolerations []map[string]any
+	var tolerations = []map[string]any{}
 	for _, t := range kubeOut.Tolerations[tolerationKey] {
 		tolerations = append(tolerations, map[string]any{
 			"key":      t.Key,
@@ -220,13 +220,17 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 		})
 	}
 
-	var secretsAsVolumes []map[string]any
-	var volumeMounts []map[string]any
-	var requiredDuringSchedulingIgnoredDuringExecution []Preference
-	var preferredDuringSchedulingIgnoredDuringExecution []WeightedPreference
+	var secretsAsVolumes = []map[string]any{}
+	var volumeMounts = []map[string]any{}
+	var requiredDuringSchedulingIgnoredDuringExecution = []Preference{}
+	var preferredDuringSchedulingIgnoredDuringExecution = []WeightedPreference{}
 
-	requiredDuringSchedulingIgnoredDuringExecution = fd.conf.NodeAffinityMatchExpressions.RequiredDuringSchedulingIgnoredDuringExecution
-	preferredDuringSchedulingIgnoredDuringExecution = fd.conf.NodeAffinityMatchExpressions.PreferredDuringSchedulingIgnoredDuringExecution
+	if fd.conf.NodeAffinityMatchExpressions.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+		requiredDuringSchedulingIgnoredDuringExecution = fd.conf.NodeAffinityMatchExpressions.RequiredDuringSchedulingIgnoredDuringExecution
+	}
+	if fd.conf.NodeAffinityMatchExpressions.PreferredDuringSchedulingIgnoredDuringExecution != nil {
+		preferredDuringSchedulingIgnoredDuringExecution = fd.conf.NodeAffinityMatchExpressions.PreferredDuringSchedulingIgnoredDuringExecution
+	}
 
 	newVolume := func(name string) map[string]any {
 		const mountMode = 420
