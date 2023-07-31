@@ -45,7 +45,8 @@ func (fd *firehoseDriver) planChange(exr module.ExpandedResource, act module.Act
 		newConf.DeploymentID = curConf.DeploymentID
 		newConf.ChartValues = chartVals
 		newConf.Namespace = curConf.Namespace
-		newConf.Telegraf = curConf.Telegraf
+		newConf.Telegraf = fd.conf.Telegraf
+		newConf.InitContainer = fd.conf.InitContainer
 
 		curConf = newConf
 

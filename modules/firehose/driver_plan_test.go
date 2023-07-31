@@ -97,6 +97,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
 							"SOURCE_KAFKA_TOPIC":             "foo-log",
 						},
+						"init_container": map[string]interface{}{"args": interface{}(nil), "command": interface{}(nil), "enabled": false, "image_tag": "", "pull_policy": "", "repository": ""},
 					}),
 				},
 				State: resource.State{
@@ -167,6 +168,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
 							"SOURCE_KAFKA_TOPIC":             "foo-log",
 						},
+						"init_container": map[string]interface{}{"args": interface{}(nil), "command": interface{}(nil), "enabled": false, "image_tag": "", "pull_policy": "", "repository": ""},
 					}),
 				},
 				State: resource.State{
@@ -252,6 +254,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 							"cpu":    "200m",
 							"memory": "512Mi",
 						},
+						"init_container": map[string]interface{}{"args": interface{}(nil), "command": interface{}(nil), "enabled": false, "image_tag": "", "pull_policy": "", "repository": ""},
 					}),
 				},
 				State: resource.State{
@@ -377,7 +380,8 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 							"cpu":    "200m",
 							"memory": "512Mi",
 						},
-						"stopped": false,
+						"stopped":        false,
+						"init_container": map[string]interface{}{"args": interface{}(nil), "command": interface{}(nil), "enabled": false, "image_tag": "", "pull_policy": "", "repository": ""},
 					}),
 				},
 				State: resource.State{
@@ -469,6 +473,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
 							"SOURCE_KAFKA_TOPIC":             "foo-log",
 						},
+						"init_container": map[string]interface{}{"args": interface{}(nil), "command": interface{}(nil), "enabled": false, "image_tag": "", "pull_policy": "", "repository": ""},
 					}),
 				},
 				State: resource.State{

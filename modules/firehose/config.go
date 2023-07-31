@@ -61,10 +61,11 @@ type Config struct {
 	// ResetOffset represents the value to which kafka consumer offset was set to
 	ResetOffset string `json:"reset_offset,omitempty"`
 
-	Limits      UsageSpec    `json:"limits,omitempty"`
-	Requests    UsageSpec    `json:"requests,omitempty"`
-	Telegraf    *Telegraf    `json:"telegraf,omitempty"`
-	ChartValues *ChartValues `json:"chart_values,omitempty"`
+	Limits        UsageSpec     `json:"limits,omitempty"`
+	Requests      UsageSpec     `json:"requests,omitempty"`
+	Telegraf      *Telegraf     `json:"telegraf,omitempty"`
+	ChartValues   *ChartValues  `json:"chart_values,omitempty"`
+	InitContainer InitContainer `json:"init_container,omitempty"`
 }
 
 type Telegraf struct {
