@@ -78,6 +78,7 @@ func (fd *firehoseDriver) Sync(ctx context.Context, exr module.ExpandedResource)
 	finalState.NextSyncAt = conf.StopTime
 	if conf.StopTime != nil && conf.StopTime.Before(fd.timeNow()) {
 		conf.Replicas = 0
+		conf.Stopped = true
 		if err := fd.releaseSync(ctx, exr.Resource, false, *conf, kubeOut); err != nil {
 			return nil, err
 		}
