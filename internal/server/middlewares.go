@@ -1,7 +1,10 @@
 package server
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -85,23 +88,47 @@ func requestLogger(lg *zap.Logger) gorillamux.MiddlewareFunc {
 			span := trace.FromContext(req.Context())
 
 			clientID, _, _ := req.BasicAuth()
-			fields := []zap.Field{
-				zap.String("path", req.URL.Path),
-				zap.String("method", req.Method),
-				zap.String("request_id", req.Header.Get(headerRequestID)),
-				zap.String("client_id", clientID),
-				zap.String("trace_id", span.SpanContext().TraceID.String()),
-			}
 
 			wrapped := &wrappedWriter{
 				Status:         http.StatusOK,
 				ResponseWriter: wr,
 			}
 			next.ServeHTTP(wrapped, req)
-			fields = append(fields,
+
+			if req.URL.Path == "/ping" {
+				return
+			}
+
+			fields := []zap.Field{
+				zap.String("path", req.URL.Path),
+				zap.String("method", req.Method),
+				zap.String("request_id", req.Header.Get(headerRequestID)),
+				zap.String("client_id", clientID),
+				zap.String("trace_id", span.SpanContext().TraceID.String()),
 				zap.Duration("response_time", time.Since(t)),
 				zap.Int("status", wrapped.Status),
-			)
+			}
+
+			switch req.Method {
+			case http.MethodGet:
+				break
+			default:
+				buf, err := io.ReadAll(req.Body)
+				if err != nil {
+					lg.Debug("error reading request body: %v", zap.String("error", err.Error()))
+				} else if len(buf) > 0 {
+					dst := &bytes.Buffer{}
+					err := json.Compact(dst, buf)
+					if err != nil {
+						lg.Debug("error json compacting request body: %v", zap.String("error", err.Error()))
+					} else {
+						fields = append(fields, zap.String("request_body", dst.String()))
+					}
+				}
+
+				reader := io.NopCloser(bytes.NewBuffer(buf))
+				req.Body = reader
+			}
 
 			if !is2xx(wrapped.Status) {
 				lg.Warn("request handled with non-2xx response", fields...)
