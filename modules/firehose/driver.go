@@ -232,39 +232,39 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 	}
 
 	if fd.conf.GCSSinkCredential != "" {
-		const mountPath = "/etc/secret/blob-gcs-sink"
-		const credentialPath = mountPath + "/auth.json"
+		const mountFile = "gcs_auth.json"
+		var credPath = fmt.Sprintf("/etc/secret/%s-mount-secrets/%s", conf.DeploymentID, mountFile)
 
 		mountSecrets = append(mountSecrets, map[string]any{
 			"value": fd.conf.GCSSinkCredential,
-			"key":   "token",
-			"path":  mountPath,
+			"key":   "gcs_credential",
+			"path":  mountFile,
 		})
-		conf.EnvVariables["SINK_BLOB_GCS_CREDENTIAL_PATH"] = credentialPath
+		conf.EnvVariables["SINK_BLOB_GCS_CREDENTIAL_PATH"] = credPath
 	}
 
 	if fd.conf.DLQGCSSinkCredential != "" {
-		const mountPath = "/etc/secret/dlq-gcs"
-		const credentialPath = mountPath + "/auth.json"
+		const mountFile = "dlq_gcs_auth.json"
+		var credPath = fmt.Sprintf("/etc/secret/%s-mount-secrets/%s", conf.DeploymentID, mountFile)
 
 		mountSecrets = append(mountSecrets, map[string]any{
 			"value": fd.conf.DLQGCSSinkCredential,
-			"key":   "token",
-			"path":  mountPath,
+			"key":   "dlq_gcs_credential",
+			"path":  mountFile,
 		})
-		conf.EnvVariables["DLQ_GCS_CREDENTIAL_PATH"] = credentialPath
+		conf.EnvVariables["DLQ_GCS_CREDENTIAL_PATH"] = credPath
 	}
 
 	if fd.conf.BigQuerySinkCredential != "" {
-		const mountPath = "/etc/secret/bigquery-sink"
-		const credentialPath = mountPath + "/auth.json"
+		const mountFile = "bigquery_auth.json"
+		var credPath = fmt.Sprintf("/etc/secret/%s-mount-secrets/%s", conf.DeploymentID, mountFile)
 
 		mountSecrets = append(mountSecrets, map[string]any{
 			"value": fd.conf.BigQuerySinkCredential,
-			"key":   "token",
-			"path":  mountPath,
+			"key":   "bigquery_credential",
+			"path":  mountFile,
 		})
-		conf.EnvVariables["SINK_BIGQUERY_CREDENTIAL_PATH"] = credentialPath
+		conf.EnvVariables["DLQ_GCS_CREDENTIAL_PATH"] = credPath
 	}
 
 	rc := helm.DefaultReleaseConfig()
