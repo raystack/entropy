@@ -264,7 +264,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 			"key":   "bigquery_credential",
 			"path":  mountFile,
 		})
-		conf.EnvVariables["DLQ_GCS_CREDENTIAL_PATH"] = credPath
+		conf.EnvVariables["SINK_BIGQUERY_CREDENTIAL_PATH"] = credPath
 	}
 
 	rc := helm.DefaultReleaseConfig()
