@@ -220,8 +220,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 		})
 	}
 
-	var secretsAsVolumes = []map[string]any{}
-	var volumeMounts = []map[string]any{}
+	var mountSecrets = []map[string]any{}
 	var requiredDuringSchedulingIgnoredDuringExecution = []Preference{}
 	var preferredDuringSchedulingIgnoredDuringExecution = []WeightedPreference{}
 
@@ -232,24 +231,14 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 		preferredDuringSchedulingIgnoredDuringExecution = fd.conf.NodeAffinityMatchExpressions.PreferredDuringSchedulingIgnoredDuringExecution
 	}
 
-	newVolume := func(name string) map[string]any {
-		const mountMode = 420
-		return map[string]any{
-			"name":        name,
-			"items":       []map[string]any{{"key": "token", "path": "auth.json"}},
-			"secretName":  name,
-			"defaultMode": mountMode,
-		}
-	}
-
 	if fd.conf.GCSSinkCredential != "" {
 		const mountPath = "/etc/secret/blob-gcs-sink"
 		const credentialPath = mountPath + "/auth.json"
 
-		secretsAsVolumes = append(secretsAsVolumes, newVolume(fd.conf.GCSSinkCredential))
-		volumeMounts = append(volumeMounts, map[string]any{
-			"name":      fd.conf.GCSSinkCredential,
-			"mountPath": mountPath,
+		mountSecrets = append(mountSecrets, map[string]any{
+			"value": fd.conf.GCSSinkCredential,
+			"key":   "token",
+			"path":  mountPath,
 		})
 		conf.EnvVariables["SINK_BLOB_GCS_CREDENTIAL_PATH"] = credentialPath
 	}
@@ -258,10 +247,10 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 		const mountPath = "/etc/secret/dlq-gcs"
 		const credentialPath = mountPath + "/auth.json"
 
-		secretsAsVolumes = append(secretsAsVolumes, newVolume(fd.conf.DLQGCSSinkCredential))
-		volumeMounts = append(volumeMounts, map[string]any{
-			"name":      fd.conf.DLQGCSSinkCredential,
-			"mountPath": mountPath,
+		mountSecrets = append(mountSecrets, map[string]any{
+			"value": fd.conf.DLQGCSSinkCredential,
+			"key":   "token",
+			"path":  mountPath,
 		})
 		conf.EnvVariables["DLQ_GCS_CREDENTIAL_PATH"] = credentialPath
 	}
@@ -270,10 +259,10 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 		const mountPath = "/etc/secret/bigquery-sink"
 		const credentialPath = mountPath + "/auth.json"
 
-		secretsAsVolumes = append(secretsAsVolumes, newVolume(fd.conf.BigQuerySinkCredential))
-		volumeMounts = append(volumeMounts, map[string]any{
-			"name":      fd.conf.BigQuerySinkCredential,
-			"mountPath": mountPath,
+		mountSecrets = append(mountSecrets, map[string]any{
+			"value": fd.conf.BigQuerySinkCredential,
+			"key":   "token",
+			"path":  mountPath,
 		})
 		conf.EnvVariables["SINK_BIGQUERY_CREDENTIAL_PATH"] = credentialPath
 	}
@@ -305,10 +294,8 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 					"memory": conf.Requests.Memory,
 				},
 			},
-			"volumeMounts": volumeMounts,
 		},
-		"secretsAsVolumes": secretsAsVolumes,
-		"tolerations":      tolerations,
+		"tolerations": tolerations,
 		"nodeAffinityMatchExpressions": map[string]any{
 			"requiredDuringSchedulingIgnoredDuringExecution":  requiredDuringSchedulingIgnoredDuringExecution,
 			"preferredDuringSchedulingIgnoredDuringExecution": preferredDuringSchedulingIgnoredDuringExecution,
@@ -331,6 +318,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 				"additional_global_tags": telegrafConf.Config.AdditionalGlobalTags,
 			},
 		},
+		"mountSecrets": mountSecrets,
 	}
 
 	return rc, nil
