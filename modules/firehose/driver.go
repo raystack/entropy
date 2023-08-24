@@ -241,6 +241,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 			"path":  mountFile,
 		})
 		conf.EnvVariables["SINK_BLOB_GCS_CREDENTIAL_PATH"] = credPath
+		conf.EnvVariables["SINK_BIGTABLE_CREDENTIAL_PATH"] = credPath
 	}
 
 	if fd.conf.DLQGCSSinkCredential != "" {
