@@ -233,7 +233,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 
 	if fd.conf.GCSSinkCredential != "" {
 		const mountFile = "gcs_auth.json"
-		var credPath = fmt.Sprintf("/etc/secret/%s-mount-secrets/%s", conf.DeploymentID, mountFile)
+		var credPath = fmt.Sprintf("/etc/secret/%s", mountFile)
 
 		mountSecrets = append(mountSecrets, map[string]any{
 			"value": fd.conf.GCSSinkCredential,
@@ -246,7 +246,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 
 	if fd.conf.DLQGCSSinkCredential != "" {
 		const mountFile = "dlq_gcs_auth.json"
-		var credPath = fmt.Sprintf("/etc/secret/%s-mount-secrets/%s", conf.DeploymentID, mountFile)
+		var credPath = fmt.Sprintf("/etc/secret/%s", mountFile)
 
 		mountSecrets = append(mountSecrets, map[string]any{
 			"value": fd.conf.DLQGCSSinkCredential,
@@ -258,7 +258,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 
 	if fd.conf.BigQuerySinkCredential != "" {
 		const mountFile = "bigquery_auth.json"
-		var credPath = fmt.Sprintf("/etc/secret/%s-mount-secrets/%s", conf.DeploymentID, mountFile)
+		var credPath = fmt.Sprintf("/etc/secret/%s", mountFile)
 
 		mountSecrets = append(mountSecrets, map[string]any{
 			"value": fd.conf.BigQuerySinkCredential,
