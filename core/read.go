@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"context"
 
 	"github.com/goto/entropy/core/module"
@@ -27,7 +28,13 @@ func (svc *Service) GetResource(ctx context.Context, urn string) (*resource.Reso
 		return nil, err
 	}
 
-	res.State.Output = output
+	if !bytes.Equal(res.State.Output, output) {
+		res.State.Output = output
+		err = svc.store.Update(ctx, *res, false, "")
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return res, nil
 }
