@@ -287,6 +287,11 @@ func (c Client) GetPodDetails(ctx context.Context, namespace string, labelSelect
 	}
 
 	for _, pod := range pods.Items {
+		// not listing pods that are not in running state or are about to terminate
+		if pod.Status.Phase != corev1.PodRunning || pod.DeletionTimestamp != nil {
+			continue
+		}
+
 		podDetail := Pod{
 			Name: pod.Name,
 		}
