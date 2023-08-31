@@ -36,6 +36,7 @@ const (
 	labelDeployment   = "deployment"
 	labelOrchestrator = "orchestrator"
 	labelURN          = "urn"
+	labelName         = "name"
 
 	orchestratorLabelValue = "entropy"
 )
@@ -178,7 +179,8 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 	}
 
 	otherLabels := map[string]string{
-		labelURN: res.URN,
+		labelURN:  res.URN,
+		labelName: res.Name,
 	}
 
 	deploymentLabels, err := renderTpl(fd.conf.Labels, cloneAndMergeMaps(res.Labels, entropyLabels))
