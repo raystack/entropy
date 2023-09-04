@@ -96,7 +96,10 @@ var Module = module.Descriptor{
 				return errHelm
 			},
 			kubeGetPod: func(ctx context.Context, conf kube.Config, ns string, labels map[string]string) ([]kube.Pod, error) {
-				kubeCl := kube.NewClient(conf)
+				kubeCl, err := kube.NewClient(conf)
+				if err != nil {
+					return nil, errors.ErrInternal.WithMsgf("failed to create new kube client on firehose driver kube get pod").WithCausef(err.Error())
+				}
 				return kubeCl.GetPodDetails(ctx, ns, labels)
 			},
 			consumerReset: consumerReset,
@@ -118,8 +121,12 @@ func consumerReset(ctx context.Context, conf Config, out kubernetes.Output, rese
 	brokerAddr := conf.EnvVariables[confKeyKafkaBrokers]
 	consumerID := conf.EnvVariables[confKeyConsumerID]
 
-	err := kafka.DoReset(ctx, kube.NewClient(out.Configs), conf.Namespace, brokerAddr, consumerID, resetTo)
+	kubeClient, err := kube.NewClient(out.Configs)
 	if err != nil {
+		return err
+	}
+
+	if err := kafka.DoReset(ctx, kubeClient, conf.Namespace, brokerAddr, consumerID, resetTo); err != nil {
 		switch {
 		case errors.Is(err, kube.ErrJobCreationFailed):
 			return errNetwork.WithCause(err)

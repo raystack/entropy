@@ -125,11 +125,19 @@ func DefaultClientConfig() Config {
 	return defaultProviderConfig
 }
 
-func NewClient(config Config) *Client {
-	return &Client{
-		restConfig:      *config.RESTConfig(),
-		streamingConfig: *config.StreamingConfig(),
+func NewClient(config Config) (*Client, error) {
+	restConfig, err := config.RESTConfig()
+	if err != nil {
+		return nil, err
 	}
+	streamingConfig, err := config.StreamingConfig()
+	if err != nil {
+		return nil, err
+	}
+	return &Client{
+		restConfig:      *restConfig,
+		streamingConfig: *streamingConfig,
+	}, nil
 }
 
 func (c Client) StreamLogs(ctx context.Context, namespace string, filter map[string]string) (<-chan LogChunk, error) {

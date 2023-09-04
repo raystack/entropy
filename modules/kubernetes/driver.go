@@ -53,7 +53,12 @@ func (m *kubeDriver) Output(_ context.Context, res module.ExpandedResource) (jso
 		return nil, err
 	}
 
-	clientSet, err := kubernetes.NewForConfig(conf.RESTConfig())
+	restConfig, err := conf.RESTConfig()
+	if err != nil {
+		return nil, errors.ErrInternal.WithMsgf("failed to create new kube client on kube driver output").WithCausef(err.Error())
+	}
+
+	clientSet, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("failed to create client: %v", err)
 	}

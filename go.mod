@@ -11,7 +11,7 @@ require (
 	github.com/go-playground/validator/v10 v10.11.2
 	github.com/google/go-cmp v0.5.9
 	github.com/gorilla/mux v1.8.0
-	github.com/goto/salt v0.3.0
+	github.com/goto/salt v0.3.3
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.3
 	github.com/jmoiron/sqlx v1.3.5
@@ -28,8 +28,9 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.opencensus.io v0.24.0
 	go.uber.org/zap v1.21.0
-	google.golang.org/genproto v0.0.0-20220822174746-9e6da59bd2fc
-	google.golang.org/grpc v1.49.0
+	google.golang.org/api v0.103.0
+	google.golang.org/genproto v0.0.0-20221202195650-67e5cbc046fd
+	google.golang.org/grpc v1.50.1
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/yaml.v2 v2.4.0
 	helm.sh/helm/v3 v3.9.0
@@ -162,7 +163,7 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/net v0.5.0 // indirect
-	golang.org/x/oauth2 v0.4.0 // indirect
+	golang.org/x/oauth2 v0.4.0
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/term v0.4.0 // indirect
@@ -189,6 +190,8 @@ require (
 )
 
 require (
+	cloud.google.com/go/compute v1.14.0 // indirect
+	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/cli/safeexec v1.0.0 // indirect
 	github.com/go-kit/log v0.1.0 // indirect
@@ -196,8 +199,9 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
+	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/newrelic/newrelic-telemetry-sdk-go v0.2.0 // indirect
 	github.com/prometheus/statsd_exporter v0.21.0 // indirect
-	google.golang.org/api v0.98.0 // indirect
 )
