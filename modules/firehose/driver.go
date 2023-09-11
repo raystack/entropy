@@ -75,7 +75,7 @@ type firehoseDriver struct {
 type (
 	kubeDeployFn    func(ctx context.Context, isCreate bool, conf kube.Config, hc helm.ReleaseConfig) error
 	kubeGetPodFn    func(ctx context.Context, conf kube.Config, ns string, labels map[string]string) ([]kube.Pod, error)
-	consumerResetFn func(ctx context.Context, conf Config, out kubernetes.Output, resetTo string) error
+	consumerResetFn func(ctx context.Context, conf Config, out kubernetes.Output, resetTo string, offsetResetDelaySeconds int) error
 )
 
 type driverConf struct {
@@ -118,6 +118,9 @@ type driverConf struct {
 
 	// NodeAffinityMatchExpressions can be used to set node-affinity for the deployment.
 	NodeAffinityMatchExpressions NodeAffinityMatchExpressions `json:"node_affinity_match_expressions"`
+
+	// delay between stopping a firehose and making an offset reset request
+	OffsetResetDelaySeconds int `json:"offset_reset_delay_seconds"`
 }
 
 type RequestsAndLimits struct {

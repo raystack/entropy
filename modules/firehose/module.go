@@ -107,15 +107,17 @@ var Module = module.Descriptor{
 	},
 }
 
-func consumerReset(ctx context.Context, conf Config, out kubernetes.Output, resetTo string) error {
+func consumerReset(ctx context.Context, conf Config, out kubernetes.Output, resetTo string, offsetResetDelaySeconds int) error {
 	const (
-		networkErrorRetryDuration   = 5 * time.Second
-		kubeAPIRetryBackoffDuration = 30 * time.Second
+		networkErrorRetryDuration          = 5 * time.Second
+		kubeAPIRetryBackoffDuration        = 30 * time.Second
+		contextCancellationBackoffDuration = 30 * time.Second
 	)
 
 	var (
-		errNetwork = worker.RetryableError{RetryAfter: networkErrorRetryDuration}
-		errKubeAPI = worker.RetryableError{RetryAfter: kubeAPIRetryBackoffDuration}
+		errNetwork                  = worker.RetryableError{RetryAfter: networkErrorRetryDuration}
+		errKubeAPI                  = worker.RetryableError{RetryAfter: kubeAPIRetryBackoffDuration}
+		errResetContextCancellation = worker.RetryableError{RetryAfter: contextCancellationBackoffDuration}
 	)
 
 	brokerAddr := conf.EnvVariables[confKeyKafkaBrokers]
@@ -126,20 +128,25 @@ func consumerReset(ctx context.Context, conf Config, out kubernetes.Output, rese
 		return err
 	}
 
-	if err := kafka.DoReset(ctx, kubeClient, conf.Namespace, brokerAddr, consumerID, resetTo); err != nil {
-		switch {
-		case errors.Is(err, kube.ErrJobCreationFailed):
-			return errNetwork.WithCause(err)
+	select {
+	case <-time.After(time.Duration(offsetResetDelaySeconds) * time.Second):
+		if err := kafka.DoReset(ctx, kubeClient, conf.Namespace, brokerAddr, consumerID, resetTo); err != nil {
+			switch {
+			case errors.Is(err, kube.ErrJobCreationFailed):
+				return errNetwork.WithCause(err)
 
-		case errors.Is(err, kube.ErrJobNotFound):
-			return errKubeAPI.WithCause(err)
+			case errors.Is(err, kube.ErrJobNotFound):
+				return errKubeAPI.WithCause(err)
 
-		case errors.Is(err, kube.ErrJobExecutionFailed):
-			return errKubeAPI.WithCause(err)
+			case errors.Is(err, kube.ErrJobExecutionFailed):
+				return errKubeAPI.WithCause(err)
 
-		default:
-			return err
+			default:
+				return err
+			}
 		}
+	case <-ctx.Done():
+		return errResetContextCancellation.WithCause(errors.New("context cancelled while reset"))
 	}
 
 	return nil
