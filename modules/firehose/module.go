@@ -130,7 +130,7 @@ func consumerReset(ctx context.Context, conf Config, out kubernetes.Output, rese
 
 	select {
 	case <-time.After(time.Duration(offsetResetDelaySeconds) * time.Second):
-		if err := kafka.DoReset(ctx, kubeClient, conf.Namespace, brokerAddr, consumerID, resetTo); err != nil {
+		if err := kafka.DoReset(ctx, kubeClient, conf.Namespace, brokerAddr, consumerID, resetTo, conf.DeploymentID); err != nil {
 			switch {
 			case errors.Is(err, kube.ErrJobCreationFailed):
 				return errNetwork.WithCause(err)
