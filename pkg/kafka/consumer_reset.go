@@ -20,9 +20,13 @@ const (
 	resetDatetime = "datetime"
 )
 
-type ResetParams struct {
+type ResetV2Params struct {
 	To       string `json:"to"`
 	Datetime string `json:"datetime"`
+}
+
+type ResetParams struct {
+	To string `json:"to"`
 }
 
 // DoReset executes a kubernetes job with kafka-consumer-group.sh installed to
@@ -40,10 +44,10 @@ func DoReset(ctx context.Context, jobCluster *kube.Client, kubeNamespace, kafkaB
 	)
 }
 
-// ParseResetParams parses the given JSON data as reset parameters value and
+// ParseResetV2Params parses the given JSON data as reset parameters value and
 // returns the actual reset value to be used with DoReset().
-func ParseResetParams(bytes json.RawMessage) (string, error) {
-	var params ResetParams
+func ParseResetV2Params(bytes json.RawMessage) (string, error) {
+	var params ResetV2Params
 	if err := json.Unmarshal(bytes, &params); err != nil {
 		return "", errors.ErrInvalid.
 			WithMsgf("invalid reset params").
@@ -56,6 +60,25 @@ func ParseResetParams(bytes json.RawMessage) (string, error) {
 	} else if resetValue != resetLatest && resetValue != resetEarliest {
 		return "", errors.ErrInvalid.
 			WithMsgf("reset_value must be one of %v", []string{resetEarliest, resetLatest, resetDatetime})
+	}
+
+	return resetValue, nil
+}
+
+// ParseResetParams parses the given JSON data as reset parameters value and
+// returns the actual reset value to be used with DoReset().
+func ParseResetParams(bytes json.RawMessage) (string, error) {
+	var params ResetParams
+	if err := json.Unmarshal(bytes, &params); err != nil {
+		return "", errors.ErrInvalid.
+			WithMsgf("invalid reset params").
+			WithCausef(err.Error())
+	}
+
+	resetValue := strings.ToLower(params.To)
+	if resetValue != resetLatest && resetValue != resetEarliest {
+		return "", errors.ErrInvalid.
+			WithMsgf("reset_value must be one of %v", []string{resetEarliest, resetLatest})
 	}
 
 	return resetValue, nil

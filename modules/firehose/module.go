@@ -25,6 +25,7 @@ const (
 	StartAction   = "start"
 	StopAction    = "stop"
 	ResetAction   = "reset"
+	ResetV2Action = "reset-v2"
 	UpgradeAction = "upgrade"
 )
 

@@ -3,12 +3,20 @@ package firehose
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"regexp"
+	"strconv"
 
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/core/resource"
 	"github.com/goto/entropy/pkg/errors"
 	"github.com/goto/entropy/pkg/kafka"
 )
+
+const SourceKafkaConsumerAutoOffsetReset = "SOURCE_KAFKA_CONSUMER_CONFIG_AUTO_OFFSET_RESET"
+
+var suffixRegex = regexp.MustCompile(`^([A-Za-z0-9-]+)-([0-9]+)$`)
+var errGroupIDFormat = fmt.Errorf("group id must match the format '%s'", suffixRegex)
 
 func (fd *firehoseDriver) Plan(_ context.Context, exr module.ExpandedResource, act module.ActionRequest) (*resource.Resource, error) {
 	switch act.Name {
@@ -17,6 +25,9 @@ func (fd *firehoseDriver) Plan(_ context.Context, exr module.ExpandedResource, a
 
 	case ResetAction:
 		return fd.planReset(exr, act)
+
+	case ResetV2Action:
+		return fd.planResetV2(exr, act)
 
 	default:
 		return fd.planChange(exr, act)
@@ -128,8 +139,8 @@ func (fd *firehoseDriver) planCreate(exr module.ExpandedResource, act module.Act
 	return &exr.Resource, nil
 }
 
-func (fd *firehoseDriver) planReset(exr module.ExpandedResource, act module.ActionRequest) (*resource.Resource, error) {
-	resetValue, err := kafka.ParseResetParams(act.Params)
+func (fd *firehoseDriver) planResetV2(exr module.ExpandedResource, act module.ActionRequest) (*resource.Resource, error) {
+	resetValue, err := kafka.ParseResetV2Params(act.Params)
 	if err != nil {
 		return nil, err
 	}
@@ -158,4 +169,56 @@ func (fd *firehoseDriver) planReset(exr module.ExpandedResource, act module.Acti
 		}),
 	}
 	return &exr.Resource, nil
+}
+
+func (fd *firehoseDriver) planReset(exr module.ExpandedResource, act module.ActionRequest) (*resource.Resource, error) {
+	resetValue, err := kafka.ParseResetParams(act.Params)
+	if err != nil {
+		return nil, err
+	}
+
+	immediately := fd.timeNow()
+
+	curConf, err := readConfig(exr.Resource, exr.Resource.Spec.Configs, fd.conf)
+	if err != nil {
+		return nil, err
+	}
+
+	curConf.ResetOffset = resetValue
+	curConf.EnvVariables[SourceKafkaConsumerAutoOffsetReset] = resetValue
+	curConf.EnvVariables[confKeyConsumerID], err = getNewConsumerGroupID(curConf.EnvVariables[confKeyConsumerID])
+	if err != nil {
+		return nil, err
+	}
+
+	exr.Resource.Spec.Configs = mustJSON(curConf)
+	exr.Resource.State = resource.State{
+		Status:     resource.StatusPending,
+		Output:     exr.Resource.State.Output,
+		NextSyncAt: &immediately,
+		ModuleData: mustJSON(transientData{
+			PendingSteps: []string{
+				stepReleaseStop,   // stop the firehose
+				stepReleaseUpdate, // restart the deployment.
+			},
+		}),
+	}
+	return &exr.Resource, nil
+}
+
+func getNewConsumerGroupID(curGroup string) (string, error) {
+	matches := suffixRegex.FindStringSubmatch(curGroup)
+	if expLen := 3; len(matches) != expLen {
+		return "", errGroupIDFormat
+	}
+	prefix, sequence := matches[1], matches[2]
+
+	seq, err := strconv.Atoi(sequence)
+	if err != nil {
+		return "", errors.Errorf("error converting group sequence %s to int: %v", sequence, err)
+	} else {
+		seq++
+	}
+
+	return fmt.Sprintf("%s-%d", prefix, seq), nil
 }
