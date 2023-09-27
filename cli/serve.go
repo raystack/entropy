@@ -38,23 +38,23 @@ func cmdServe() *cobra.Command {
 			return err
 		}
 
-		zapLog, err := logger.New(&cfg.Log)
+		err = logger.Setup(&cfg.Log)
 		if err != nil {
 			return err
 		}
 
-		telemetry.Init(cmd.Context(), cfg.Telemetry, zapLog)
+		telemetry.Init(cmd.Context(), cfg.Telemetry)
 		nrApp, err := newrelic.NewApplication(
 			newrelic.ConfigAppName(cfg.Telemetry.ServiceName),
 			newrelic.ConfigLicense(cfg.Telemetry.NewRelicAPIKey),
 		)
 
-		store := setupStorage(zapLog, cfg.PGConnStr, cfg.Syncer)
-		moduleService := module.NewService(setupRegistry(zapLog), store)
-		resourceService := core.New(store, moduleService, time.Now, zapLog)
+		store := setupStorage(cfg.PGConnStr, cfg.Syncer)
+		moduleService := module.NewService(setupRegistry(), store)
+		resourceService := core.New(store, moduleService, time.Now)
 
 		if migrate {
-			if migrateErr := runMigrations(cmd.Context(), zapLog, cfg); migrateErr != nil {
+			if migrateErr := runMigrations(cmd.Context(), cfg); migrateErr != nil {
 				return migrateErr
 			}
 		}
@@ -62,21 +62,21 @@ func cmdServe() *cobra.Command {
 		if spawnWorker {
 			go func() {
 				if runErr := resourceService.RunSyncer(cmd.Context(), cfg.Syncer.SyncInterval); runErr != nil {
-					zapLog.Error("syncer exited with error", zap.Error(err))
+					zap.L().Error("syncer exited with error", zap.Error(err))
 				}
 			}()
 		}
 
 		return entropyserver.Serve(cmd.Context(),
 			cfg.Service.httpAddr(), cfg.Service.grpcAddr(),
-			nrApp, zapLog, resourceService, moduleService,
+			nrApp, resourceService, moduleService,
 		)
 	})
 
 	return cmd
 }
 
-func setupRegistry(logger *zap.Logger) module.Registry {
+func setupRegistry() module.Registry {
 	supported := []module.Descriptor{
 		kubernetes.Module,
 		firehose.Module,
@@ -85,7 +85,7 @@ func setupRegistry(logger *zap.Logger) module.Registry {
 	registry := &modules.Registry{}
 	for _, desc := range supported {
 		if err := registry.Register(desc); err != nil {
-			logger.Fatal("failed to register module",
+			zap.L().Fatal("failed to register module",
 				zap.String("module_kind", desc.Kind),
 				zap.Error(err),
 			)
@@ -94,10 +94,10 @@ func setupRegistry(logger *zap.Logger) module.Registry {
 	return registry
 }
 
-func setupStorage(logger *zap.Logger, pgConStr string, syncCfg syncerConf) *postgres.Store {
+func setupStorage(pgConStr string, syncCfg syncerConf) *postgres.Store {
 	store, err := postgres.Open(pgConStr, syncCfg.RefreshInterval, syncCfg.ExtendLockBy)
 	if err != nil {
-		logger.Fatal("failed to connect to Postgres database",
+		zap.L().Fatal("failed to connect to Postgres database",
 			zap.Error(err), zap.String("conn_str", pgConStr))
 	}
 	return store

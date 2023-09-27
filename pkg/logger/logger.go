@@ -9,11 +9,16 @@ type LogConfig struct {
 	Level string `mapstructure:"level" default:"info"`
 }
 
-func New(config *LogConfig) (*zap.Logger, error) {
+func Setup(config *LogConfig) error {
 	defaultConfig := zap.NewProductionConfig()
 	defaultConfig.Level = zap.NewAtomicLevelAt(getZapLogLevelFromString(config.Level))
 	logger, err := zap.NewProductionConfig().Build()
-	return logger, err
+	if err != nil {
+		return err
+	}
+	// Setting up global Logger. This can be accessed by zap.L()
+	zap.ReplaceGlobals(logger)
+	return nil
 }
 
 func getZapLogLevelFromString(level string) zapcore.Level {

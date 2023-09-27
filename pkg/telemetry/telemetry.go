@@ -31,7 +31,7 @@ type Config struct {
 
 // Init initialises OpenCensus based async-telemetry processes and
 // returns (i.e., it does not block).
-func Init(ctx context.Context, cfg Config, lg *zap.Logger) {
+func Init(ctx context.Context, cfg Config) {
 	mux := http.NewServeMux()
 	mux.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
 	mux.Handle("/debug/pprof/heap", pprof.Handler("heap"))
@@ -39,14 +39,14 @@ func Init(ctx context.Context, cfg Config, lg *zap.Logger) {
 	mux.Handle("/debug/pprof/block", pprof.Handler("block"))
 
 	if err := setupOpenCensus(ctx, mux, cfg); err != nil {
-		lg.Error("failed to setup OpenCensus", zap.Error(err))
+		zap.L().Error("failed to setup OpenCensus", zap.Error(err))
 	}
 
 	if cfg.Debug != "" {
 		go func() {
 			// nolint
 			if err := http.ListenAndServe(cfg.Debug, mux); err != nil {
-				lg.Error("debug server exited due to error", zap.Error(err))
+				zap.L().Error("debug server exited due to error", zap.Error(err))
 			}
 		}()
 	}

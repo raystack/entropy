@@ -81,7 +81,7 @@ func requestID() gorillamux.MiddlewareFunc {
 	}
 }
 
-func requestLogger(lg *zap.Logger) gorillamux.MiddlewareFunc {
+func requestLogger() gorillamux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(wr http.ResponseWriter, req *http.Request) {
 			t := time.Now()
@@ -96,7 +96,7 @@ func requestLogger(lg *zap.Logger) gorillamux.MiddlewareFunc {
 
 			bodyBytes, err := io.ReadAll(req.Body)
 			if err != nil {
-				lg.Error("error reading request body: %v", zap.String("error", err.Error()))
+				zap.L().Error("error reading request body: %v", zap.String("error", err.Error()))
 				return
 			}
 			reader := io.NopCloser(bytes.NewBuffer(bodyBytes))
@@ -122,16 +122,16 @@ func requestLogger(lg *zap.Logger) gorillamux.MiddlewareFunc {
 				dst := bytes.NewBuffer(nil)
 				err = json.Compact(dst, bodyBytes)
 				if err != nil {
-					lg.Error("error json compacting request body: %v", zap.String("error", err.Error()))
+					zap.L().Error("error json compacting request body: %v", zap.String("error", err.Error()))
 				} else {
 					fields = append(fields, zap.String("request_body", dst.String()))
 				}
 			}
 
 			if !is2xx(wrapped.Status) {
-				lg.Warn("request handled with non-2xx response", fields...)
+				zap.L().Warn("request handled with non-2xx response", fields...)
 			} else {
-				lg.Info("request handled", fields...)
+				zap.L().Info("request handled", fields...)
 			}
 		})
 	}
