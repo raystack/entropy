@@ -26,14 +26,14 @@ func (svc *Service) RunSyncer(ctx context.Context, interval time.Duration) error
 
 			err := svc.store.SyncOne(ctx, svc.handleSync)
 			if err != nil {
-				svc.logger.Warn("SyncOne() failed", zap.Error(err))
+				zap.L().Warn("SyncOne() failed", zap.Error(err))
 			}
 		}
 	}
 }
 
 func (svc *Service) handleSync(ctx context.Context, res resource.Resource) (*resource.Resource, error) {
-	logEntry := svc.logger.With(
+	logEntry := zap.L().With(
 		zap.String("resource_urn", res.URN),
 		zap.String("resource_status", res.State.Status),
 		zap.Int("retries", res.State.SyncResult.Retries),

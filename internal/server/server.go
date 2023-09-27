@@ -40,14 +40,14 @@ const (
 
 // Serve initialises all the gRPC+HTTP API routes, starts listening for requests at addr, and blocks until server exits.
 // Server exits gracefully when context is cancelled.
-func Serve(ctx context.Context, httpAddr, grpcAddr string, nrApp *newrelic.Application, logger *zap.Logger,
+func Serve(ctx context.Context, httpAddr, grpcAddr string, nrApp *newrelic.Application,
 	resourceSvc resourcesv1.ResourceService, moduleSvc modulesv1.ModuleService,
 ) error {
 	grpcOpts := []grpc.ServerOption{
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			grpc_recovery.UnaryServerInterceptor(),
 			grpc_ctxtags.UnaryServerInterceptor(),
-			grpc_zap.UnaryServerInterceptor(logger),
+			grpc_zap.UnaryServerInterceptor(zap.L()),
 			nrgrpc.UnaryServerInterceptor(nrApp),
 		)),
 		grpc.StatsHandler(&ocgrpc.ServerHandler{}),
@@ -75,7 +75,6 @@ func Serve(ctx context.Context, httpAddr, grpcAddr string, nrApp *newrelic.Appli
 	}
 
 	resourceServiceRPC := &resourcesv1.LogWrapper{
-		Logger:                logger,
 		ResourceServiceServer: resourcesv1.NewAPIServer(resourceSvc),
 	}
 	grpcServer.RegisterService(&entropyv1beta1.ResourceService_ServiceDesc, resourceServiceRPC)
@@ -99,10 +98,10 @@ func Serve(ctx context.Context, httpAddr, grpcAddr string, nrApp *newrelic.Appli
 	httpRouter.Use(
 		requestID(),
 		withOpenCensus(),
-		requestLogger(logger), // nolint
+		requestLogger(), // nolint
 	)
 
-	logger.Info("starting http & grpc servers",
+	zap.L().Info("starting http & grpc servers",
 		zap.String("http_addr", httpAddr),
 		zap.String("grpc_addr", grpcAddr),
 	)
