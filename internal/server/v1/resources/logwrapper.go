@@ -10,14 +10,12 @@ import (
 
 type LogWrapper struct {
 	entropyv1beta1.ResourceServiceServer
-
-	Logger *zap.Logger
 }
 
 func (lw *LogWrapper) ListResources(ctx context.Context, request *entropyv1beta1.ListResourcesRequest) (*entropyv1beta1.ListResourcesResponse, error) {
 	resp, err := lw.ResourceServiceServer.ListResources(ctx, request)
 	if err != nil {
-		lw.Logger.Error("ListResources() failed", zap.Error(err))
+		zap.L().Error("ListResources() failed", zap.Error(err))
 		return nil, err
 	}
 	return resp, nil
@@ -26,7 +24,7 @@ func (lw *LogWrapper) ListResources(ctx context.Context, request *entropyv1beta1
 func (lw *LogWrapper) GetResource(ctx context.Context, request *entropyv1beta1.GetResourceRequest) (*entropyv1beta1.GetResourceResponse, error) {
 	resp, err := lw.ResourceServiceServer.GetResource(ctx, request)
 	if err != nil {
-		lw.Logger.Error("GetResource() failed", zap.Error(err))
+		zap.L().Error("GetResource() failed", zap.Error(err))
 		return nil, err
 	}
 	return resp, nil
@@ -35,7 +33,7 @@ func (lw *LogWrapper) GetResource(ctx context.Context, request *entropyv1beta1.G
 func (lw *LogWrapper) CreateResource(ctx context.Context, request *entropyv1beta1.CreateResourceRequest) (*entropyv1beta1.CreateResourceResponse, error) {
 	resp, err := lw.ResourceServiceServer.CreateResource(ctx, request)
 	if err != nil {
-		lw.Logger.Error("CreateResource() failed", zap.Error(err))
+		zap.L().Error("CreateResource() failed", zap.Error(err))
 		return nil, err
 	}
 	return resp, nil
@@ -44,7 +42,7 @@ func (lw *LogWrapper) CreateResource(ctx context.Context, request *entropyv1beta
 func (lw *LogWrapper) UpdateResource(ctx context.Context, request *entropyv1beta1.UpdateResourceRequest) (*entropyv1beta1.UpdateResourceResponse, error) {
 	resp, err := lw.ResourceServiceServer.UpdateResource(ctx, request)
 	if err != nil {
-		lw.Logger.Error("UpdateResource() failed", zap.Error(err))
+		zap.L().Error("UpdateResource() failed", zap.Error(err))
 		return nil, err
 	}
 	return resp, nil
@@ -53,7 +51,7 @@ func (lw *LogWrapper) UpdateResource(ctx context.Context, request *entropyv1beta
 func (lw *LogWrapper) DeleteResource(ctx context.Context, request *entropyv1beta1.DeleteResourceRequest) (*entropyv1beta1.DeleteResourceResponse, error) {
 	resp, err := lw.ResourceServiceServer.DeleteResource(ctx, request)
 	if err != nil {
-		lw.Logger.Error("DeleteResource() failed", zap.Error(err))
+		zap.L().Error("DeleteResource() failed", zap.Error(err))
 		return nil, err
 	}
 	return resp, nil
@@ -62,7 +60,7 @@ func (lw *LogWrapper) DeleteResource(ctx context.Context, request *entropyv1beta
 func (lw *LogWrapper) ApplyAction(ctx context.Context, request *entropyv1beta1.ApplyActionRequest) (*entropyv1beta1.ApplyActionResponse, error) {
 	resp, err := lw.ResourceServiceServer.ApplyAction(ctx, request)
 	if err != nil {
-		lw.Logger.Error("ApplyAction() failed", zap.Error(err))
+		zap.L().Error("ApplyAction() failed", zap.Error(err))
 		return nil, err
 	}
 	return resp, nil
@@ -71,7 +69,7 @@ func (lw *LogWrapper) ApplyAction(ctx context.Context, request *entropyv1beta1.A
 func (lw *LogWrapper) GetLog(request *entropyv1beta1.GetLogRequest, server entropyv1beta1.ResourceService_GetLogServer) error {
 	err := lw.ResourceServiceServer.GetLog(request, server)
 	if err != nil {
-		lw.Logger.Error("GetLog() failed", zap.Error(err))
+		zap.L().Error("GetLog() failed", zap.Error(err))
 		return err
 	}
 	return nil
@@ -80,7 +78,7 @@ func (lw *LogWrapper) GetLog(request *entropyv1beta1.GetLogRequest, server entro
 func (lw *LogWrapper) GetResourceRevisions(ctx context.Context, request *entropyv1beta1.GetResourceRevisionsRequest) (*entropyv1beta1.GetResourceRevisionsResponse, error) {
 	resp, err := lw.ResourceServiceServer.GetResourceRevisions(ctx, request)
 	if err != nil {
-		lw.Logger.Error("GetResourceRevisions() failed", zap.Error(err))
+		zap.L().Error("GetResourceRevisions() failed", zap.Error(err))
 		return nil, err
 	}
 	return resp, nil
