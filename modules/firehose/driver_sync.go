@@ -6,6 +6,7 @@ import (
 
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/modules"
 	"github.com/goto/entropy/modules/kubernetes"
 	"github.com/goto/entropy/pkg/errors"
 )
@@ -68,7 +69,7 @@ func (fd *firehoseDriver) Sync(ctx context.Context, exr module.ExpandedResource)
 		// as soon as possible.
 		immediately := fd.timeNow()
 		finalState.NextSyncAt = &immediately
-		finalState.ModuleData = mustJSON(modData)
+		finalState.ModuleData = modules.MustJSON(modData)
 
 		return &finalState, nil
 	}

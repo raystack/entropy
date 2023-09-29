@@ -13,6 +13,7 @@ import (
 	"github.com/goto/entropy/internal/store/postgres"
 	"github.com/goto/entropy/modules"
 	"github.com/goto/entropy/modules/firehose"
+	"github.com/goto/entropy/modules/job"
 	"github.com/goto/entropy/modules/kubernetes"
 	"github.com/goto/entropy/pkg/logger"
 	"github.com/goto/entropy/pkg/telemetry"
@@ -80,6 +81,7 @@ func setupRegistry() module.Registry {
 	supported := []module.Descriptor{
 		kubernetes.Module,
 		firehose.Module,
+		job.Module,
 	}
 
 	registry := &modules.Registry{}

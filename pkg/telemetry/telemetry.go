@@ -44,7 +44,7 @@ func Init(ctx context.Context, cfg Config) {
 
 	if cfg.Debug != "" {
 		go func() {
-			// nolint
+			//nolint:gosec
 			if err := http.ListenAndServe(cfg.Debug, mux); err != nil {
 				zap.L().Error("debug server exited due to error", zap.Error(err))
 			}

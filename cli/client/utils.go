@@ -39,7 +39,7 @@ func parseFile(filePath string, v protoreflect.ProtoMessage) error {
 		}
 
 	default:
-		return errors.New("unsupported file type") // nolint
+		return errors.New("unsupported file type")
 	}
 
 	return nil

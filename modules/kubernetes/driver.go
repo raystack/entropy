@@ -45,7 +45,7 @@ func (*kubeDriver) Sync(_ context.Context, res module.ExpandedResource) (*resour
 	}, nil
 }
 
-func (m *kubeDriver) Output(_ context.Context, res module.ExpandedResource) (json.RawMessage, error) {
+func (m *kubeDriver) Output(ctx context.Context, res module.ExpandedResource) (json.RawMessage, error) {
 	conf := kube.DefaultClientConfig()
 	if err := json.Unmarshal(res.Spec.Configs, &conf); err != nil {
 		return nil, errors.ErrInvalid.WithMsgf("invalid json config value").WithCausef(err.Error())
@@ -53,7 +53,7 @@ func (m *kubeDriver) Output(_ context.Context, res module.ExpandedResource) (jso
 		return nil, err
 	}
 
-	restConfig, err := conf.RESTConfig()
+	restConfig, err := conf.RESTConfig(ctx)
 	if err != nil {
 		return nil, errors.ErrInternal.WithMsgf("failed to create new kube client on kube driver output").WithCausef(err.Error())
 	}

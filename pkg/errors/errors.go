@@ -53,7 +53,7 @@ func (err Error) WithMsgf(format string, args ...interface{}) Error {
 // Is checks if 'other' is of type Error and has the same code.
 // See https://blog.golang.org/go1.13-errors.
 func (err Error) Is(other error) bool {
-	if oe, ok := other.(Error); ok { // nolint
+	if oe, ok := other.(Error); ok {
 		return oe.Code == err.Code
 	}
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/modules"
 	"github.com/goto/entropy/pkg/errors"
 	"github.com/goto/entropy/pkg/kafka"
 )
@@ -94,11 +95,11 @@ func (fd *firehoseDriver) planChange(exr module.ExpandedResource, act module.Act
 
 	immediately := fd.timeNow()
 
-	exr.Resource.Spec.Configs = mustJSON(curConf)
+	exr.Resource.Spec.Configs = modules.MustJSON(curConf)
 	exr.Resource.State = resource.State{
 		Status: resource.StatusPending,
 		Output: exr.Resource.State.Output,
-		ModuleData: mustJSON(transientData{
+		ModuleData: modules.MustJSON(transientData{
 			PendingSteps: []string{stepReleaseUpdate},
 		}),
 		NextSyncAt: &immediately,
@@ -125,15 +126,15 @@ func (fd *firehoseDriver) planCreate(exr module.ExpandedResource, act module.Act
 
 	immediately := fd.timeNow()
 
-	exr.Resource.Spec.Configs = mustJSON(conf)
+	exr.Resource.Spec.Configs = modules.MustJSON(conf)
 	exr.Resource.State = resource.State{
 		Status: resource.StatusPending,
-		Output: mustJSON(Output{
+		Output: modules.MustJSON(Output{
 			Namespace:   conf.Namespace,
 			ReleaseName: conf.DeploymentID,
 		}),
 		NextSyncAt: &immediately,
-		ModuleData: mustJSON(transientData{
+		ModuleData: modules.MustJSON(transientData{
 			PendingSteps: []string{stepReleaseCreate},
 		}),
 	}
@@ -156,12 +157,12 @@ func (fd *firehoseDriver) planResetV2(exr module.ExpandedResource, act module.Ac
 
 	curConf.ResetOffset = resetValue
 
-	exr.Resource.Spec.Configs = mustJSON(curConf)
+	exr.Resource.Spec.Configs = modules.MustJSON(curConf)
 	exr.Resource.State = resource.State{
 		Status:     resource.StatusPending,
 		Output:     exr.Resource.State.Output,
 		NextSyncAt: &immediately,
-		ModuleData: mustJSON(transientData{
+		ModuleData: modules.MustJSON(transientData{
 			ResetOffsetTo: resetValue,
 			PendingSteps: []string{
 				stepReleaseStop,   // stop the firehose
@@ -193,12 +194,12 @@ func (fd *firehoseDriver) planReset(exr module.ExpandedResource, act module.Acti
 		return nil, err
 	}
 
-	exr.Resource.Spec.Configs = mustJSON(curConf)
+	exr.Resource.Spec.Configs = modules.MustJSON(curConf)
 	exr.Resource.State = resource.State{
 		Status:     resource.StatusPending,
 		Output:     exr.Resource.State.Output,
 		NextSyncAt: &immediately,
-		ModuleData: mustJSON(transientData{
+		ModuleData: modules.MustJSON(transientData{
 			PendingSteps: []string{
 				stepReleaseStop,   // stop the firehose
 				stepReleaseUpdate, // restart the deployment.

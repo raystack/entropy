@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/modules"
 	"github.com/goto/entropy/modules/kubernetes"
 	"github.com/goto/entropy/pkg/errors"
 	"github.com/goto/entropy/pkg/helm"
@@ -586,8 +587,8 @@ func TestFirehoseDriver(t *testing.T) {
 				assert.NoError(t, err)
 				require.NotNil(t, got)
 
-				wantJSON := string(mustJSON(tt.want))
-				gotJSON := string(mustJSON(got))
+				wantJSON := string(modules.MustJSON(tt.want))
+				gotJSON := string(modules.MustJSON(got))
 				assert.JSONEq(t, wantJSON, gotJSON)
 			}
 		})

@@ -8,10 +8,10 @@ import (
 
 	gorillamux "github.com/gorilla/mux"
 	"github.com/goto/salt/mux"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpcrecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	grpcctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/newrelic/go-agent/v3/integrations/nrgorilla"
 	"github.com/newrelic/go-agent/v3/integrations/nrgrpc"
@@ -44,10 +44,10 @@ func Serve(ctx context.Context, httpAddr, grpcAddr string, nrApp *newrelic.Appli
 	resourceSvc resourcesv1.ResourceService, moduleSvc modulesv1.ModuleService,
 ) error {
 	grpcOpts := []grpc.ServerOption{
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_recovery.UnaryServerInterceptor(),
-			grpc_ctxtags.UnaryServerInterceptor(),
-			grpc_zap.UnaryServerInterceptor(zap.L()),
+		grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(
+			grpcrecovery.UnaryServerInterceptor(),
+			grpcctxtags.UnaryServerInterceptor(),
+			grpczap.UnaryServerInterceptor(zap.L()),
 			nrgrpc.UnaryServerInterceptor(nrApp),
 		)),
 		grpc.StatsHandler(&ocgrpc.ServerHandler{}),
@@ -98,7 +98,7 @@ func Serve(ctx context.Context, httpAddr, grpcAddr string, nrApp *newrelic.Appli
 	httpRouter.Use(
 		requestID(),
 		withOpenCensus(),
-		requestLogger(), // nolint
+		requestLogger(),
 	)
 
 	zap.L().Info("starting http & grpc servers",

@@ -17,7 +17,7 @@ func New(version *commonv1.Version) *CommonService {
 	}
 }
 
-// nolint
+//nolint:unparam
 func (c *CommonService) GetVersion(context.Context, *commonv1.GetVersionRequest) (*commonv1.GetVersionResponse, error) {
 	return &commonv1.GetVersionResponse{
 		Server: c.version,

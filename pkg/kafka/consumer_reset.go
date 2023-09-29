@@ -36,12 +36,14 @@ func DoReset(ctx context.Context, jobCluster *kube.Client, kubeNamespace, kafkaB
 	resetJobName = strings.TrimSuffix(resetJobName, suffix)
 	resetJobName += "-reset"
 
-	return jobCluster.RunJob(ctx, kubeNamespace,
+	_, err := jobCluster.RunJob(ctx, kubeNamespace,
 		resetJobName,
 		kafkaImage,
 		prepCommand(kafkaBrokers, kafkaConsumerID, kafkaResetValue),
 		retries,
+		true,
 	)
+	return err
 }
 
 // ParseResetV2Params parses the given JSON data as reset parameters value and

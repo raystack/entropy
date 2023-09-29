@@ -11,6 +11,7 @@ import (
 
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/modules"
 	"github.com/goto/entropy/modules/kubernetes"
 	"github.com/goto/entropy/pkg/errors"
 	"github.com/goto/entropy/pkg/helm"
@@ -186,13 +187,13 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 		labelName: res.Name,
 	}
 
-	deploymentLabels, err := renderTpl(fd.conf.Labels, cloneAndMergeMaps(res.Labels, entropyLabels))
+	deploymentLabels, err := renderTpl(fd.conf.Labels, modules.CloneAndMergeMaps(res.Labels, entropyLabels))
 	if err != nil {
 		return nil, err
 	}
 
 	if conf.Telegraf != nil && conf.Telegraf.Enabled {
-		mergedLabelsAndEnvVariablesMap := cloneAndMergeMaps(cloneAndMergeMaps(conf.EnvVariables, cloneAndMergeMaps(deploymentLabels, cloneAndMergeMaps(res.Labels, entropyLabels))), otherLabels)
+		mergedLabelsAndEnvVariablesMap := modules.CloneAndMergeMaps(modules.CloneAndMergeMaps(conf.EnvVariables, modules.CloneAndMergeMaps(deploymentLabels, modules.CloneAndMergeMaps(res.Labels, entropyLabels))), otherLabels)
 
 		conf.EnvVariables, err = renderTpl(conf.EnvVariables, mergedLabelsAndEnvVariablesMap)
 		if err != nil {
@@ -281,7 +282,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 	rc.ForceUpdate = true
 	rc.Version = conf.ChartValues.ChartVersion
 	rc.Values = map[string]any{
-		labelsConfKey:  cloneAndMergeMaps(deploymentLabels, entropyLabels),
+		labelsConfKey:  modules.CloneAndMergeMaps(deploymentLabels, entropyLabels),
 		"replicaCount": conf.Replicas,
 		"firehose": map[string]any{
 			"image": map[string]any{
@@ -397,25 +398,6 @@ func readTransientData(exr module.ExpandedResource) (*transientData, error) {
 		return nil, errors.ErrInternal.WithMsgf("corrupted transient data").WithCausef(err.Error())
 	}
 	return &modData, nil
-}
-
-func mustJSON(v any) json.RawMessage {
-	b, err := json.Marshal(v)
-	if err != nil {
-		panic(err)
-	}
-	return b
-}
-
-func cloneAndMergeMaps(m1, m2 map[string]string) map[string]string {
-	res := map[string]string{}
-	for k, v := range m1 {
-		res[k] = v
-	}
-	for k, v := range m2 {
-		res[k] = v
-	}
-	return res
 }
 
 func (us UsageSpec) merge(overide UsageSpec) UsageSpec {

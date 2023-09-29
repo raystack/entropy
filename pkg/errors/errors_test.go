@@ -109,7 +109,7 @@ func TestError_Is(t *testing.T) {
 		{
 			title: "NonEntropyErr",
 			err:   errors.ErrInternal,
-			other: goerrors.New("foo"), // nolint
+			other: goerrors.New("foo"),
 			want:  true,
 		},
 		{

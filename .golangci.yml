@@ -1,5 +1,5 @@
 run:
-  go: '1.17'
+  go: '1.21'
   timeout: 10m
   skip-files:
     - expt/main.go
@@ -8,38 +8,40 @@ output:
   format: colored-line-number
 
 linters:
-  enable-all: true
-  disable:
-    - exhaustruct
-    - cyclop
-    - exhaustive
-    - exhaustivestruct
-    - exhaustruct
-    - funlen
-    - gochecknoglobals
+  disable-all: true
+  enable:
+    - bodyclose
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - exportloopref
+    - gci
+    - gochecknoinits
+    - goconst
+    - gocritic
     - gocyclo
-    - godox
-    - gofumpt
-    - golint
-    - interfacer
-    - lll
-    - maintidx
-    - ireturn
-    - maligned
-    - nlreturn
+    - gofmt
+    - goimports
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - decorder
+    - ineffassign
+    - misspell
+    - nakedret
+    - noctx
     - nolintlint
-    - prealloc
-    - promlinter
-    - scopelint
-    - tagliatelle
-    - testpackage
-    - paralleltest
-    - tparallel
-    - containedctx
-    - varnamelen
-    - wrapcheck
-    - wsl
-
+    - revive
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
 linters-settings:
   decorder:
     dec-order:

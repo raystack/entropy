@@ -25,7 +25,7 @@ func (fd *firehoseDriver) Log(ctx context.Context, res module.ExpandedResource, 
 	if err := json.Unmarshal(res.Dependencies[keyKubeDependency].Output, &kubeOut); err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
-	kubeCl, err := kube.NewClient(kubeOut.Configs)
+	kubeCl, err := kube.NewClient(ctx, kubeOut.Configs)
 	if err != nil {
 		return nil, errors.ErrInternal.WithMsgf("failed to create new kube client on firehose driver Log").WithCausef(err.Error())
 	}

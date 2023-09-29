@@ -1,14 +1,13 @@
 package firehose
 
 import (
-	"crypto/sha256"
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/goto/entropy/core/resource"
+	"github.com/goto/entropy/modules"
 	"github.com/goto/entropy/pkg/errors"
 	"github.com/goto/entropy/pkg/validator"
 )
@@ -91,7 +90,7 @@ func readConfig(r resource.Resource, confJSON json.RawMessage, dc driverConf) (*
 		return nil, errors.ErrInvalid.WithMsgf("invalid config json").WithCausef(err.Error())
 	}
 
-	cfg.EnvVariables = cloneAndMergeMaps(dc.EnvVariables, cfg.EnvVariables)
+	cfg.EnvVariables = modules.CloneAndMergeMaps(dc.EnvVariables, cfg.EnvVariables)
 
 	if cfg.Replicas <= 0 {
 		cfg.Replicas = 1
@@ -103,7 +102,7 @@ func readConfig(r resource.Resource, confJSON json.RawMessage, dc driverConf) (*
 
 	// note: enforce the kubernetes deployment name length limit.
 	if len(cfg.DeploymentID) == 0 {
-		cfg.DeploymentID = safeReleaseName(fmt.Sprintf("%s-%s", r.Project, r.Name))
+		cfg.DeploymentID = modules.SafeName(fmt.Sprintf("%s-%s", r.Project, r.Name), "-firehose", helmReleaseNameMaxLength)
 	} else if len(cfg.DeploymentID) > helmReleaseNameMaxLength {
 		return nil, errors.ErrInvalid.WithMsgf("deployment_id must not have more than 53 chars")
 	}
@@ -123,27 +122,4 @@ func readConfig(r resource.Resource, confJSON json.RawMessage, dc driverConf) (*
 	cfg.Requests = rl.Requests
 
 	return &cfg, nil
-}
-
-func safeReleaseName(concatName string) string {
-	const randomHashLen = 6
-	suffix := "-firehose"
-
-	// remove suffix if already there.
-	concatName = strings.TrimSuffix(concatName, suffix)
-
-	if len(concatName) <= helmReleaseNameMaxLength-len(suffix) {
-		return concatName + suffix
-	}
-
-	val := sha256.Sum256([]byte(concatName))
-	hash := fmt.Sprintf("%x", val)
-	suffix = fmt.Sprintf("-%s%s", hash[:randomHashLen], suffix)
-
-	// truncate and make room for the suffix. also trim any leading, trailing
-	// hyphens to prevent '--' (not allowed in deployment names).
-	truncLen := helmReleaseNameMaxLength - len(suffix)
-	truncated := concatName[0:truncLen]
-	truncated = strings.Trim(truncated, "-")
-	return truncated + suffix
 }

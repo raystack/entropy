@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goto/entropy/modules"
 )
 
 func Test_safeReleaseName(t *testing.T) {
@@ -38,7 +40,7 @@ func Test_safeReleaseName(t *testing.T) {
 
 	for i, tt := range table {
 		t.Run(fmt.Sprintf("Case#%d", i), func(t *testing.T) {
-			got := safeReleaseName(tt.str)
+			got := modules.SafeName(tt.str, "-firehose", helmReleaseNameMaxLength)
 			assert.Equal(t, tt.want, got)
 			assert.True(t, len(got) <= helmReleaseNameMaxLength, "release name has length %d", len(got))
 		})

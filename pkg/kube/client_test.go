@@ -84,7 +84,7 @@ func TestGetStreamingLogs(t *testing.T) {
 			config.ClientKey = tt.ClientKey
 			config.ClientCertificate = tt.ClientCert
 
-			client := NewClient(config)
+			client := NewClient(context.Background(), config)
 
 			ctx := new(context.Context)
 			_, err := client.StreamLogs(*ctx, tt.Namespace, filter)

@@ -42,7 +42,7 @@ type Config struct {
 	ProviderType string `json:"provider_type"`
 }
 
-func (conf *Config) RESTConfig() (*rest.Config, error) {
+func (conf *Config) RESTConfig(ctx context.Context) (*rest.Config, error) {
 	rc := &rest.Config{
 		Host:    conf.Host,
 		Timeout: conf.Timeout,
@@ -57,7 +57,7 @@ func (conf *Config) RESTConfig() (*rest.Config, error) {
 	if conf.ProviderType != "" {
 		switch conf.ProviderType {
 		case providerTypeGKE:
-			ts, err := google.DefaultTokenSource(context.Background(), container.CloudPlatformScope)
+			ts, err := google.DefaultTokenSource(ctx, container.CloudPlatformScope)
 			if err != nil {
 				return nil, errors.ErrInvalid.WithMsgf("%s: can't fetch credentials from service account json", conf.ProviderType).WithCausef(err.Error())
 			}
@@ -77,8 +77,8 @@ func (conf *Config) RESTConfig() (*rest.Config, error) {
 	return rc, nil
 }
 
-func (conf *Config) StreamingConfig() (*rest.Config, error) {
-	rc, err := conf.RESTConfig()
+func (conf *Config) StreamingConfig(ctx context.Context) (*rest.Config, error) {
+	rc, err := conf.RESTConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
