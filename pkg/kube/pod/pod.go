@@ -23,6 +23,10 @@ func (p Pod) Template() corev1.PodTemplateSpec {
 	for _, v := range p.Volumes {
 		volumes = append(volumes, v.GetPodVolume())
 	}
+	volumes = append(volumes, corev1.Volume{
+		Name:         "shared-data",
+		VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+	})
 	return corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{Name: p.Name},
 		Spec: corev1.PodSpec{

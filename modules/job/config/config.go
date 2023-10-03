@@ -57,12 +57,15 @@ type Container struct {
 	Image             string            `json:"image"`
 	ImagePullPolicy   string            `json:"image_pull_policy,omitempty"`
 	Command           []string          `json:"command,omitempty"`
+	Args              []string          `json:"args,omitempty"`
 	SecretsVolumes    []Secret          `json:"secrets_volumes,omitempty"`
 	ConfigMapsVolumes []ConfigMap       `json:"config_maps_volumes,omitempty"`
 	Limits            UsageSpec         `json:"limits,omitempty"`
 	Requests          UsageSpec         `json:"requests,omitempty"`
 	EnvConfigMaps     []string          `json:"env_config_maps,omitempty"`
 	EnvVariables      map[string]string `json:"env_variables,omitempty"`
+	PreStopCmd        []string          `json:"pre_stop_cmd,omitempty"`
+	PostStartCmd      []string          `json:"post_start_cmd,omitempty"`
 }
 
 type Secret struct {

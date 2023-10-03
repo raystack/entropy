@@ -94,9 +94,12 @@ func getJob(res resource.Resource, conf *config.Config) *job.Job {
 			Name:            c.Name,
 			EnvConfigMaps:   c.EnvConfigMaps,
 			Command:         c.Command,
+			Args:            c.Args,
 			EnvMap:          c.EnvVariables,
 			ImagePullPolicy: c.ImagePullPolicy,
 			VolumeMounts:    vm,
+			PreStopCmd:      c.PreStopCmd,
+			PostStartCmd:    c.PostStartCmd,
 			Requests:        map[string]string{"cpu": c.Requests.CPU, "memory": c.Requests.Memory},
 			Limits:          map[string]string{"cpu": c.Limits.CPU, "memory": c.Limits.Memory},
 		})

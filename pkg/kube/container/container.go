@@ -17,6 +17,8 @@ type Container struct {
 	VolumeMounts    []VolumeMount
 	Requests        map[string]string
 	Limits          map[string]string
+	PreStopCmd      []string
+	PostStartCmd    []string
 }
 
 type VolumeMount struct {
@@ -48,6 +50,24 @@ func (c Container) Template() corev1.Container {
 		})
 	}
 
+	// Shared directory for all the containers
+	mounts = append(mounts, corev1.VolumeMount{
+		Name:      "shared-data",
+		MountPath: "/shared",
+	})
+
+	var lifecycle corev1.Lifecycle
+	if len(c.PreStopCmd) > 0 {
+		lifecycle.PreStop = &corev1.LifecycleHandler{
+			Exec: &corev1.ExecAction{Command: c.PreStopCmd},
+		}
+	}
+	if len(c.PostStartCmd) > 0 {
+		lifecycle.PostStart = &corev1.LifecycleHandler{
+			Exec: &corev1.ExecAction{Command: c.PostStartCmd},
+		}
+	}
+
 	return corev1.Container{
 		Name:            c.Name,
 		Image:           c.Image,
@@ -57,6 +77,7 @@ func (c Container) Template() corev1.Container {
 		Env:             env,
 		Resources:       c.parseResources(),
 		VolumeMounts:    mounts,
+		Lifecycle:       &lifecycle,
 		ImagePullPolicy: corev1.PullPolicy(c.ImagePullPolicy),
 	}
 }

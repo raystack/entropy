@@ -61,7 +61,11 @@ func TestContainer_Template(t *testing.T) {
 					v1.ResourceMemory: quantity,
 				},
 			},
-			VolumeMounts:    []v1.VolumeMount{{Name: "v1", MountPath: "/tmp/v1"}},
+			Lifecycle: &v1.Lifecycle{},
+			VolumeMounts: []v1.VolumeMount{
+				{Name: "v1", MountPath: "/tmp/v1"},
+				{Name: "shared-data", MountPath: "/shared"},
+			},
 			ImagePullPolicy: "Never",
 		}},
 	}
@@ -80,7 +84,7 @@ func TestContainer_Template(t *testing.T) {
 				Limits:          tt.fields.Limits,
 			}
 			if got := c.Template(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Template() = %v, want %v", got, tt.want)
+				t.Errorf("Template() = %v\n, want %v\n", got, tt.want)
 			}
 		})
 	}

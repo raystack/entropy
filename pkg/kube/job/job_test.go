@@ -46,8 +46,11 @@ func TestJob_Template(t *testing.T) {
 				Template: v13.PodTemplateSpec{
 					ObjectMeta: v1.ObjectMeta{Name: "pod-name"},
 					Spec: v13.PodSpec{
-						Containers:    nil,
-						Volumes:       nil,
+						Containers: nil,
+						Volumes: []v13.Volume{{
+							Name:         "shared-data",
+							VolumeSource: v13.VolumeSource{EmptyDir: &v13.EmptyDirVolumeSource{}},
+						}},
 						RestartPolicy: v13.RestartPolicyNever,
 					},
 				},
