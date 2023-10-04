@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	v1 "k8s.io/api/core/v1"
+
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/modules/job/config"
 	"github.com/goto/entropy/modules/job/driver"
@@ -105,6 +107,44 @@ var Module = module.Descriptor{
 					return err
 				}
 				return processor.UpdateJob(false)
+			},
+			GetJobPods: func(ctx context.Context, kubeConf kube.Config, labels map[string]string) ([]kube.Pod, error) {
+				kubeCl, err := kube.NewClient(ctx, kubeConf)
+				if err != nil {
+					return nil, errors.ErrInternal.WithMsgf("failed to create new kube client on driver").WithCausef(err.Error())
+				}
+				return kubeCl.GetPodDetails(ctx, conf.Namespace, labels, func(pod v1.Pod) bool {
+					// allow all pods
+					return true
+				})
+			},
+			StreamLogs: func(ctx context.Context, kubeConf kube.Config, filter map[string]string) (<-chan module.LogChunk, error) {
+				kubeCl, err := kube.NewClient(ctx, kubeConf)
+				if err != nil {
+					return nil, errors.ErrInternal.WithMsgf("failed to create new kube client on firehose driver Log").WithCausef(err.Error())
+				}
+
+				logs, err := kubeCl.StreamLogs(ctx, conf.Namespace, filter)
+				if err != nil {
+					return nil, err
+				}
+
+				mappedLogs := make(chan module.LogChunk)
+				go func() {
+					defer close(mappedLogs)
+					for {
+						select {
+						case log, ok := <-logs:
+							if !ok {
+								return
+							}
+							mappedLogs <- module.LogChunk{Data: log.Data, Labels: log.Labels}
+						case <-ctx.Done():
+							return
+						}
+					}
+				}()
+				return mappedLogs, err
 			},
 		}, nil
 	},

@@ -12,6 +12,7 @@ type Pod struct {
 	Name       string
 	Containers []container.Container
 	Volumes    []volume.Volume
+	Labels     map[string]string
 }
 
 func (p Pod) Template() corev1.PodTemplateSpec {
@@ -28,7 +29,10 @@ func (p Pod) Template() corev1.PodTemplateSpec {
 		VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
 	})
 	return corev1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{Name: p.Name},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   p.Name,
+			Labels: p.Labels,
+		},
 		Spec: corev1.PodSpec{
 			Containers:    containers,
 			Volumes:       volumes,

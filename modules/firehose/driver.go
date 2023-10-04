@@ -382,6 +382,9 @@ func mergeChartValues(cur, newVal *ChartValues) (*ChartValues, error) {
 
 func readOutputData(exr module.ExpandedResource) (*Output, error) {
 	var curOut Output
+	if len(exr.Resource.State.Output) == 0 {
+		return &curOut, nil
+	}
 	if err := json.Unmarshal(exr.Resource.State.Output, &curOut); err != nil {
 		return nil, errors.ErrInternal.WithMsgf("corrupted output").WithCausef(err.Error())
 	}

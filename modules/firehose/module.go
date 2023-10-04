@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"helm.sh/helm/v3/pkg/release"
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/goto/entropy/core/module"
 	"github.com/goto/entropy/modules/kubernetes"
@@ -101,7 +102,10 @@ var Module = module.Descriptor{
 				if err != nil {
 					return nil, errors.ErrInternal.WithMsgf("failed to create new kube client on firehose driver kube get pod").WithCausef(err.Error())
 				}
-				return kubeCl.GetPodDetails(ctx, ns, labels)
+				return kubeCl.GetPodDetails(ctx, ns, labels, func(pod v1.Pod) bool {
+					// allow pods that are in running state and are not marked for deletion
+					return pod.Status.Phase == v1.PodRunning && pod.DeletionTimestamp == nil
+				})
 			},
 			consumerReset: consumerReset,
 		}, nil

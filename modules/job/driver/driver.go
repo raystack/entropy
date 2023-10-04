@@ -21,6 +21,8 @@ type Driver struct {
 	SuspendJob func(ctx context.Context, conf kube.Config, j *job.Job) error
 	DeleteJob  func(ctx context.Context, conf kube.Config, j *job.Job) error
 	StartJob   func(ctx context.Context, conf kube.Config, j *job.Job) error
+	GetJobPods func(ctx context.Context, conf kube.Config, labels map[string]string) ([]kube.Pod, error)
+	StreamLogs func(ctx context.Context, kubeConf kube.Config, filter map[string]string) (<-chan module.LogChunk, error)
 }
 
 func (driver *Driver) Plan(_ context.Context, res module.ExpandedResource, act module.ActionRequest) (*resource.Resource, error) {
@@ -95,7 +97,7 @@ func (driver *Driver) Sync(ctx context.Context, exr module.ExpandedResource) (*r
 		return &finalState, nil
 	}
 
-	finalOut, err := driver.refreshOutput(ctx, exr.Resource, *conf, *out, kubeOut)
+	finalOut, err := driver.refreshOutput(ctx, *conf, *out, kubeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +108,21 @@ func (driver *Driver) Sync(ctx context.Context, exr module.ExpandedResource) (*r
 	return &finalState, nil
 }
 
-func (*Driver) Output(context.Context, module.ExpandedResource) (json.RawMessage, error) {
-	return nil, nil
+func (driver *Driver) Output(ctx context.Context, exr module.ExpandedResource) (json.RawMessage, error) {
+	output, err := ReadOutputData(exr)
+	if err != nil {
+		return nil, err
+	}
+
+	conf, err := config.ReadConfig(exr.Resource, exr.Spec.Configs, driver.Conf)
+	if err != nil {
+		return nil, errors.ErrInternal.WithCausef(err.Error())
+	}
+
+	var kubeOut kubernetes.Output
+	if err := json.Unmarshal(exr.Dependencies[KeyKubeDependency].Output, &kubeOut); err != nil {
+		return nil, errors.ErrInternal.WithMsgf("invalid kube state").WithCausef(err.Error())
+	}
+
+	return driver.refreshOutput(ctx, *conf, *output, kubeOut)
 }

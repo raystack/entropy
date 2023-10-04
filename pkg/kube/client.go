@@ -52,6 +52,7 @@ type LogChunk struct {
 type Pod struct {
 	Name       string   `json:"name"`
 	Containers []string `json:"containers"`
+	Status     string   `json:"status"`
 }
 
 type LogOptions struct {
@@ -281,7 +282,7 @@ func (c Client) GetJobProcessor(j *job.Job) (*job.Processor, error) {
 	return job.NewProcessor(j, clientSet.BatchV1().Jobs(j.Namespace)), nil
 }
 
-func (c Client) GetPodDetails(ctx context.Context, namespace string, labelSelectors map[string]string) ([]Pod, error) {
+func (c Client) GetPodDetails(ctx context.Context, namespace string, labelSelectors map[string]string, allow func(pod corev1.Pod) bool) ([]Pod, error) {
 	var podDetails []Pod
 	var selectors []string
 	var labelSelector string
@@ -305,13 +306,12 @@ func (c Client) GetPodDetails(ctx context.Context, namespace string, labelSelect
 	}
 
 	for _, pod := range pods.Items {
-		// not listing pods that are not in running state or are about to terminate
-		if pod.Status.Phase != corev1.PodRunning || pod.DeletionTimestamp != nil {
+		if !allow(pod) {
 			continue
 		}
-
 		podDetail := Pod{
-			Name: pod.Name,
+			Name:   pod.Name,
+			Status: string(pod.Status.Phase),
 		}
 
 		for _, container := range pod.Spec.Containers {
