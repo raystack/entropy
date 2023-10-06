@@ -91,6 +91,7 @@ func readConfig(r resource.Resource, confJSON json.RawMessage, dc driverConf) (*
 	}
 
 	cfg.EnvVariables = modules.CloneAndMergeMaps(dc.EnvVariables, cfg.EnvVariables)
+	cfg.InitContainer = dc.InitContainer
 
 	if cfg.Replicas <= 0 {
 		cfg.Replicas = 1
