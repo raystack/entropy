@@ -75,3 +75,8 @@ ALTER TABLE resources
     ADD COLUMN IF NOT EXISTS updated_by TEXT NOT NULL DEFAULT '<unknown>';
 
 ALTER TABLE revisions ADD COLUMN IF NOT EXISTS created_by TEXT NOT NULL DEFAULT '<unknown>';
+
+ALTER TABLE revision_tags
+DROP CONSTRAINT revision_tags_revision_id_fkey,
+    ADD CONSTRAINT revision_tags_revision_id_fkey FOREIGN KEY (revision_id)
+          REFERENCES revisions (id) ON DELETE CASCADE;
