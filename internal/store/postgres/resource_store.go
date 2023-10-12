@@ -1,9 +1,12 @@
 package postgres
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
+	"regexp"
+	"strings"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -72,46 +75,60 @@ func (st *Store) GetByURN(ctx context.Context, urn string) (*resource.Resource, 
 }
 
 func (st *Store) List(ctx context.Context, filter resource.Filter) ([]resource.Resource, error) {
-	q := sq.Select("urn").From(tableResources)
-	if filter.Kind != "" {
-		q = q.Where(sq.Eq{"kind": filter.Kind})
-	}
-	if filter.Project != "" {
-		q = q.Where(sq.Eq{"project": filter.Project})
-	}
-
-	if len(filter.Labels) > 0 {
-		tags := labelMapToTags(filter.Labels)
-		q = q.Join("resource_tags ON resource_id=id").
-			Where(sq.Eq{"tag": tags}).
-			GroupBy("urn").
-			Having("count(*) >= ?", len(tags))
-	}
-
-	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(st.db).QueryContext(ctx)
+	ListResourceByFilterRows, err := listResourceByFilter(ctx, st.db, filter.Project, filter.Kind)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
-	defer rows.Close()
 
-	var res []resource.Resource
-	for rows.Next() {
-		var urn string
-		if err := rows.Scan(&urn); err != nil {
-			return nil, err
+	var result []resource.Resource
+	for _, res := range ListResourceByFilterRows {
+		var nextSyncAt *time.Time
+		if res.StateNextSync != nil && !res.StateNextSync.IsZero() {
+			nextSyncAt = res.StateNextSync
 		}
 
-		r, err := st.GetByURN(ctx, urn)
+		var syncResult resource.SyncResult
+		if len(res.StateSyncResult) > 0 {
+			if err := json.Unmarshal(res.StateSyncResult, &syncResult); err != nil {
+				return nil, err
+			}
+		}
+
+		deps, err := depsBytesToMap(res.Dependencies)
 		if err != nil {
 			return nil, err
 		}
-		res = append(res, *r)
+
+		tagsMap, err := byteArrayToMap(res.Tags)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, resource.Resource{
+			URN:       res.Urn,
+			Kind:      res.Kind,
+			Name:      res.Name,
+			Project:   res.Project,
+			Labels:    tagsMap,
+			CreatedAt: *res.CreatedAt,
+			UpdatedAt: *res.UpdatedAt,
+			UpdatedBy: res.UpdatedBy,
+			CreatedBy: res.CreatedBy,
+			Spec: resource.Spec{
+				Configs:      res.SpecConfigs,
+				Dependencies: deps,
+			},
+			State: resource.State{
+				Status:     res.StateStatus,
+				Output:     res.StateOutput,
+				ModuleData: res.StateModuleData,
+				NextSyncAt: nextSyncAt,
+				SyncResult: syncResult,
+			},
+		})
 	}
 
-	return res, rows.Err()
+	return result, nil
 }
 
 func (st *Store) Create(ctx context.Context, r resource.Resource, hooks ...resource.MutationHook) error {
@@ -391,4 +408,51 @@ func syncResultAsJSON(syncRes resource.SyncResult) json.RawMessage {
 		panic(err)
 	}
 	return val
+}
+
+func byteArrayToMap(data []uint8) (map[string]string, error) {
+	if bytes.Equal(data, []byte("{NULL}")) {
+		return make(map[string]string), nil
+	}
+
+	re := regexp.MustCompile(`(\w+)=(\S+?)(?:,|\}|$)`)
+	matches := re.FindAllStringSubmatch(string(data), -1)
+
+	if len(matches) == 0 {
+		if len(data) > 0 {
+			return nil, errors.New("labels not in the expected format")
+		}
+		return make(map[string]string), nil
+	}
+
+	keyValueMap := make(map[string]string)
+	for _, match := range matches {
+		key := match[1]
+		value := match[2]
+
+		// Remove quotes from the value if present
+		value = strings.Trim(value, `"`)
+
+		keyValueMap[key] = value
+	}
+
+	return keyValueMap, nil
+}
+
+func depsBytesToMap(dependencies []byte) (map[string]string, error) {
+	deps := map[string]string{}
+	if len(dependencies) > 0 {
+		if err := json.Unmarshal(dependencies, &deps); err != nil {
+			return nil, err
+		}
+
+		for k := range deps {
+			if k != "" {
+				break
+			}
+			deps = map[string]string{}
+		}
+	}
+
+	return deps, nil
 }
