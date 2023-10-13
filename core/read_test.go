@@ -96,7 +96,7 @@ func TestService_ListResources(t *testing.T) {
 				t.Helper()
 				repo := &mocks.ResourceStore{}
 				repo.EXPECT().
-					List(mock.Anything, mock.Anything).
+					List(mock.Anything, mock.Anything, false).
 					Return(nil, nil).
 					Once()
 				return core.New(repo, nil, deadClock)
@@ -110,7 +110,7 @@ func TestService_ListResources(t *testing.T) {
 				t.Helper()
 				repo := &mocks.ResourceStore{}
 				repo.EXPECT().
-					List(mock.Anything, mock.Anything).
+					List(mock.Anything, mock.Anything, false).
 					Return(nil, errStoreFailure).
 					Once()
 				return core.New(repo, nil, deadClock)
@@ -124,7 +124,7 @@ func TestService_ListResources(t *testing.T) {
 				t.Helper()
 				repo := &mocks.ResourceStore{}
 				repo.EXPECT().
-					List(mock.Anything, mock.Anything).
+					List(mock.Anything, mock.Anything, false).
 					Return([]resource.Resource{sampleResource}, nil).
 					Once()
 				return core.New(repo, nil, deadClock)
@@ -140,7 +140,7 @@ func TestService_ListResources(t *testing.T) {
 			t.Parallel()
 			svc := tt.setup(t)
 
-			got, err := svc.ListResources(context.Background(), tt.filter)
+			got, err := svc.ListResources(context.Background(), tt.filter, false)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tt.wantErr))

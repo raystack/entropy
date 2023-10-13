@@ -418,7 +418,7 @@ func TestAPIServer_ListResources(t *testing.T) {
 				t.Helper()
 				resourceService := &mocks.ResourceService{}
 				resourceService.EXPECT().
-					ListResources(mock.Anything, mock.Anything).
+					ListResources(mock.Anything, mock.Anything, false).
 					Return(nil, errors.New("failed")).Once()
 
 				return NewAPIServer(resourceService)
@@ -436,7 +436,7 @@ func TestAPIServer_ListResources(t *testing.T) {
 				t.Helper()
 				resourceService := &mocks.ResourceService{}
 				resourceService.EXPECT().
-					ListResources(mock.Anything, mock.Anything).
+					ListResources(mock.Anything, mock.Anything, false).
 					Return([]resource.Resource{
 						{
 							URN:       "p-testdata-gl-testname-log",

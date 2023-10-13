@@ -999,6 +999,8 @@ func (m *ListResourcesRequest) validate(all bool) error {
 
 	// no validation rules for Labels
 
+	// no validation rules for WithSpecConfigs
+
 	if len(errors) > 0 {
 		return ListResourcesRequestMultiError(errors)
 	}

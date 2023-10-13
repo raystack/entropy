@@ -13,7 +13,7 @@ import (
 
 type ResourceService interface {
 	GetResource(ctx context.Context, urn string) (*resource.Resource, error)
-	ListResources(ctx context.Context, filter resource.Filter) ([]resource.Resource, error)
+	ListResources(ctx context.Context, filter resource.Filter, withSpecConfigs bool) ([]resource.Resource, error)
 	CreateResource(ctx context.Context, res resource.Resource) (*resource.Resource, error)
 	UpdateResource(ctx context.Context, urn string, req resource.UpdateRequest) (*resource.Resource, error)
 	DeleteResource(ctx context.Context, urn string) error
@@ -118,7 +118,9 @@ func (server APIServer) ListResources(ctx context.Context, request *entropyv1bet
 		Labels:  request.Labels,
 	}
 
-	resources, err := server.resourceSvc.ListResources(ctx, filter)
+	withSpecConfigs := request.GetWithSpecConfigs()
+
+	resources, err := server.resourceSvc.ListResources(ctx, filter, withSpecConfigs)
 	if err != nil {
 		return nil, serverutils.ToRPCError(err)
 	}

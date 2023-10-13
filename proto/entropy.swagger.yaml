@@ -134,6 +134,13 @@ paths:
           in: query
           required: false
           type: string
+        - name: with_spec_configs
+          description: |-
+            this toggle if set, will return spec configs as well.
+            it's default value is false.
+          in: query
+          required: false
+          type: boolean
       tags:
         - ResourceService
     post:

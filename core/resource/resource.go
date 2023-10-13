@@ -18,7 +18,7 @@ var namingPattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]+$`)
 
 type Store interface {
 	GetByURN(ctx context.Context, urn string) (*Resource, error)
-	List(ctx context.Context, filter Filter) ([]Resource, error)
+	List(ctx context.Context, filter Filter, withSpecConfigs bool) ([]Resource, error)
 
 	Create(ctx context.Context, r Resource, hooks ...MutationHook) error
 	Update(ctx context.Context, r Resource, saveRevision bool, reason string, hooks ...MutationHook) error

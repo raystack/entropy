@@ -8,11 +8,24 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 
 	"github.com/goto/entropy/pkg/errors"
 )
 
-const listResourceByFilterQuery = `SELECT r.id, r.urn, r.kind, r.name, r.project, r.created_at, r.updated_at, r.spec_configs, r.state_status, r.state_output, r.state_module_data, r.state_next_sync, r.state_sync_result, r.created_by, r.updated_by,
+const listResourceByFilterQuery = `SELECT r.id, r.urn, r.kind, r.name, r.project, r.created_at, r.updated_at, r.state_status, r.state_output, r.state_module_data, r.state_next_sync, r.state_sync_result, r.created_by, r.updated_by,
+       array_agg(rt.tag)::text[] AS tags,
+       jsonb_object_agg(COALESCE(rd.dependency_key, ''), d.urn) AS dependencies
+FROM resources r
+         LEFT JOIN resource_dependencies rd ON r.id = rd.resource_id
+         LEFT JOIN resources d ON rd.depends_on = d.id
+         LEFT JOIN resource_tags rt ON r.id = rt.resource_id
+WHERE ($1 = '' OR r.project = $1)
+  AND ($2 = '' OR r.kind = $2)
+GROUP BY r.id
+`
+
+const listResourceWithSpecConfigsByFilterQuery = `SELECT r.id, r.urn, r.kind, r.name, r.project, r.created_at, r.updated_at, r.spec_configs, r.state_status, r.state_output, r.state_module_data, r.state_next_sync, r.state_sync_result, r.created_by, r.updated_by,
        array_agg(rt.tag)::text[] AS tags,
        jsonb_object_agg(COALESCE(rd.dependency_key, ''), d.urn) AS dependencies
 FROM resources r
@@ -58,8 +71,48 @@ type ListResourceByFilterRow struct {
 	StateSyncResult []byte
 	CreatedBy       string
 	UpdatedBy       string
-	Tags            []byte
+	Tags            pq.StringArray
 	Dependencies    []byte
+}
+
+func listResourceWithSpecConfigsByFilter(ctx context.Context, db *sqlx.DB, project, kind string) ([]ListResourceByFilterRow, error) {
+	rows, err := db.QueryContext(ctx, listResourceWithSpecConfigsByFilterQuery, project, kind)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	var items []ListResourceByFilterRow
+	for rows.Next() {
+		var i ListResourceByFilterRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Urn,
+			&i.Kind,
+			&i.Name,
+			&i.Project,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.SpecConfigs,
+			&i.StateStatus,
+			&i.StateOutput,
+			&i.StateModuleData,
+			&i.StateNextSync,
+			&i.StateSyncResult,
+			&i.CreatedBy,
+			&i.UpdatedBy,
+			&i.Tags,
+			&i.Dependencies,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 func listResourceByFilter(ctx context.Context, db *sqlx.DB, project, kind string) ([]ListResourceByFilterRow, error) {
@@ -79,7 +132,6 @@ func listResourceByFilter(ctx context.Context, db *sqlx.DB, project, kind string
 			&i.Project,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.SpecConfigs,
 			&i.StateStatus,
 			&i.StateOutput,
 			&i.StateModuleData,

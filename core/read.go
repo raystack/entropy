@@ -39,8 +39,8 @@ func (svc *Service) GetResource(ctx context.Context, urn string) (*resource.Reso
 	return res, nil
 }
 
-func (svc *Service) ListResources(ctx context.Context, filter resource.Filter) ([]resource.Resource, error) {
-	resources, err := svc.store.List(ctx, filter)
+func (svc *Service) ListResources(ctx context.Context, filter resource.Filter, withSpecConfigs bool) ([]resource.Resource, error) {
+	resources, err := svc.store.List(ctx, filter, withSpecConfigs)
 	if err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}

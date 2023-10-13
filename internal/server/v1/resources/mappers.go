@@ -71,9 +71,11 @@ func resourceStateToProto(state resource.State) (*entropyv1beta1.ResourceState, 
 }
 
 func resourceSpecToProto(spec resource.Spec) (*entropyv1beta1.ResourceSpec, error) {
-	conf := structpb.Value{}
-	if err := json.Unmarshal(spec.Configs, &conf); err != nil {
-		return nil, errors.ErrInternal.WithMsgf("json.Unmarshal failed for spec.configs").WithCausef(err.Error())
+	conf := structpb.NewNullValue()
+	if spec.Configs != nil {
+		if err := json.Unmarshal(spec.Configs, &conf); err != nil {
+			return nil, errors.ErrInternal.WithMsgf("json.Unmarshal failed for spec.configs").WithCausef(err.Error())
+		}
 	}
 
 	var deps []*entropyv1beta1.ResourceDependency
@@ -85,7 +87,7 @@ func resourceSpecToProto(spec resource.Spec) (*entropyv1beta1.ResourceSpec, erro
 	}
 
 	return &entropyv1beta1.ResourceSpec{
-		Configs:      &conf,
+		Configs:      conf,
 		Dependencies: deps,
 	}, nil
 }
