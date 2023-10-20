@@ -119,8 +119,8 @@ func readConfig(r resource.Resource, confJSON json.RawMessage, dc driverConf) (*
 		rl.Limits = rl.Limits.merge(overrides.Limits)
 		rl.Requests = rl.Requests.merge(overrides.Requests)
 	}
-	cfg.Limits = rl.Limits
-	cfg.Requests = rl.Requests
+	cfg.Limits = rl.Limits.merge(cfg.Limits)
+	cfg.Requests = rl.Requests.merge(cfg.Requests)
 
 	return &cfg, nil
 }
