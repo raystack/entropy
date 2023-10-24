@@ -114,7 +114,9 @@ func ReadConfig(r resource.Resource, confJSON json.RawMessage, dc DriverConf) (*
 	} else if len(cfg.Name) > maxJobNameLength {
 		return nil, errors.ErrInvalid.WithMsgf("Job name must not have more than %d chars", maxJobNameLength)
 	}
-	cfg.Namespace = dc.Namespace
+	if len(cfg.Namespace) == 0 {
+		cfg.Namespace = dc.Namespace
+	}
 	if cfg.Replicas < 1 {
 		cfg.Replicas = 1
 	}
