@@ -209,6 +209,20 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 			return nil, err
 		}
 
+		for key, val := range conf.Telegraf.Config.Output {
+			valAsMap, ok := val.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			valAsMap, err = renderTplOfMapStringAny(valAsMap, mergedLabelsAndEnvVariablesMap)
+			if err != nil {
+				return nil, err
+			}
+
+			conf.Telegraf.Config.Output[key] = valAsMap
+		}
+
 		telegrafConf = Telegraf{
 			Enabled: true,
 			Image:   conf.Telegraf.Image,
@@ -419,4 +433,25 @@ func (us UsageSpec) merge(overide UsageSpec) UsageSpec {
 	}
 
 	return clone
+}
+
+func renderTplOfMapStringAny(labelsTpl map[string]any, labelsValues map[string]string) (map[string]any, error) {
+	outputMap := make(map[string]string)
+
+	for key, value := range labelsTpl {
+		if strValue, ok := value.(string); ok {
+			outputMap[key] = strValue
+		}
+	}
+
+	outputMap, err := renderTpl(outputMap, labelsValues)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, val := range outputMap {
+		labelsTpl[key] = val
+	}
+
+	return labelsTpl, nil
 }

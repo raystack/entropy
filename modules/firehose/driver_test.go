@@ -181,7 +181,7 @@ func TestFirehoseDriver(t *testing.T) {
 							"output": map[string]any{
 								"prometheus_remote_write": map[string]any{
 									"enabled": true,
-									"url":     "http://goto.com",
+									"url":     "http://goto.namespace-1.com",
 								},
 							},
 							"additional_global_tags": map[string]string{
@@ -358,7 +358,7 @@ func TestFirehoseDriver(t *testing.T) {
 							"output": map[string]any{
 								"prometheus_remote_write": map[string]any{
 									"enabled": true,
-									"url":     "http://goto.com",
+									"url":     "http://goto.namespace-1.com",
 								},
 							},
 							"additional_global_tags": map[string]string{
@@ -543,7 +543,7 @@ func TestFirehoseDriver(t *testing.T) {
 							"output": map[string]any{
 								"prometheus_remote_write": map[string]any{
 									"enabled": true,
-									"url":     "http://goto.com",
+									"url":     "http://goto.namespace-1.com",
 								},
 							},
 							"additional_global_tags": map[string]string{
@@ -686,7 +686,7 @@ func firehoseDriverConf() driverConf {
 				Output: map[string]any{
 					"prometheus_remote_write": map[string]any{
 						"enabled": true,
-						"url":     "http://goto.com",
+						"url":     "http://goto.{{ .namespace }}.com",
 					},
 				},
 				AdditionalGlobalTags: map[string]string{
