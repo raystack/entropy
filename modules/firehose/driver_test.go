@@ -576,7 +576,6 @@ func TestFirehoseDriver(t *testing.T) {
 			chartVals, _ := mergeChartValues(&fd.conf.ChartValues, conf.ChartValues)
 
 			conf.Telegraf = fd.conf.Telegraf
-			conf.Namespace = fd.conf.Namespace
 			conf.ChartValues = chartVals
 
 			got, err := fd.getHelmRelease(tt.res, *conf, tt.kubeOutput)
@@ -641,7 +640,9 @@ func firehoseDriverConf() driverConf {
 		Labels: map[string]string{
 			"team": "{{.team}}",
 		},
-		Namespace: "namespace-1",
+		Namespace: map[string]string{
+			"default": "namespace-1",
+		},
 		RequestsAndLimits: map[string]RequestsAndLimits{
 			"BIGQUERY": {
 				Limits: UsageSpec{

@@ -43,6 +43,7 @@ func (fd *firehoseDriver) refreshOutput(ctx context.Context, r resource.Resource
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
 	output.Pods = pods
+	output.Namespace = conf.Namespace
 
 	return modules.MustJSON(output), nil
 }

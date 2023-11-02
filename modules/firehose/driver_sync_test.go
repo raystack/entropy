@@ -81,7 +81,7 @@ func TestFirehoseDriver_Sync(t *testing.T) {
 				ModuleData: modules.MustJSON(transientData{
 					PendingSteps: nil,
 				}),
-			}),
+			}, "LOG", "firehose"),
 			kubeGetPod: func(t *testing.T) kubeGetPodFn {
 				t.Helper()
 				return func(ctx context.Context, conf kube.Config, ns string, labels map[string]string) ([]kube.Pod, error) {
@@ -98,6 +98,7 @@ func TestFirehoseDriver_Sync(t *testing.T) {
 			want: &resource.State{
 				Status: resource.StatusCompleted,
 				Output: modules.MustJSON(Output{
+					Namespace: "firehose",
 					Pods: []kube.Pod{
 						{
 							Name:       "foo-1",
@@ -113,7 +114,7 @@ func TestFirehoseDriver_Sync(t *testing.T) {
 			exr: sampleResourceWithState(resource.State{
 				Status: resource.StatusCompleted,
 				Output: modules.MustJSON(Output{}),
-			}),
+			}, "LOG", "firehose"),
 			kubeGetPod: func(t *testing.T) kubeGetPodFn {
 				t.Helper()
 				return func(ctx context.Context, conf kube.Config, ns string, labels map[string]string) ([]kube.Pod, error) {
@@ -130,7 +131,7 @@ func TestFirehoseDriver_Sync(t *testing.T) {
 				ModuleData: modules.MustJSON(transientData{
 					PendingSteps: []string{stepReleaseCreate},
 				}),
-			}),
+			}, "LOG", "firehose"),
 			kubeDeploy: func(t *testing.T) kubeDeployFn {
 				t.Helper()
 				return func(ctx context.Context, isCreate bool, conf kube.Config, hc helm.ReleaseConfig) error {
@@ -160,7 +161,7 @@ func TestFirehoseDriver_Sync(t *testing.T) {
 				ModuleData: modules.MustJSON(transientData{
 					PendingSteps: []string{stepReleaseCreate},
 				}),
-			}),
+			}, "LOG", "firehose"),
 			kubeDeploy: func(t *testing.T) kubeDeployFn {
 				t.Helper()
 				return func(ctx context.Context, isCreate bool, conf kube.Config, hc helm.ReleaseConfig) error {
@@ -199,7 +200,7 @@ func TestFirehoseDriver_Sync(t *testing.T) {
 				ModuleData: modules.MustJSON(transientData{
 					PendingSteps: []string{stepReleaseStop},
 				}),
-			}),
+			}, "LOG", "firehose"),
 			kubeDeploy: func(t *testing.T) kubeDeployFn {
 				t.Helper()
 				return func(ctx context.Context, isCreate bool, conf kube.Config, hc helm.ReleaseConfig) error {
@@ -263,7 +264,7 @@ func TestFirehoseDriver_Sync(t *testing.T) {
 	}
 }
 
-func sampleResourceWithState(state resource.State) module.ExpandedResource {
+func sampleResourceWithState(state resource.State, sinkType, namespace string) module.ExpandedResource {
 	return module.ExpandedResource{
 		Resource: resource.Resource{
 			URN:     "urn:goto:entropy:foo:fh1",
@@ -273,7 +274,7 @@ func sampleResourceWithState(state resource.State) module.ExpandedResource {
 			Spec: resource.Spec{
 				Configs: modules.MustJSON(map[string]any{
 					"replicas":      1,
-					"namespace":     "firehose",
+					"namespace":     namespace,
 					"deployment_id": "firehose-foo-fh1",
 					"telegraf": map[string]any{
 						"enabled": false,
@@ -284,7 +285,7 @@ func sampleResourceWithState(state resource.State) module.ExpandedResource {
 						"image_tag":         "latest",
 					},
 					"env_variables": map[string]string{
-						"SINK_TYPE":                      "LOG",
+						"SINK_TYPE":                      sinkType,
 						"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
 						"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
 						"SOURCE_KAFKA_BROKERS":           "localhost:9092",

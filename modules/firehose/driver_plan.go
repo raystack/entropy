@@ -20,6 +20,8 @@ var (
 	suffixRegex = regexp.MustCompile(`^([A-Za-z0-9-]+)-([0-9]+)$`)
 )
 
+var errCauseInvalidNamespaceUpdate = "cannot update kube namespace of a running firehose"
+
 func (fd *firehoseDriver) Plan(_ context.Context, exr module.ExpandedResource, act module.ActionRequest) (*resource.Resource, error) {
 	switch act.Name {
 	case module.CreateAction:
@@ -57,9 +59,19 @@ func (fd *firehoseDriver) planChange(exr module.ExpandedResource, act module.Act
 		// restore configs that are not user-controlled.
 		newConf.DeploymentID = curConf.DeploymentID
 		newConf.ChartValues = chartVals
-		newConf.Namespace = curConf.Namespace
 		newConf.Telegraf = fd.conf.Telegraf
 		newConf.InitContainer = fd.conf.InitContainer
+
+		ns := fd.conf.Namespace[defaultKey]
+		if override, ok := fd.conf.Namespace[newConf.EnvVariables[confSinkType]]; ok {
+			ns = override
+		}
+		if curConf.Namespace != ns {
+			if !curConf.Stopped {
+				return nil, errors.ErrInvalid.WithCausef(errCauseInvalidNamespaceUpdate)
+			}
+			newConf.Namespace = ns
+		}
 
 		curConf = newConf
 
@@ -120,7 +132,6 @@ func (fd *firehoseDriver) planCreate(exr module.ExpandedResource, act module.Act
 
 	// set project defaults.
 	conf.Telegraf = fd.conf.Telegraf
-	conf.Namespace = fd.conf.Namespace
 	conf.ChartValues = chartVals
 
 	immediately := fd.timeNow()

@@ -186,6 +186,77 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 			},
 			wantErr: nil,
 		},
+		{
+			title: "Create_ValidRequest_Bigquery",
+			exr: module.ExpandedResource{
+				Resource: resource.Resource{
+					URN:     "urn:goto:entropy:foo:fh1",
+					Kind:    "firehose",
+					Name:    "fh1",
+					Project: "foo",
+				},
+			},
+			act: module.ActionRequest{
+				Name: module.CreateAction,
+				Params: modules.MustJSON(map[string]any{
+					"replicas": 1,
+					"env_variables": map[string]string{
+						"SINK_TYPE":                      "BIGQUERY",
+						"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
+						"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
+						"SOURCE_KAFKA_BROKERS":           "localhost:9092",
+						"SOURCE_KAFKA_TOPIC":             "foo-log",
+					},
+				}),
+			},
+			want: &resource.Resource{
+				URN:     "urn:goto:entropy:foo:fh1",
+				Kind:    "firehose",
+				Name:    "fh1",
+				Project: "foo",
+				Spec: resource.Spec{
+					Configs: modules.MustJSON(map[string]any{
+						"stopped":       false,
+						"replicas":      1,
+						"namespace":     "bigquery-firehose",
+						"deployment_id": "foo-fh1-firehose",
+						"chart_values": map[string]string{
+							"chart_version":     "0.1.3",
+							"image_pull_policy": "IfNotPresent",
+							"image_tag":         "latest",
+						},
+						"limits": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
+						},
+						"requests": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
+						},
+						"env_variables": map[string]string{
+							"SINK_TYPE":                      "BIGQUERY",
+							"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
+							"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
+							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
+							"SOURCE_KAFKA_TOPIC":             "foo-log",
+						},
+						"init_container": map[string]interface{}{"args": interface{}(nil), "command": interface{}(nil), "enabled": false, "image_tag": "", "pull_policy": "", "repository": ""},
+					}),
+				},
+				State: resource.State{
+					Status: resource.StatusPending,
+					Output: modules.MustJSON(Output{
+						Namespace:   "bigquery-firehose",
+						ReleaseName: "foo-fh1-firehose",
+					}),
+					ModuleData: modules.MustJSON(transientData{
+						PendingSteps: []string{stepReleaseCreate},
+					}),
+					NextSyncAt: &frozenTime,
+				},
+			},
+			wantErr: nil,
+		},
 
 		// update action tests
 		{
@@ -211,7 +282,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					State: resource.State{
 						Status: resource.StatusCompleted,
 						Output: modules.MustJSON(Output{
-							Namespace:   "foo",
+							Namespace:   "firehose",
 							ReleaseName: "bar",
 						}),
 					},
@@ -237,6 +308,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 				Project: "foo",
 				Spec: resource.Spec{
 					Configs: modules.MustJSON(map[string]any{
+						"namespace":     "firehose",
 						"stopped":       false,
 						"replicas":      10,
 						"deployment_id": "firehose-deployment-x",
@@ -261,7 +333,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 				State: resource.State{
 					Status: resource.StatusPending,
 					Output: modules.MustJSON(Output{
-						Namespace:   "foo",
+						Namespace:   "firehose",
 						ReleaseName: "bar",
 					}),
 					ModuleData: modules.MustJSON(transientData{
@@ -272,7 +344,6 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 			},
 			wantErr: nil,
 		},
-
 		{
 			title: "Update_Resource_&_Limits",
 			exr: module.ExpandedResource{
@@ -296,7 +367,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					State: resource.State{
 						Status: resource.StatusCompleted,
 						Output: modules.MustJSON(Output{
-							Namespace:   "foo",
+							Namespace:   "firehose",
 							ReleaseName: "bar",
 						}),
 					},
@@ -330,6 +401,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 				Project: "foo",
 				Spec: resource.Spec{
 					Configs: modules.MustJSON(map[string]any{
+						"namespace":     "firehose",
 						"stopped":       false,
 						"replicas":      10,
 						"deployment_id": "firehose-deployment-x",
@@ -354,7 +426,142 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 				State: resource.State{
 					Status: resource.StatusPending,
 					Output: modules.MustJSON(Output{
-						Namespace:   "foo",
+						Namespace:   "firehose",
+						ReleaseName: "bar",
+					}),
+					ModuleData: modules.MustJSON(transientData{
+						PendingSteps: []string{stepReleaseUpdate},
+					}),
+					NextSyncAt: &frozenTime,
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			title: "Update_Running_Firehose_Namespace",
+			exr: module.ExpandedResource{
+				Resource: resource.Resource{
+					URN:     "urn:goto:entropy:foo:fh1",
+					Kind:    "firehose",
+					Name:    "fh1",
+					Project: "foo",
+					Spec: resource.Spec{
+						Configs: modules.MustJSON(map[string]any{
+							"replicas":      1,
+							"stopped":       false,
+							"deployment_id": "firehose-deployment-x",
+							"env_variables": map[string]string{
+								"SINK_TYPE":                "LOG",
+								"INPUT_SCHEMA_PROTO_CLASS": "com.foo.Bar",
+								"SOURCE_KAFKA_BROKERS":     "localhost:9092",
+								"SOURCE_KAFKA_TOPIC":       "foo-log",
+							},
+						}),
+					},
+					State: resource.State{
+						Status: resource.StatusCompleted,
+						Output: modules.MustJSON(Output{
+							Namespace:   "firehose",
+							ReleaseName: "bar",
+						}),
+					},
+				},
+			},
+			act: module.ActionRequest{
+				Name: module.UpdateAction,
+				Params: modules.MustJSON(map[string]any{
+					"replicas": 10,
+					"stopped":  false,
+					"env_variables": map[string]string{
+						"SINK_TYPE":                      "BIGQUERY", // the change being applied
+						"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
+						"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
+						"SOURCE_KAFKA_BROKERS":           "localhost:9092",
+						"SOURCE_KAFKA_TOPIC":             "foo-log",
+					},
+				}),
+			},
+			want:    nil,
+			wantErr: errors.ErrInvalid.WithCausef(errCauseInvalidNamespaceUpdate),
+		},
+		{
+			title: "Update_Stopped_Firehose_Namespace",
+			exr: module.ExpandedResource{
+				Resource: resource.Resource{
+					URN:     "urn:goto:entropy:foo:fh1",
+					Kind:    "firehose",
+					Name:    "fh1",
+					Project: "foo",
+					Spec: resource.Spec{
+						Configs: modules.MustJSON(map[string]any{
+							"namespace":     "firehose",
+							"replicas":      1,
+							"stopped":       true,
+							"deployment_id": "firehose-deployment-x",
+							"env_variables": map[string]string{
+								"SINK_TYPE":                "LOG",
+								"INPUT_SCHEMA_PROTO_CLASS": "com.foo.Bar",
+								"SOURCE_KAFKA_BROKERS":     "localhost:9092",
+								"SOURCE_KAFKA_TOPIC":       "foo-log",
+							},
+						}),
+					},
+					State: resource.State{
+						Status: resource.StatusCompleted,
+						Output: modules.MustJSON(Output{
+							Namespace:   "firehose",
+							ReleaseName: "bar",
+						}),
+					},
+				},
+			},
+			act: module.ActionRequest{
+				Name: module.UpdateAction,
+				Params: modules.MustJSON(map[string]any{
+					"replicas": 10,
+					"stopped":  false, // shall allow starting at the time of update
+					"env_variables": map[string]string{
+						"SINK_TYPE":                      "BIGQUERY", // the change being applied
+						"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
+						"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
+						"SOURCE_KAFKA_BROKERS":           "localhost:9092",
+						"SOURCE_KAFKA_TOPIC":             "foo-log",
+					},
+				}),
+			},
+			want: &resource.Resource{
+				URN:     "urn:goto:entropy:foo:fh1",
+				Kind:    "firehose",
+				Name:    "fh1",
+				Project: "foo",
+				Spec: resource.Spec{
+					Configs: modules.MustJSON(map[string]any{
+						"namespace":     "bigquery-firehose",
+						"stopped":       false,
+						"replicas":      10,
+						"deployment_id": "firehose-deployment-x",
+						"env_variables": map[string]string{
+							"SINK_TYPE":                      "BIGQUERY",
+							"INPUT_SCHEMA_PROTO_CLASS":       "com.foo.Bar",
+							"SOURCE_KAFKA_CONSUMER_GROUP_ID": "foo-bar-baz",
+							"SOURCE_KAFKA_BROKERS":           "localhost:9092",
+							"SOURCE_KAFKA_TOPIC":             "foo-log",
+						},
+						"limits": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
+						},
+						"requests": map[string]any{
+							"cpu":    "200m",
+							"memory": "512Mi",
+						},
+						"init_container": map[string]interface{}{"args": interface{}(nil), "command": interface{}(nil), "enabled": false, "image_tag": "", "pull_policy": "", "repository": ""},
+					}),
+				},
+				State: resource.State{
+					Status: resource.StatusPending,
+					Output: modules.MustJSON(Output{
+						Namespace:   "firehose", // this is updated when Output is triggered
 						ReleaseName: "bar",
 					}),
 					ModuleData: modules.MustJSON(transientData{
@@ -438,7 +645,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					State: resource.State{
 						Status: resource.StatusCompleted,
 						Output: modules.MustJSON(Output{
-							Namespace:   "foo",
+							Namespace:   "firehose",
 							ReleaseName: "bar",
 						}),
 					},
@@ -457,6 +664,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 				Project: "foo",
 				Spec: resource.Spec{
 					Configs: modules.MustJSON(map[string]any{
+						"namespace":     "firehose",
 						"replicas":      1,
 						"deployment_id": "firehose-deployment-x",
 						"env_variables": map[string]string{
@@ -483,7 +691,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 				State: resource.State{
 					Status: resource.StatusPending,
 					Output: modules.MustJSON(Output{
-						Namespace:   "foo",
+						Namespace:   "firehose",
 						ReleaseName: "bar",
 					}),
 					ModuleData: modules.MustJSON(transientData{
@@ -528,7 +736,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 					State: resource.State{
 						Status: resource.StatusCompleted,
 						Output: modules.MustJSON(Output{
-							Namespace:   "foo",
+							Namespace:   "firehose",
 							ReleaseName: "bar",
 						}),
 					},
@@ -544,6 +752,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 				Project: "foo",
 				Spec: resource.Spec{
 					Configs: modules.MustJSON(map[string]any{
+						"namespace":     "firehose",
 						"stopped":       false,
 						"replicas":      1,
 						"deployment_id": "firehose-deployment-x",
@@ -573,7 +782,7 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 				State: resource.State{
 					Status: resource.StatusPending,
 					Output: modules.MustJSON(Output{
-						Namespace:   "foo",
+						Namespace:   "firehose",
 						ReleaseName: "bar",
 					}),
 					ModuleData: modules.MustJSON(transientData{
@@ -634,6 +843,11 @@ func TestFirehoseDriver_Plan(t *testing.T) {
 			dr := &firehoseDriver{
 				conf:    defaultDriverConf,
 				timeNow: func() time.Time { return frozenTime },
+			}
+
+			dr.conf.Namespace = map[string]string{
+				defaultKey: "firehose",
+				"BIGQUERY": "bigquery-firehose",
 			}
 
 			got, err := dr.Plan(context.Background(), tt.exr, tt.act)

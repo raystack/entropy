@@ -75,7 +75,7 @@ func TestFirehoseDriver_Output(t *testing.T) {
 			exr: sampleResourceWithState(resource.State{
 				Status: resource.StatusCompleted,
 				Output: modules.MustJSON(Output{}),
-			}),
+			}, "LOG", "firehose"),
 			kubeGetPod: func(t *testing.T) kubeGetPodFn {
 				t.Helper()
 				return func(ctx context.Context, conf kube.Config, ns string, labels map[string]string) ([]kube.Pod, error) {
@@ -95,7 +95,7 @@ func TestFirehoseDriver_Output(t *testing.T) {
 					Namespace:   "firehose",
 					ReleaseName: "foo-bar",
 				}),
-			}),
+			}, "LOG", "firehose"),
 			kubeGetPod: func(t *testing.T) kubeGetPodFn {
 				t.Helper()
 				return func(ctx context.Context, conf kube.Config, ns string, labels map[string]string) ([]kube.Pod, error) {
@@ -120,6 +120,40 @@ func TestFirehoseDriver_Output(t *testing.T) {
 				ReleaseName: "foo-bar",
 			}),
 		},
+		{
+			title: "Update_Namespace",
+			exr: sampleResourceWithState(resource.State{
+				Status: resource.StatusCompleted,
+				Output: modules.MustJSON(Output{
+					Pods:        nil,
+					Namespace:   "firehose",
+					ReleaseName: "foo-bar",
+				}),
+			}, "BIGQUERY", "bigquery-firehose"),
+			kubeGetPod: func(t *testing.T) kubeGetPodFn {
+				t.Helper()
+				return func(ctx context.Context, conf kube.Config, ns string, labels map[string]string) ([]kube.Pod, error) {
+					assert.Equal(t, ns, "bigquery-firehose")
+					assert.Equal(t, labels["app"], "firehose-foo-fh1")
+					return []kube.Pod{
+						{
+							Name:       "foo-1",
+							Containers: []string{"firehose"},
+						},
+					}, nil
+				}
+			},
+			want: modules.MustJSON(Output{
+				Pods: []kube.Pod{
+					{
+						Name:       "foo-1",
+						Containers: []string{"firehose"},
+					},
+				},
+				Namespace:   "bigquery-firehose",
+				ReleaseName: "foo-bar",
+			}),
+		},
 	}
 
 	for _, tt := range table {
@@ -128,6 +162,12 @@ func TestFirehoseDriver_Output(t *testing.T) {
 				conf:    defaultDriverConf,
 				timeNow: func() time.Time { return frozenTime },
 			}
+
+			fd.conf.Namespace = map[string]string{
+				defaultKey: "firehose",
+				"BIGQUERY": "bigquery-firehose",
+			}
+
 			if tt.kubeGetPod != nil {
 				fd.kubeGetPod = tt.kubeGetPod(t)
 			}
