@@ -15,6 +15,7 @@ import (
 const urnSeparator = ":"
 
 var namingPattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]+$`)
+var namingPatternStartingWithDigits = regexp.MustCompile(`^\d*[A-Za-z0-9_-]+$`)
 
 type Store interface {
 	GetByURN(ctx context.Context, urn string) (*Resource, error)
@@ -91,8 +92,8 @@ func (res *Resource) Validate(isCreate bool) error {
 	if !namingPattern.MatchString(res.Kind) {
 		return errors.ErrInvalid.WithMsgf("kind must match pattern '%s'", namingPattern)
 	}
-	if !namingPattern.MatchString(res.Name) {
-		return errors.ErrInvalid.WithMsgf("name must match pattern '%s'", namingPattern)
+	if !namingPatternStartingWithDigits.MatchString(res.Name) {
+		return errors.ErrInvalid.WithMsgf("name must match pattern '%s'", namingPatternStartingWithDigits)
 	}
 	if !namingPattern.MatchString(res.Project) {
 		return errors.ErrInvalid.WithMsgf("project must match pattern '%s'", namingPattern)

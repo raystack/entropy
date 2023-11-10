@@ -44,7 +44,24 @@ func TestResource_Validate(t *testing.T) {
 			},
 			want: errors.ErrInvalid,
 		},
-
+		{
+			name: "ValidResourceWithNameStartingWithANumber",
+			res: resource.Resource{
+				Kind:    "fake",
+				Name:    "12a1lpha",
+				Project: "goto",
+			},
+			want: nil,
+		},
+		{
+			name: "ValidResourceWithNameAsNumber",
+			res: resource.Resource{
+				Kind:    "fake",
+				Name:    "112233",
+				Project: "goto",
+			},
+			want: nil,
+		},
 		{
 			name: "ValidResource",
 			res: resource.Resource{
