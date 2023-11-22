@@ -16,9 +16,7 @@ import (
 
 const SourceKafkaConsumerAutoOffsetReset = "SOURCE_KAFKA_CONSUMER_CONFIG_AUTO_OFFSET_RESET"
 
-var (
-	suffixRegex = regexp.MustCompile(`^([A-Za-z0-9-]+)-([0-9]+)$`)
-)
+var suffixRegex = regexp.MustCompile(`^([A-Za-z0-9-]+)-([0-9]+)$`)
 
 var errCauseInvalidNamespaceUpdate = "cannot update kube namespace of a running firehose"
 
