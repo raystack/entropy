@@ -39,7 +39,6 @@ func (driver *Driver) planCreate(exr module.ExpandedResource, act module.ActionR
 }
 
 func (driver *Driver) planPendingWithConf(conf *config.Config, exr module.ExpandedResource, steps []PendingStep) (*resource.Resource, error) {
-	conf.Namespace = driver.Conf.Namespace
 	immediately := time.Now()
 	exr.Resource.Spec.Configs = modules.MustJSON(conf)
 	exr.Resource.State = resource.State{
