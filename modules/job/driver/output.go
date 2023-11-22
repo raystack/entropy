@@ -10,6 +10,7 @@ import (
 	"github.com/goto/entropy/modules/kubernetes"
 	"github.com/goto/entropy/pkg/errors"
 	"github.com/goto/entropy/pkg/kube"
+	"github.com/goto/entropy/pkg/kube/job"
 )
 
 type Output struct {
@@ -19,7 +20,8 @@ type Output struct {
 }
 
 func (driver *Driver) refreshOutput(ctx context.Context, conf config.Config, output Output, kubeOut kubernetes.Output) (json.RawMessage, error) {
-	pods, err := driver.GetJobPods(ctx, kubeOut.Configs, map[string]string{"job-name": conf.Name})
+	j := &job.Job{Name: conf.Name, Namespace: conf.Namespace}
+	pods, err := driver.GetJobPods(ctx, kubeOut.Configs, j, map[string]string{"job-name": conf.Name})
 	if err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}

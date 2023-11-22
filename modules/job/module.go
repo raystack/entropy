@@ -108,23 +108,23 @@ var Module = module.Descriptor{
 				}
 				return processor.UpdateJob(false)
 			},
-			GetJobPods: func(ctx context.Context, kubeConf kube.Config, labels map[string]string) ([]kube.Pod, error) {
+			GetJobPods: func(ctx context.Context, kubeConf kube.Config, j *job.Job, labels map[string]string) ([]kube.Pod, error) {
 				kubeCl, err := kube.NewClient(ctx, kubeConf)
 				if err != nil {
 					return nil, errors.ErrInternal.WithMsgf("failed to create new kube client on driver").WithCausef(err.Error())
 				}
-				return kubeCl.GetPodDetails(ctx, conf.Namespace, labels, func(pod v1.Pod) bool {
+				return kubeCl.GetPodDetails(ctx, j.Namespace, labels, func(pod v1.Pod) bool {
 					// allow all pods
 					return true
 				})
 			},
-			StreamLogs: func(ctx context.Context, kubeConf kube.Config, filter map[string]string) (<-chan module.LogChunk, error) {
+			StreamLogs: func(ctx context.Context, kubeConf kube.Config, j *job.Job, filter map[string]string) (<-chan module.LogChunk, error) {
 				kubeCl, err := kube.NewClient(ctx, kubeConf)
 				if err != nil {
 					return nil, errors.ErrInternal.WithMsgf("failed to create new kube client on firehose driver Log").WithCausef(err.Error())
 				}
 
-				logs, err := kubeCl.StreamLogs(ctx, conf.Namespace, filter)
+				logs, err := kubeCl.StreamLogs(ctx, j.Namespace, filter)
 				if err != nil {
 					return nil, err
 				}

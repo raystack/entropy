@@ -8,6 +8,7 @@ import (
 	"github.com/goto/entropy/modules/job/config"
 	"github.com/goto/entropy/modules/kubernetes"
 	"github.com/goto/entropy/pkg/errors"
+	"github.com/goto/entropy/pkg/kube/job"
 )
 
 func (driver *Driver) Log(ctx context.Context, res module.ExpandedResource, filter map[string]string) (<-chan module.LogChunk, error) {
@@ -25,5 +26,6 @@ func (driver *Driver) Log(ctx context.Context, res module.ExpandedResource, filt
 	if err := json.Unmarshal(res.Dependencies[KeyKubeDependency].Output, &kubeOut); err != nil {
 		return nil, errors.ErrInternal.WithCausef(err.Error())
 	}
-	return driver.StreamLogs(ctx, kubeOut.Configs, filter)
+	j := &job.Job{Name: conf.Name, Namespace: conf.Namespace}
+	return driver.StreamLogs(ctx, kubeOut.Configs, j, filter)
 }

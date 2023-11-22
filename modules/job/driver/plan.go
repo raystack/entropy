@@ -35,10 +35,10 @@ func (driver *Driver) planCreate(exr module.ExpandedResource, act module.ActionR
 	if err != nil {
 		return nil, err
 	}
-	return driver.planPendingWithConf(conf, exr, []PendingStep{Create})
+	return planPendingWithConf(conf, exr, []PendingStep{Create})
 }
 
-func (driver *Driver) planPendingWithConf(conf *config.Config, exr module.ExpandedResource, steps []PendingStep) (*resource.Resource, error) {
+func planPendingWithConf(conf *config.Config, exr module.ExpandedResource, steps []PendingStep) (*resource.Resource, error) {
 	immediately := time.Now()
 	exr.Resource.Spec.Configs = modules.MustJSON(conf)
 	exr.Resource.State = resource.State{
@@ -60,7 +60,7 @@ func (driver *Driver) planPendingWithExistingResource(exr module.ExpandedResourc
 	if err != nil {
 		return nil, err
 	}
-	return driver.planPendingWithConf(conf, exr, step)
+	return planPendingWithConf(conf, exr, step)
 }
 
 func (driver *Driver) planDelete(exr module.ExpandedResource) (*resource.Resource, error) {
