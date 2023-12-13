@@ -82,7 +82,7 @@ func TestFirehoseDriver(t *testing.T) {
 				Chart:       "firehose",
 				Version:     "0.1.13",
 				Namespace:   "namespace-1",
-				Timeout:     300,
+				Timeout:     60,
 				Wait:        true,
 				ForceUpdate: true,
 				Values: map[string]any{
@@ -259,7 +259,7 @@ func TestFirehoseDriver(t *testing.T) {
 				Chart:       "firehose",
 				Version:     "0.1.13",
 				Namespace:   "namespace-1",
-				Timeout:     300,
+				Timeout:     60,
 				Wait:        true,
 				ForceUpdate: true,
 				Values: map[string]any{
@@ -444,7 +444,7 @@ func TestFirehoseDriver(t *testing.T) {
 				Chart:       "firehose",
 				Version:     "0.1.13",
 				Namespace:   "namespace-1",
-				Timeout:     300,
+				Timeout:     60,
 				Wait:        true,
 				ForceUpdate: true,
 				Values: map[string]any{
@@ -596,6 +596,7 @@ func TestFirehoseDriver(t *testing.T) {
 
 func firehoseDriverConf() driverConf {
 	return driverConf{
+		KubeDeployTimeout: 60,
 		NodeAffinityMatchExpressions: NodeAffinityMatchExpressions{
 			RequiredDuringSchedulingIgnoredDuringExecution: []Preference{
 				{

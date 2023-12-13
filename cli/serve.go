@@ -52,7 +52,7 @@ func cmdServe() *cobra.Command {
 
 		store := setupStorage(cfg.PGConnStr, cfg.Syncer)
 		moduleService := module.NewService(setupRegistry(), store)
-		resourceService := core.New(store, moduleService, time.Now)
+		resourceService := core.New(store, moduleService, time.Now, cfg.Syncer.SyncBackoffInterval, cfg.Syncer.MaxRetries)
 
 		if migrate {
 			if migrateErr := runMigrations(cmd.Context(), cfg); migrateErr != nil {

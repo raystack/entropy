@@ -27,9 +27,11 @@ type Config struct {
 }
 
 type syncerConf struct {
-	SyncInterval    time.Duration `mapstructure:"sync_interval" default:"1s"`
-	RefreshInterval time.Duration `mapstructure:"refresh_interval" default:"3s"`
-	ExtendLockBy    time.Duration `mapstructure:"extend_lock_by" default:"5s"`
+	SyncInterval        time.Duration `mapstructure:"sync_interval" default:"1s"`
+	RefreshInterval     time.Duration `mapstructure:"refresh_interval" default:"3s"`
+	ExtendLockBy        time.Duration `mapstructure:"extend_lock_by" default:"5s"`
+	SyncBackoffInterval time.Duration `mapstructure:"sync_backoff_interval" default:"5s"`
+	MaxRetries          int           `mapstructure:"max_retries" default:"5"`
 }
 
 type serveConfig struct {

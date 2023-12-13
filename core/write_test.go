@@ -37,7 +37,7 @@ func TestService_CreateResource(t *testing.T) {
 					PlanAction(mock.Anything, mock.Anything, mock.Anything).
 					Return(nil, errSample).Once()
 
-				return core.New(nil, mod, deadClock)
+				return core.New(nil, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -59,7 +59,7 @@ func TestService_CreateResource(t *testing.T) {
 					Return(nil, errors.ErrNotFound).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -98,7 +98,7 @@ func TestService_CreateResource(t *testing.T) {
 					}, nil).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -136,7 +136,7 @@ func TestService_CreateResource(t *testing.T) {
 					}, nil).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -170,7 +170,7 @@ func TestService_CreateResource(t *testing.T) {
 					Return(errSample).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -198,7 +198,7 @@ func TestService_CreateResource(t *testing.T) {
 					Create(mock.Anything, mock.Anything, mock.Anything).
 					Return(errors.ErrConflict).Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -255,7 +255,7 @@ func TestService_CreateResource(t *testing.T) {
 					}).
 					Return(nil)
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			res: resource.Resource{
 				Kind:    "mock",
@@ -328,7 +328,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Return(nil, errors.ErrNotFound).
 					Once()
 
-				return core.New(resourceRepo, nil, deadClock)
+				return core.New(resourceRepo, nil, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			urn: "orn:entropy:mock:project:child",
 			update: resource.UpdateRequest{
@@ -357,7 +357,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Return(&testResource, nil).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			urn: "orn:entropy:mock:project:child",
 			update: resource.UpdateRequest{
@@ -404,7 +404,7 @@ func TestService_UpdateResource(t *testing.T) {
 					Return(nil).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			urn: "orn:entropy:mock:project:child",
 			update: resource.UpdateRequest{
@@ -450,7 +450,7 @@ func TestService_UpdateResource(t *testing.T) {
 					}).
 					Twice()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			urn: "orn:entropy:mock:project:child",
 			update: resource.UpdateRequest{
@@ -513,7 +513,7 @@ func TestService_DeleteResource(t *testing.T) {
 					Return(nil, testErr).
 					Once()
 
-				return core.New(resourceRepo, nil, deadClock)
+				return core.New(resourceRepo, nil, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			urn:     "orn:entropy:mock:foo:bar",
 			wantErr: testErr,
@@ -558,7 +558,7 @@ func TestService_DeleteResource(t *testing.T) {
 					Return(testErr).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			urn:     "orn:entropy:mock:foo:bar",
 			wantErr: errors.ErrInternal,
@@ -603,7 +603,7 @@ func TestService_DeleteResource(t *testing.T) {
 					Return(nil).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			urn:     "orn:entropy:mock:foo:bar",
 			wantErr: nil,
@@ -653,7 +653,7 @@ func TestService_ApplyAction(t *testing.T) {
 					Return(nil, errors.ErrNotFound).
 					Once()
 
-				return core.New(resourceRepo, nil, deadClock)
+				return core.New(resourceRepo, nil, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			urn:     "orn:entropy:mock:foo:bar",
 			action:  sampleAction,
@@ -680,7 +680,7 @@ func TestService_ApplyAction(t *testing.T) {
 					}, nil).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			urn:     "orn:entropy:mock:foo:bar",
 			action:  sampleAction,
@@ -713,7 +713,7 @@ func TestService_ApplyAction(t *testing.T) {
 					}, nil).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			urn:     "orn:entropy:mock:foo:bar",
 			action:  sampleAction,
@@ -756,7 +756,7 @@ func TestService_ApplyAction(t *testing.T) {
 					Return(nil).
 					Once()
 
-				return core.New(resourceRepo, mod, deadClock)
+				return core.New(resourceRepo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			urn:    "orn:entropy:mock:foo:bar",
 			action: sampleAction,

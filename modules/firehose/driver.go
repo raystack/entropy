@@ -125,6 +125,9 @@ type driverConf struct {
 
 	// delay between stopping a firehose and making an offset reset request
 	OffsetResetDelaySeconds int `json:"offset_reset_delay_seconds"`
+
+	// timeout value for a kube deployment run
+	KubeDeployTimeout int `json:"kube_deploy_timeout_seconds"`
 }
 
 type RequestsAndLimits struct {
@@ -293,6 +296,7 @@ func (fd *firehoseDriver) getHelmRelease(res resource.Resource, conf Config,
 	}
 
 	rc := helm.DefaultReleaseConfig()
+	rc.Timeout = fd.conf.KubeDeployTimeout
 	rc.Name = conf.DeploymentID
 	rc.Repository = chartRepo
 	rc.Chart = chartName

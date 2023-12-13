@@ -27,12 +27,7 @@ type ModuleService interface {
 	GetOutput(ctx context.Context, res module.ExpandedResource) (json.RawMessage, error)
 }
 
-func New(repo resource.Store, moduleSvc ModuleService, clockFn func() time.Time) *Service {
-	const (
-		defaultMaxRetries  = 10
-		defaultSyncBackoff = 5 * time.Second
-	)
-
+func New(repo resource.Store, moduleSvc ModuleService, clockFn func() time.Time, syncBackoffInterval time.Duration, maxRetries int) *Service {
 	if clockFn == nil {
 		clockFn = time.Now
 	}
@@ -40,8 +35,8 @@ func New(repo resource.Store, moduleSvc ModuleService, clockFn func() time.Time)
 	return &Service{
 		clock:          clockFn,
 		store:          repo,
-		syncBackoff:    defaultSyncBackoff,
-		maxSyncRetries: defaultMaxRetries,
+		syncBackoff:    syncBackoffInterval,
+		maxSyncRetries: maxRetries,
 		moduleSvc:      moduleSvc,
 	}
 }

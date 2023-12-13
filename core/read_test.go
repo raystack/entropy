@@ -3,6 +3,7 @@ package core_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -11,6 +12,11 @@ import (
 	"github.com/goto/entropy/core/mocks"
 	"github.com/goto/entropy/core/resource"
 	"github.com/goto/entropy/pkg/errors"
+)
+
+const (
+	defaultMaxRetries  = 5
+	defaultSyncBackoff = 5 * time.Second
 )
 
 func TestService_GetResource(t *testing.T) {
@@ -32,7 +38,7 @@ func TestService_GetResource(t *testing.T) {
 					GetByURN(mock.Anything, mock.Anything).
 					Return(nil, errors.ErrNotFound).
 					Once()
-				return core.New(repo, nil, nil)
+				return core.New(repo, nil, nil, defaultSyncBackoff, defaultMaxRetries)
 			},
 			urn:     "foo:bar:baz",
 			wantErr: errors.ErrNotFound,
@@ -52,7 +58,7 @@ func TestService_GetResource(t *testing.T) {
 					Return(nil, nil).
 					Once()
 
-				return core.New(repo, mod, deadClock)
+				return core.New(repo, mod, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			urn:     "foo:bar:baz",
 			want:    &sampleResource,
@@ -99,7 +105,7 @@ func TestService_ListResources(t *testing.T) {
 					List(mock.Anything, mock.Anything, false).
 					Return(nil, nil).
 					Once()
-				return core.New(repo, nil, deadClock)
+				return core.New(repo, nil, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			want:    nil,
 			wantErr: nil,
@@ -113,7 +119,7 @@ func TestService_ListResources(t *testing.T) {
 					List(mock.Anything, mock.Anything, false).
 					Return(nil, errStoreFailure).
 					Once()
-				return core.New(repo, nil, deadClock)
+				return core.New(repo, nil, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			want:    nil,
 			wantErr: errors.ErrInternal,
@@ -127,7 +133,7 @@ func TestService_ListResources(t *testing.T) {
 					List(mock.Anything, mock.Anything, false).
 					Return([]resource.Resource{sampleResource}, nil).
 					Once()
-				return core.New(repo, nil, deadClock)
+				return core.New(repo, nil, deadClock, defaultSyncBackoff, defaultMaxRetries)
 			},
 			want:    []resource.Resource{sampleResource},
 			wantErr: nil,
