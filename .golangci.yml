@@ -145,5 +145,8 @@ issues:
       linters:
         - forbidigo
         - contextcheck
+    - path: /
+      linters:
+        - typecheck
 severity:
   default-severity: error
