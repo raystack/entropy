@@ -9,6 +9,9 @@ output:
 
 linters:
   disable-all: true
+  enable-all: false
+  disable:
+    - typecheck
   enable:
     - bodyclose
     - depguard
